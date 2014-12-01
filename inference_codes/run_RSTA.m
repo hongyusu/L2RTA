@@ -225,35 +225,35 @@ function run_RSTA(filename,graph_type,t,isTest,kth_fold,l_norm,maxkappa,slack_c)
         paramsIn.debugging      = 3;
         paramsIn.l_norm         = l_norm;
         if isTest
-            paramsIn.extra_iter     = 0;        % extra iteration through examples when optimization is over
+            paramsIn.extra_iter = 0;        % extra iteration through examples when optimization is over
         else
-            paramsIn.extra_iter     = 0;        % extra iteration through examples when optimization is over
+            paramsIn.extra_iter = 0;        % extra iteration through examples when optimization is over
         end
         paramsIn.filestem       = sprintf('%s',suffix);		% file name stem used for writing output
 
         % nfold cross validation
-        Itrain = find(Ind ~= k);
-        Itest  = find(Ind == k);
+        Itrain  = find(Ind ~= k);
+        Itest   = find(Ind == k);
         %Itrain = [Itrain;Itest(1:ceil(numel(Itest)/5))];
-        gKx_tr = K(Itrain, Itrain);     % kernel
-        gKx_ts = K(Itest,  Itrain)';
-        gY_tr = Y(Itrain,:); gY_tr(gY_tr==0)=-1;    % training label
-        gY_ts = Y(Itest,:); gY_ts(gY_ts==0)=-1;
+        gKx_tr  = K(Itrain, Itrain);     % kernel
+        gKx_ts  = K(Itest,  Itrain)';
+        gY_tr   = Y(Itrain,:); gY_tr(gY_tr==0)=-1;    % training label
+        gY_ts   = Y(Itest,:); gY_ts(gY_ts==0)=-1;
         % set input data
-        dataIn.Elist = Elist;               % edge
-        dataIn.Kx_tr = gKx_tr;      % kernel
-        dataIn.Kx_ts = gKx_ts;
-        dataIn.Y_tr = gY_tr;        % label
-        dataIn.Y_ts = gY_ts;
+        dataIn.Elist =  Elist;               % edge
+        dataIn.Kx_tr =  gKx_tr;      % kernel
+        dataIn.Kx_ts =  gKx_ts;
+        dataIn.Y_tr =   gY_tr;        % label
+        dataIn.Y_ts =   gY_ts;
         % running
         [rtn,~] = RSTA(paramsIn,dataIn);
         % save margin dual mu
-        muList{k}=rtn;
+        muList{k} = rtn;
         % collecting results
         load(sprintf('/var/tmp/Ypred_%s.mat', paramsIn.filestem));
         
-        Ypred(Itest,:)=Ypred_ts;
-        %YpredVal(Itest,:)=Ypred_ts_val;
+        Ypred(Itest,:) = Ypred_ts;
+        YpredVal(Itest,:)=Ypred_ts_val;
         running_times(k,1) = running_time;
     end
 
