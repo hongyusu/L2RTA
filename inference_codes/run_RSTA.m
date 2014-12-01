@@ -1,4 +1,3 @@
-
 %%
 %
 % COMPILE WITH:
@@ -54,33 +53,36 @@ function run_RSTA(filename,graph_type,t,isTest,kth_fold,l_norm,maxkappa,slack_c)
     if nargin < 7
         maxkappa = '2';
     end
+    if nargin < 8
+        slack_c = '100';
+    end
     
-    % Set seed of random number
+    % Set the seed of the random number generator
     rand('twister', 0);
     
     %losstype = 'r'; % 1 loss
     losstype = 's'; % scaled loss
     
-    % Set suffix of the result files
+    % Set the suffix of result files
     suffix=sprintf('%s_%s_%s_f%s_l%s_k%s_c%s_RSTA%s', filename,graph_type,t,kth_fold,l_norm,maxkappa,slack_c,losstype);
     system(sprintf('rm /var/tmp/%s.log', suffix));
     system(sprintf('rm /var/tmp/Ypred_%s.mat', suffix));
     
     % Convert parameters from string to numerical
-    t=eval(t);
-    isTest = eval(isTest);
-    kth_fold = eval(kth_fold);
-    l_norm = eval(l_norm);
-    maxkappa = eval(maxkappa);
-    slack_c = eval(slack_c);
+    t           = eval(t);
+    isTest      = eval(isTest);
+    kth_fold    = eval(kth_fold);
+    l_norm      = eval(l_norm);
+    maxkappa    = eval(maxkappa);
+    slack_c     = eval(slack_c);
     
     % Add search path
     addpath('../shared_scripts/');  
     
-    % Get current hostname to be able to run on cluster
+    % Get current hostname to run on computer cluster
     [~,comres]=system('hostname');
     
-    % Read in X and Y matrix
+    % Read in X and Y matrix of data from location based on the current computing node
     if strcmp(comres(1:4),'melk') || strcmp(comres(1:4),'ukko') || strcmp(comres(1:4),'node')
         X=dlmread(sprintf('/cs/taatto/group/urenzyme/workspace/data/%s_features',filename));
         Y=dlmread(sprintf('/cs/taatto/group/urenzyme/workspace/data/%s_targets',filename));
@@ -90,12 +92,12 @@ function run_RSTA(filename,graph_type,t,isTest,kth_fold,l_norm,maxkappa,slack_c)
     end
     
     %% Process input data X and Y matrix
-    % select examples which have non-zero features 
+    % Select the examples with non-zero features which makes sense for e.g., document classification problem.
     Xsum=sum(X,2);
     X=X(Xsum~=0,:);
     Y=Y(Xsum~=0,:);
-    % Select labels which is not constant over examples.
-    % Note that after label selection the performance might drop because the easy-to-predict labels are removed.
+    % Select the labels which is not constant over the selected examples.
+    % The mean performance will drop after the label selection due to the removal of the easy-to-classify labels.
     Yuniq=zeros(1,size(Y,2));
     for i=1:size(Y,2)
         if size(unique(Y(:,i)),1)>1
@@ -104,16 +106,15 @@ function run_RSTA(filename,graph_type,t,isTest,kth_fold,l_norm,maxkappa,slack_c)
     end
     Y=Y(:,Yuniq(Yuniq~=0));
     
-    %Y=Y(:,1:6);
     
-    % Feature normalization (tf-idf for text data, scale and centralization for other numerical features).
+    %% Feature normalization (tf-idf for text data, scale and centralization for other numerical features).
     if or(strcmp(filename,'medical'),strcmp(filename,'enron')) 
         X=tfidf(X);
     elseif ~(strcmp(filename(1:2),'to'))
         X=(X-repmat(min(X),size(X,1),1))./repmat(max(X)-min(X),size(X,1),1);
     end
 
-    % Change Y from -1 to 0: labeling (0/1).
+    % Change Y from -1 to 0, now we have standard label of +1 and 0
     Y(Y==-1)=0;
 
     % Get dot product kernels from normalized features or just read precomputed kernels.
