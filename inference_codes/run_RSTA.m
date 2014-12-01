@@ -201,13 +201,15 @@ function run_RSTA(filename,graph_type,t,isTest,kth_fold,l_norm,maxkappa,slack_c)
         
     end
     
+    
     %% Variable to keep results.
     Ypred=zeros(size(Y));
     YpredVal=zeros(size(Y));
     running_times=zeros(nfold,1);
     muList=cell(nfold,1);
 
-    %% nfold cross validation of base learner
+    
+    %% the k'th fold of the 5 fold cross-validation
     for k=kth_fold
         paramsIn.profileiter    = 40;
         paramsIn.losstype       = losstype; % losstype
@@ -258,11 +260,12 @@ function run_RSTA(filename,graph_type,t,isTest,kth_fold,l_norm,maxkappa,slack_c)
     end
 
     
-    % auc & roc random model
+    %% Compute performance metrics.
     [acc,vecacc,pre,rec,f1,auc1,auc2]=get_performance(Y(Itest,:),(Ypred(Itest,:)==1),YpredVal(Itest));
     perf = [acc,vecacc,pre,rec,f1,auc1,auc2,norm_const_quadratic_list]
     
-    %% Close matlab process if it's not test run, otherwise keep matlab process alive
+    
+    %% If current session is not a test run (is a true run), save the results files, save the log files, and terminate the MATLAB session.
     if ~isTest
         %% need to save: Ypred, YpredVal, running_time, mu for current baselearner t,filename
         save(sprintf('../outputs/%s.mat', paramsIn.filestem), 'perf','Ypred', 'YpredVal', 'running_times', 'muList','norm_const_quadratic_list');
