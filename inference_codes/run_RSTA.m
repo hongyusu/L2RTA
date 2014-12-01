@@ -1,5 +1,9 @@
 %%
 %
+% CURRENT PROBLEM:
+%   featuer vector should be normalized such that the value start from 0
+%
+%
 % COMPILE WITH:
 %   mex compute_topk_omp.c forward_alg_omp.c backward_alg_omp.c  CFLAGS="\$CFLAGS -fopenmp" LDFLAGS="\$LDFLAGS -fopenmp" CC="/usr/local/bin/gcc -std=c99"
 %   mex find_worst_violator_new.c
@@ -113,11 +117,13 @@ function run_RSTA(filename,graph_type,t,isTest,kth_fold,l_norm,maxkappa,slack_c)
     elseif ~(strcmp(filename(1:2),'to'))
         X=(X-repmat(min(X),size(X,1),1))./repmat(max(X)-min(X),size(X,1),1);
     end
-
-    % Change Y from -1 to 0, now we have standard label of +1 and 0
+    
+    %% Change Y from -1 to 0, now we have standard label of +1 and 0
     Y(Y==-1)=0;
+    
+    %X=(X-repmat(mean(X),size(X,1),1));
 
-    % Get dot product kernels from normalized features or just read precomputed kernels.
+    %% Get dot product kernels from normalized features or just read in precomputed kernel matrix.
     if or(strcmp(filename,'fpuni'),strcmp(filename,'cancer'))
         if strcmp(comres(1:4),'dave') | strcmp(comres(1:4),'ukko') | strcmp(comres(1:4),'node')
             K=dlmread(sprintf('/cs/taatto/group/urenzyme/workspace/data/%s_kernel',filename));
@@ -126,15 +132,15 @@ function run_RSTA(filename,graph_type,t,isTest,kth_fold,l_norm,maxkappa,slack_c)
         end
     else
         K = X * X'; % dot product
-        K = K ./ sqrt(diag(K)*diag(K)');    %normalization diagonal is 1
+        K = K ./ sqrt(diag(K)*diag(K)');    % normalization of the kernel matrix to make sure points are in a unit sphere.
     end
-
+    
     %% Stratified n fold cross validation index.
     nfold = 5;
     Ind = getCVIndex(Y,nfold);
     
     %% Select part of the data for code sanity check if 'isTest==1'.
-    ntrain = 100;
+    ntrain = 50;
     if isTest==1
         X=X(1:ntrain,:);
         Y=Y(1:ntrain,:);
@@ -159,19 +165,18 @@ function run_RSTA(filename,graph_type,t,isTest,kth_fold,l_norm,maxkappa,slack_c)
     mmcrf_c = parameters(para_n,2);
     
     % currently use following parameters
-    mmcrf_c = slack_c;
-    mmcrf_g = -1e10;%0.01;
-    mmcrf_i = 120;
-    mmcrf_maxkappa = maxkappa;
+    mmcrf_c         = slack_c;      % margin slack parameter
+    mmcrf_g         = -1e10;%0.01;  % relative duality gap
+    mmcrf_i         = 120;          % number of iteration
+    mmcrf_maxkappa  = maxkappa;     % length of the K-best list
     
-    % display parameters
-    fprintf('\tC:%d G:%.2f Iteration:%d\n', mmcrf_c,mmcrf_g,mmcrf_i);
+    % Print out all parameters
+    fprintf('\n\tC:%d G:%.2f Iteration:%d MaxKappa:%d\n', mmcrf_c,mmcrf_g,mmcrf_i,mmcrf_maxkappa);
     
-    %% Generate random graph.
+    %% Generate random graphs.
     rand('twister', 0);    
     
-    Nrep=t;
-    
+    Nrep=t; % number of random graph
     Nnode=size(Y,2);
     Elist=cell(Nrep,1);
     for i=1:Nrep
@@ -181,11 +186,11 @@ function run_RSTA(filename,graph_type,t,isTest,kth_fold,l_norm,maxkappa,slack_c)
         if strcmp(graph_type,'pair')
             E=randPairGenerator(Nnode); % generate
         end
-        E=[E,min(E')',max(E')'];E=E(:,3:4); % arrange head and tail
+        E=[E,min(E,[],2),max(E,[],2)];E=E(:,3:4); % arrange head and tail
         E=sortrows(E,[1,2]); % sort by head and tail
         Elist{i}=RootTree(E); % put into cell array
       
-% construct similar spanning tree        
+% Construct a collection of similar spanning trees         
 %         if i~=1
 %             Elist{i}=Elist{1};
 %             pos = randsample(2:(size(Elist{1},1)),1);
@@ -195,10 +200,6 @@ function run_RSTA(filename,graph_type,t,isTest,kth_fold,l_norm,maxkappa,slack_c)
         
         
     end
-    
-    
-    % Pick up one random graph.
-    E=Elist{t};
     
     %% Variable to keep results.
     Ypred=zeros(size(Y));
