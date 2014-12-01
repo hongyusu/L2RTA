@@ -7,26 +7,28 @@
 %
 %
 % PARAMETERS:
-%   filename: prefix of the input file
-%   graph_type: spanning tree or random pair graph
-%   t: number of trees
-%   isTest: TRUE to select small portion of data for testing purpose
-%   kth_fold: kth fold of five fold CV
-%   l_norm: '1'->l1 norm regularization, '2'->l2 norm regularization
-%   maxkappa: the length of K best list
+%   filename:       the prefix of the input file
+%   graph_type:     spanning tree or random pairing graph
+%   t:              the number of trees
+%   isTest:         if 'TRUE' the algorithm will select a small portion of the training data for code sanity check, results are not saved.
+%   kth_fold:       the kth fold of five fold Cross-Validation
+%   l_norm:         '1'->l1 norm regularization, '2'->l2 norm regularization. Currently, only L2 regularization implemented
+%   maxkappa:       the length of K best list
 %
 %
-% EXAMPLE:
-%   run_RSTA('ArD15','tree','5','1','1','2','2','100')
-%   this will run the algorithm
-%   on ArD15 dataset, with random spanning tree as output structure,
-%   generating 5 random spanning tree, selecting small portion of data for
-%   testing, running first fold of five fold CV, with l2 norm
-%   regularization, bulding K best list with K=2
-%   margin slack parameter equals to 100
+% EXAMPLE USAGE:
+%   Use command:    run_RSTA('ArD10','tree','5','1','1','2','2','100')
+%   This will run the algorithm:
+%       on ArD10 dataset,
+%       with random spanning tree as the output graph,
+%       generating 5 random spanning tree,
+%       in test mode which selects a small portion of the training data for sanity check,
+%       running first fold of five fold Cross-Validation,
+%       with l2 norm regularization on featuer weight parameters,
+%       with K best multilabel list of depth 2,
+%       with margin slack parameter C equals to 100.
 %
 %
-
 function run_RSTA(filename,graph_type,t,isTest,kth_fold,l_norm,maxkappa,slack_c)
 
     %% Process input parameters
