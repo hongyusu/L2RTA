@@ -124,11 +124,12 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn)
 
     %% Optimization
     print_message('Conditional gradient descend ...',0);
-    primal_ub = Inf;
-    opt_round = 0;
+    primal_ub = Inf;    % primal upper bound
+    opt_round = 0;      % the number of optimization
 
 	compute_duality_gap;
    
+    adfas
     profile_update_tr;
        
     
@@ -352,11 +353,10 @@ function Kmu_x = compute_Kmu_x(x,Kx,E,ind_edge_val,Rmu,Smu)
 end
 
 
-%%
-% Function to compute ralative duality gap.
-%
+%% Function to compute the relative duality gap
 function compute_duality_gap
-    %% parameter
+
+    %% global parameters
     global obj_list;
     global duality_gap_on_trees;
     global T_size;
@@ -373,40 +373,41 @@ function compute_duality_gap
     global norm_const_linear;
     global norm_const_quadratic_list;
     global iter;
+    global m;
+    global l;
+    global node_degree_list;
     
-    m=size(Kx_tr,1);
-    Y=Y_tr;
-    Ypred = zeros(size(Y));
-    Y_kappa = zeros(size(Y,1)*T_size,size(Y,2)*kappa);
-    Y_kappa_val = zeros(size(Y,1)*T_size,kappa);
+    Y           = Y_tr;                                     % the true multilabel
+    Ypred       = zeros(size(Y));                           % the predicted best multilabel
+    Y_kappa     = zeros(size(Y,1)*T_size, size(Y,2)*kappa); % Holder for the k-best multilabels
+    Y_kappa_val = zeros(size(Y,1)*T_size, kappa);           % Holder for the value achieved by the k-best multilabels
     
-    %%
-    % Get k best prediction from each random spanning tree
-    Kmu_list_local = cell(1,T_size);
+    %% Get k best prediction from each random spanning tree
+    
+    % result holders
+    Kmu_list_local      = cell(1,T_size);
     gradient_list_local = cell(1,T_size);
-    for t=1:T_size
+    
+    % iteration over a collection of spanning trees
+    for t = 1:T_size
+        % retrieve or compute variables locally on each spanning tree
         loss = loss_list{t};
         E = E_list{t};
         mu = mu_list{t};
         ind_edge_val = ind_edge_val_list{t};
         loss = reshape(loss,4,size(E,1)*m);
-        Kmu_list_local{t} = compute_Kmu(Kx_tr,mu,E,ind_edge_val);
-        Kmu_list_local{t} = reshape(Kmu_list_local{t},4,size(E,1)*m);
+        Kmu_list_local{t} = compute_Kmu(Kx_tr, mu, E, ind_edge_val);
+        Kmu_list_local{t} = reshape(Kmu_list_local{t}, 4, size(E,1)*m);
         Kmu = Kmu_list_local{t};
         gradient_list_local{t} = norm_const_linear*loss - norm_const_quadratic_list(t)*Kmu;
         gradient = gradient_list_local{t};
-                 
-        l=size(E,1)+1;
-        node_degree = zeros(1,l);
-        for i=1:l
-            node_degree(i) = sum(sum(E==i));
-        end
+        node_degree = node_degree_list{t};
         in_gradient = reshape(gradient,numel(gradient),1);
         
-        [Y_tmp,Y_tmp_val] = compute_topk_omp(in_gradient,kappa,E,node_degree);
-        
-        Y_kappa(((t-1)*size(Y,1)+1):(t*size(Y,1)),:) = Y_tmp;
-        Y_kappa_val(((t-1)*size(Y,1)+1):(t*size(Y,1)),:) = Y_tmp_val;
+        % compute and save the K-best multilabels and their scores
+        [Y_tmp,Y_tmp_val] = compute_topk_omp(in_gradient, kappa, E, node_degree);
+        Y_kappa(((t-1)*size(Y,1)+1):(t*size(Y,1)),:)        = Y_tmp;
+        Y_kappa_val(((t-1)*size(Y,1)+1):(t*size(Y,1)),:)    = Y_tmp_val;
     end
     
     %% Get the worst violator from the K best predictions
@@ -503,9 +504,9 @@ function compute_duality_gap
 
     primal_ub = obj + sum(dgap);
     
-    %%
-    return;
 end
+
+
 function par_compute_duality_gap
     %% parameter
     global T_size;
@@ -1636,6 +1637,8 @@ function optimizer_init
     global opt_round;
     global E_list;
     global m;
+    global l;
+    global node_degree_list;
     
     Rmu_list = cell(T_size,1);
     Smu_list = cell(T_size,1);
@@ -1648,6 +1651,16 @@ function optimizer_init
             Rmu_list{t}{u} = zeros(size(E_list{t},1),m);
         end
     end
+    
+    node_degree_list = cell(T_size,1);
+    for t=1:T_size
+	    node_degree = zeros(1,l);
+        for i=1:l
+            node_degree(i) = sum(sum(E_list{t}==i));
+        end
+        node_degree_list{t}=node_degree;
+    end
+    
     
     obj         = 0;
     delta_obj   = 0;
