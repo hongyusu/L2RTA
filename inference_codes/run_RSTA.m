@@ -255,7 +255,7 @@ function run_RSTA(filename,graph_type,t,isTest,kth_fold,l_norm,maxkappa,slack_c)
         load(sprintf('/var/tmp/Ypred_%s.mat', paramsIn.filestem));
         
         Ypred(Itest,:) = Ypred_ts;
-        YpredVal(Itest,:)=Ypred_ts_val;
+        %YpredVal(Itest,:) = Ypred_ts_val;
         running_times(k,1) = running_time;
     end
 

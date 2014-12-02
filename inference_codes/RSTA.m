@@ -48,7 +48,7 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn)
     global Kxx_mu_x_list;
     global kappa;               % K best
     global kappa_decrease_flags;  
-    global iter;
+    global iter;                % the indicator for the number of iteration
     global duality_gap_on_trees;
     global val_list;
     global kappa_list;
@@ -129,7 +129,6 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn)
 
 	compute_duality_gap;
    
-    adfas
     profile_update_tr;
        
     
@@ -377,6 +376,7 @@ function compute_duality_gap
     global l;
     global node_degree_list;
     
+    
     Y           = Y_tr;                                     % the true multilabel
     Ypred       = zeros(size(Y));                           % the predicted best multilabel
     Y_kappa     = zeros(size(Y,1)*T_size, size(Y,2)*kappa); % Holder for the k-best multilabels
@@ -410,50 +410,46 @@ function compute_duality_gap
         Y_kappa_val(((t-1)*size(Y,1)+1):(t*size(Y,1)),:)    = Y_tmp_val;
     end
     
-    %% Get the worst violator from the K best predictions
+    %% Get the worst violator from the K best predictions of each example
     for i=1:size(Y,1)
+        % if the optimization has not been started yet, give default value to the predictions
         if iter==0
             kappa_decrease_flag = 1;
             Ypred(i,:) = -1*ones(1,size(Y_tr,2));
         else
-%             [Ypred(i,:),~,kappa_decrease_flag] = ...
-%                 find_worst_violator(...
-%                 Y_kappa((i:size(Y_tr,1):size(Y_kappa,1)),:),...
-%                 Y_kappa_val((i:size(Y_tr,1):size(Y_kappa_val,1)),:),[]);
-%             
-
-                IN_E = zeros(size(E_list{1},1)*2,size(E_list,1));
-                for t=1:T_size
-                    IN_E(:,t) = reshape(E_list{t},size(E_list{1},1)*2,1);
-                end
-                IN_gradient = zeros(4*size(E_list{1},1),size(E_list,1));
-                for t=1:T_size
-                    IN_gradient(:,t) = reshape(gradient_list_local{t}(:,((i-1)*size(E,1)+1):(i*size(E,1))),4*size(E_list{1},1),1);
-                end
-                Y_kappa((i:size(Y_tr,1):size(Y_kappa,1)),:) = (Y_kappa((i:size(Y_tr,1):size(Y_kappa,1)),:)+1)/2;
-                [Ypred(i,:),~,kappa_decrease_flag] = ...
-                    find_worst_violator_new(...
-                    Y_kappa((i:size(Y_tr,1):size(Y_kappa,1)),:),...
-                    Y_kappa_val((i:size(Y_tr,1):size(Y_kappa_val,1)),:)...
-                    ,[],IN_E,IN_gradient);
-                Ypred(i,:) = Ypred(i,:)*2-1;
+            IN_E = zeros((l-1)*2,T_size);
+            for t=1:T_size
+                IN_E(:,t) = reshape(E_list{t},(l-1)*2,1);
+            end
+            IN_gradient = zeros(4*(l-1),T_size);
+            for t=1:T_size
+                IN_gradient(:,t) = reshape(gradient_list_local{t}(:,((i-1)*(l-1)+1):(i*(l-1))),4*(l-1),1);
+            end
+            Y_kappa((i:size(Y_tr,1):size(Y_kappa,1)),:) = (Y_kappa((i:size(Y_tr,1):size(Y_kappa,1)),:)+1)/2;
+            % Compute the worst violator
+            [Ypred(i,:),~,kappa_decrease_flag] = ...
+                find_worst_violator_new(...
+                Y_kappa((i:size(Y_tr,1):size(Y_kappa,1)),:),...
+                Y_kappa_val((i:size(Y_tr,1):size(Y_kappa_val,1)),:)...
+                ,[],IN_E,IN_gradient);
+            Ypred(i,:) = Ypred(i,:)*2-1;
         end
     end
 
     clear Y_kappa;
     clear Y_kappa_val;
     
-    %% Compute duality gap of all training examples from each random spanning tree.
-    % Define variable to save finial results.
+    %% Compute duality gap of all training examples from each random spanning tree
+    % Define variable to save the results
     dgap = zeros(1,T_size);
-    % Iterate over all spanning tree.
+    % Iterate over a collection of random spanning trees
     for t=1:T_size
+        % compute or collect variables locally on each spanning tree
         loss = loss_list{t};
         E = E_list{t};
         mu = mu_list{t};
         Kmu = Kmu_list_local{t};
         gradient = gradient_list_local{t};
-        %% Compute current objective value under current mu.
         loss = reshape(loss,size(loss,1)*size(loss,2),1);
         mu = reshape(mu,size(loss,1)*size(loss,2),1);
         Kmu = reshape(Kmu,size(loss,1)*size(loss,2),1);
@@ -461,12 +457,10 @@ function compute_duality_gap
         %Gcur = norm_const_linear*mu'*loss - 1/2*norm_const_quadratic_list(t)*mu'*Kmu;
         % compute current maxima on gradient
         Gcur = reshape(gradient,1,size(gradient,1)*size(gradient,2))*reshape(mu,1,size(mu,1)*size(mu,2))';
-        %% compute best possible objective along Y* and gradient.
+        % compute best possible objective along Y* and gradient.
         Gmax = compute_Gmax(gradient,Ypred,E);
-        %[params.C*sum(Gmax),Gcur]
-        %% the difference is estimated duality gap
+        % the difference is estimated as duality gap
         dgap(t) = params.C*sum(Gmax)-Gcur;
-        %[params.C*sum(Gmax),Gcur]
     end
 % %     % Comment out old duality gap computation
 % %     for t=1:T_size
@@ -487,113 +481,13 @@ function compute_duality_gap
 % %     end
 
     %% Compute primal upper bound, which is obj+duality gap
-    % TODO: one of the calculates can be further optimized, as there is no
-    % need to compute both obj and dgap.
-%     if obj + sum(dgap) <  primal_ub
-%         % always use smaller value for primal upper bound
-%         primal_ub=obj + sum(dgap);
-%     end
     dgap = max(0,dgap);
     %duality_gap_on_trees = min(dgap,duality_gap_on_trees);
     duality_gap_on_trees = dgap;
     
-    
-%     if primal_ub > obj + sum(dgap)
-%         primal_ub = obj + sum(dgap);
-%     end
-
     primal_ub = obj + sum(dgap);
     
 end
-
-
-function par_compute_duality_gap
-    %% parameter
-    global T_size;
-    global Kx_tr;
-    global loss_list;
-    global E_list;
-    global Y_tr;
-    global params;
-    global mu_list;
-    global ind_edge_val_list;
-    global primal_ub;
-    global obj;
-    global kappa;
-    global norm_const_linear;
-    global norm_const_quadratic_list;
-    
-    m=size(Kx_tr,1);
-    Y=Y_tr;
-    Ypred = zeros(size(Y));
-    Y_kappa = zeros(size(Y,1)*T_size,size(Y,2)*kappa);
-    Y_kappa_val = zeros(size(Y,1)*T_size,kappa);
-    
-    nlabel = size(Y_tr,2);
-
-    %% get 'k' best prediction from each spanning tree
-    Y_tmp = cell(1,T_size);
-    Y_tmp_val = cell(1,T_size);
-    Kmu_list_local = cell(1,T_size);
-    gradient_list_local = cell(1,T_size);
-    parfor t=1:T_size
-        pause(0.000);
-        loss = loss_list{t};
-        mu = mu_list{t};
-        E = E_list{t};
-        ind_edge_val = ind_edge_val_list{t};
-        loss = reshape(loss,4,size(E,1)*m);        
-        Kmu_list_local{t} = compute_Kmu(Kx_tr,mu,E,ind_edge_val);
-        Kmu_list_local{t} = reshape(Kmu_list_local{t},4,size(E,1)*m);
-        Kmu = Kmu_list_local{t};
-        gradient_list_local{t} = norm_const_linear*loss - norm_const_quadratic_list(t)*Kmu;
-        gradient = gradient_list_local{t};
-        [Y_tmp{t},Y_tmp_val{t}] = compute_topk(gradient,kappa,E);
-    end
-    for t=1:T_size
-        Y_kappa(((t-1)*size(Y,1)+1):(t*size(Y,1)),:) = Y_tmp{t};
-        Y_kappa_val(((t-1)*size(Y,1)+1):(t*size(Y,1)),:) = Y_tmp_val{t};
-    end
-    clear Y_tmp;
-    clear Y_tmp_val;
-    
-    %% get top '1' prediction by analyzing predictions from all trees
-    parfor i=1:size(Y,1)
-        [Ypred(i,:),~,kappa_decrease_flag] = ...
-            find_worst_violator(Y_kappa((i:size(Y_tr,1):size(Y_kappa,1)),:),...
-            Y_kappa_val((i:size(Y_tr,1):size(Y_kappa_val,1)),:),[]);
-%         if ~kappa_decrease_flag
-%             [Ypred(i,:),~] = majority_voting(...
-%             Y_kappa((i:size(Y_tr,1):size(Y_kappa,1)),:),...
-%             Y_kappa_val((i:size(Y_tr,1):size(Y_kappa_val,1)),:),...
-%             size(Y,2));
-%         end
-    end
-    clear Y_kappa;
-    clear Y_kappa_val;
-    
-    %% duality gaps over trees
-    dgap = zeros(1,T_size);
-    parfor t=1:T_size
-        pause(0.000);
-        loss = loss_list{t};
-        E = E_list{t};
-        mu = mu_list{t};
-        ind_edge_val = ind_edge_val_list{t};
-        Kmu = Kmu_list_local{t};
-        gradient = gradient_list_local{t};
-        
-        Gmax = compute_Gmax(gradient,Ypred,E);
-        mu = reshape(mu,4,m*size(E,1));
-        duality_gap = params.C*max(Gmax,0) - sum(reshape(sum(gradient.*mu),size(E,1),m),1)';
-        dgap(t) = sum(duality_gap);
-    end
-    %% primal upper bound
-    primal_ub = obj + sum(dgap(t));
-    
-    return;
-end
-
 
 
 
