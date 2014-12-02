@@ -7,6 +7,15 @@
 % known to be difficult, the algorithm construct a set of predictors each with a random spanning tree as the output graph. With max-margin assumption,
 % if there exists a classifier achieving a margin on a complete graph, there will be a collection of random tree predictors achieving a similar margin.
 % 
+% PARAMETERS:
+%   paramsIn:   input parameters
+%   dataIn:     input data e.g., kernel and label matrices for training and testing
+%   rtn:        return value
+%   ts_err:     test error
+%
+%
+% USAGE:
+%   This function is called by run_RSTA(.)
 %
 %
 
@@ -38,7 +47,6 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn)
     global norm_const_quadratic_list;
     global Kxx_mu_x_list;
     global kappa;               % K best
-    global PAR;                 % parallel compuing on matlab with matlabpool
     global kappa_decrease_flags;  
     global iter;
     global duality_gap_on_trees;
@@ -50,13 +58,6 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn)
     
     rand('twister', 0);
     
-    
-    if T_size >= 20
-        PAR=0;
-    else
-        PAR =0;
-    end
-    
     global previous;
     previous=[];
 
@@ -66,31 +67,28 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn)
     else
         l1norm = 0;
     end
-    Kx_tr=dataIn.Kx_tr;
-    Kx_ts=dataIn.Kx_ts;
-    Y_tr=dataIn.Y_tr;
-    Y_ts=dataIn.Y_ts;
-    E_list=dataIn.Elist;
-    l = size(Y_tr,2);
-    m = size(Kx_tr,1);
-    T_size = size(E_list,1);
-    loss_list = cell(T_size, 1);
-    Ye_list = cell(T_size, 1);
-    ind_edge_val_list = cell(T_size, 1);
-    Kxx_mu_x_list = cell(T_size, 1);
-    duality_gap_on_trees = ones(1,T_size)*1e10;
-    
-    
-    norm_const_linear = 1/(T_size)/size(E_list{1},1);
-    norm_const_quadratic_list = zeros(1,T_size)+1/(T_size);
-    
-    mu_list = cell(T_size);
+    Kx_tr       = dataIn.Kx_tr;
+    Kx_ts       = dataIn.Kx_ts;
+    Y_tr        = dataIn.Y_tr;
+    Y_ts        = dataIn.Y_ts;      
+    E_list      = dataIn.Elist;     % a list of random spanning trees in terms of edges
+    l           = size(Y_tr,2);     % the number of microlabels
+    m           = size(Kx_tr,1);    % the number of examples
+    T_size      = size(E_list,1);   % the number of random spanning trees
+    loss_list   = cell(T_size, 1);  % a list of losses on the collection of trees
+    Ye_list     = cell(T_size, 1);   
+    ind_edge_val_list           = cell(T_size, 1);
+    Kxx_mu_x_list               = cell(T_size, 1);
+    duality_gap_on_trees        = ones(1,T_size)*1e10;          % relative duality gap on individual spanning tree
+    norm_const_linear           = 1/(T_size)/size(E_list{1},1); % normalization constant of the linear term of the objective function
+    norm_const_quadratic_list   = zeros(1,T_size)+1/(T_size);   % normalization constant of the quadratic term of the objective function
+    mu_list = cell(T_size);         % a list of solutions in terms of marginalized dual variables on the collection of trees
     
     
     if T_size <= 1
-        kappa_INIT  =2;
-        kappa_MIN   =2;
-        kappa_MAX   =2;
+        kappa_INIT  = 2;
+        kappa_MIN   = 2;
+        kappa_MAX   = 2;
     else
         kappa_INIT  = min(params.maxkappa,2^l);
         kappa_MIN   = min(params.maxkappa,2^l); 
@@ -99,44 +97,38 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn)
     
     
     kappa_decrease_flags = zeros(1,m);
-    kappa=kappa_INIT;
+    kappa = kappa_INIT;
     
     
     for t=1:T_size
         [loss_list{t},Ye_list{t},ind_edge_val_list{t}] = compute_loss_vector(Y_tr,t,params.mlloss);
-        mu_list{t} = zeros(4*size(E_list{1},1),m);
-        Kxx_mu_x_list{t} = zeros(4*size(E_list{1},1),m);
+        mu_list{t}          = zeros(4*size(E_list{1},1),m);
+        Kxx_mu_x_list{t}    = zeros(4*size(E_list{1},1),m);
     end
 
-    iter=0; 
-    profile_in_iteration = 1;
+    iter = 0; 
     
     
     
-    val_list = zeros(1,m);
-    Yipos_list = zeros(1,m)*T_size;
-    kappa_list = zeros(1,m);
-    GmaxG0_list = zeros(1,m);
+    val_list        = zeros(1,m);
+    Yipos_list      = zeros(1,m)*T_size;
+    kappa_list      = zeros(1,m);
+    GmaxG0_list     = zeros(1,m);
     GoodUpdate_list = zeros(1,m);
-    obj_list = zeros(1,T_size);
+    obj_list        = zeros(1,T_size);
     
     
-    %% initialization
-    
+    %% Initialization
     optimizer_init;
     profile_init;
-    
 
-
-    %% optimization
+    %% Optimization
     print_message('Conditional gradient descend ...',0);
     primal_ub = Inf;
     opt_round = 0;
-    if PAR
-        par_compute_duality_gap;
-    else
-        compute_duality_gap;
-    end
+
+	compute_duality_gap;
+   
     profile_update_tr;
        
     
@@ -199,9 +191,7 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn)
 %         for xi = randsample(1:m,m)
 %         for xi = 1:m
             print_message(sprintf('Start descend on example %d initial k %d',xi,kappa),3)
-            if PAR
-                [delta_obj_list,kappa_decrease_flags(xi)] = par_conditional_gradient_descent(xi,kappa);    % optimize on single example
-            else
+
                 kappa_decrease_flag(xi)=0;
                 [delta_obj_list,kappa_decrease_flags(xi)] = conditional_gradient_descent(xi,kappa);    % optimize on single example
 %                 
@@ -211,7 +201,7 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn)
 %                     [delta_obj_list,kappa_decrease_flags(xi)] = conditional_gradient_descent(xi,kappa0);    % optimize on single example
 %                 end
                 kappa_list(xi)=kappa;
-            end
+            
             obj_list = obj_list + delta_obj_list;
             obj = obj + sum(delta_obj_list);
             % update kappa
@@ -231,11 +221,9 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn)
         if mod(iter, params.profileiter)==0
             progress_made = (obj >= prev_obj);  
             prev_obj = obj;
-            if PAR
-                par_compute_duality_gap;        % duality gap
-            else
+            
                 compute_duality_gap;
-            end
+            
             profile_update_tr;          % profile update for training
             % update flip number
             if profile.n_err_microlbl > profile.n_err_microlbl_prev
@@ -270,11 +258,9 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn)
         Smu_list = best_Smu_list;
         norm_const_quadratic_list = best_norm_const_quadratic_list;
         for xi=1:m
-            if PAR
-                [~,~] = par_conditional_gradient_descent(xi,kappa);    % optimize on single example
-            else
+
                 [~,~] = conditional_gradient_descent(xi,kappa);    % optimize on single example
-            end
+
             profile_update_tr;
             if profile.n_err_microlbl < best_n_err_microlbl
                 best_n_err_microlbl=profile.n_err_microlbl;
@@ -1236,7 +1222,6 @@ function profile_update
     global Kx_ts;
     global mu;
     global obj;
-    global PAR;
     global primal_ub;
     global norm_const_quadratic_list;
     m = size(Ye,2);
@@ -1248,11 +1233,9 @@ function profile_update
         profile.n_err_microlbl_prev = profile.n_err_microlbl;
 
         %% train
-        if PAR
-            [Ypred_tr,~] = par_compute_error(Y_tr,Kx_tr);
-        else
+        
             [Ypred_tr,~] = compute_error(Y_tr,Kx_tr);
-        end
+        
         profile.microlabel_errors = sum(abs(Ypred_tr-Y_tr) >0,2);
         profile.n_err_microlbl = sum(profile.microlabel_errors);
         profile.p_err_microlbl = profile.n_err_microlbl/numel(Y_tr);
@@ -1260,11 +1243,9 @@ function profile_update
         profile.p_err = profile.n_err/length(profile.microlabel_errors);
 
         %% test
-        if PAR
-            [Ypred_ts,~] = par_compute_error(Y_ts,Kx_ts);
-        else
+        
             [Ypred_ts,~] = compute_error(Y_ts,Kx_ts);
-        end
+        
         profile.microlabel_errors_ts = sum(abs(Ypred_ts-Y_ts) > 0,2);
         profile.n_err_microlbl_ts = sum(profile.microlabel_errors_ts);
         profile.p_err_microlbl_ts = profile.n_err_microlbl_ts/numel(Y_ts);
@@ -1298,7 +1279,7 @@ function profile_update_tr
     global Kx_tr;
     global obj;
     global primal_ub;
-    global PAR;
+    
     global kappa;
     global opt_round;
     global kappa_decrease_flags;
@@ -1319,11 +1300,9 @@ function profile_update_tr
         profile.next_profile_tm = profile.next_profile_tm + params.profile_tm_interval;
         profile.n_err_microlbl_prev = profile.n_err_microlbl;
         % compute training error
-        if PAR
-            [Ypred_tr,~] = par_compute_error(Y_tr,Kx_tr);
-        else
+        
             [Ypred_tr,~] = compute_error(Y_tr,Kx_tr);
-        end
+        
         
 
 
@@ -1627,8 +1606,9 @@ function [loss,Ye,ind_edge_val] = compute_loss_vector(Y,t,scaling)
     return;
 end
 
-%% initialize profile
+%% Initialize the profiling function
 function profile_init
+
     global profile;
     profile.start_time = cputime;
     profile.next_profile_tm = profile.start_time;
@@ -1640,10 +1620,12 @@ function profile_init
     profile.microlabel_errors = [];
     profile.iter = 0;
     profile.err_ts = 0;
+    
 end
 
-%% initialize optimizer
+%% Initialize the optimization
 function optimizer_init
+
     clear;
     clear iter;
     global T_size;
@@ -1670,6 +1652,7 @@ function optimizer_init
     obj=0;
     delta_obj=0;
     opt_round=0;
+    
 end
 
 %%
