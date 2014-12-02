@@ -3,29 +3,28 @@
 
 %% 
 %
-% Random spanning tree approximations assumes a model build with complete
-% graph as output graph structure. As learning/inference on complete graph
-% is difficult, the algorithm construct a set of predictors with random
-% spanning tree as output graph. Under margin assumption, if the there is a
-% classifier achieve a margin on a complete graph, there will be a
-% combination of random tree predictors achieving a similar margin.
+% Random spanning tree approximations assumes a model built with a complete graph as output graph. As learning/inference on a complete graph is
+% known to be difficult, the algorithm construct a set of predictors each with a random spanning tree as the output graph. With max-margin assumption,
+% if there exists a classifier achieving a margin on a complete graph, there will be a collection of random tree predictors achieving a similar margin.
 % 
 %
 %
+
 function [rtn, ts_err] = RSTA(paramsIn, dataIn)
+
     %% Definition of global variables
-    global loss_list;   % losses associated with different edge labelings
-    global mu_list;     % marginal dual varibles: these are the parameters to be learned
-    global E_list;      % edges of the Markov network e_i = [E(i,1),E(i,2)];
+    global loss_list;           % losses associated with different edge labelings
+    global mu_list;             % marginal dual varibles: these are the parameters to be learned
+    global E_list;              % edges of the Markov network e_i = [E(i,1),E(i,2)];
     global ind_edge_val_list;	% ind_edge_val{u} = [Ye == u] 
     global Ye_list;             % Denotes the edge-labelings 1 <-- [-1,-1], 2 <-- [-1,+1], 3 <-- [+1,-1], 4 <-- [+1,+1]
-    global Kx_tr;   % X-kernel, assume to be positive semidefinite and normalized (Kx_tr(i,i) = 1)
+    global Kx_tr;               % X-kernel, assume to be positive semidefinite and normalized (Kx_tr(i,i) = 1)
     global Kx_ts;
-    global Y_tr;    % Y-data: assumed to be class labels encoded {-1,+1}
+    global Y_tr;                % Y-data: assumed to be class labels encoded {-1,+1}
     global Y_ts;
-    global params;  % parameters use by the learning algorithm
-    global m;       % number of training instances
-    global l;       % number of labels
+    global params;              % parameters use by the learning algorithm
+    global m;                   % number of training instances
+    global l;                   % number of labels
     global primal_ub;
     global profile;
     global obj;
@@ -34,16 +33,15 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn)
     global opt_round;
     global Rmu_list;
     global Smu_list;
-    global T_size;  % number of trees
+    global T_size;              % number of trees
     global norm_const_linear;
     global norm_const_quadratic_list;
     global Kxx_mu_x_list;
-    global kappa;   % K best
-    global PAR;     % parallel compuing on matlab with matlabpool
+    global kappa;               % K best
+    global PAR;                 % parallel compuing on matlab with matlabpool
     global kappa_decrease_flags;  
     global iter;
     global duality_gap_on_trees;
-    
     global val_list;
     global kappa_list;
     global Yipos_list;
