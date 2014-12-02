@@ -141,9 +141,9 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn)
     nflip=Inf;
     params.verbosity = 2;
     progress_made = 1;
-    profile.n_err_microlbl_prev=profile.n_err_microlbl;
+    profile.n_err_microlabel_prev=profile.n_err_microlabel;
 
-    best_n_err_microlbl=Inf;
+    best_n_err_microlabel=Inf;
     best_iter = iter;
     best_kappa = kappa;
     best_mu_list=mu_list;
@@ -226,12 +226,12 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn)
             
             profile_update_tr;          % profile update for training
             % update flip number
-            if profile.n_err_microlbl > profile.n_err_microlbl_prev
+            if profile.n_err_microlabel > profile.n_err_microlabel_prev
                 nflip = nflip - 1;
             end
             % update current best solution
-            if profile.n_err_microlbl < best_n_err_microlbl || 1
-                best_n_err_microlbl=profile.n_err_microlbl;
+            if profile.n_err_microlabel < best_n_err_microlabel || 1
+                best_n_err_microlabel=profile.n_err_microlabel;
                 best_iter = iter;
                 best_kappa = kappa;
                 best_mu_list=mu_list;
@@ -262,8 +262,8 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn)
                 [~,~] = conditional_gradient_descent(xi,kappa);    % optimize on single example
 
             profile_update_tr;
-            if profile.n_err_microlbl < best_n_err_microlbl
-                best_n_err_microlbl=profile.n_err_microlbl;
+            if profile.n_err_microlabel < best_n_err_microlabel
+                best_n_err_microlabel=profile.n_err_microlabel;
                 best_iter = iter;
                 best_kappa = kappa;
                 best_mu_list=mu_list;
@@ -1230,15 +1230,15 @@ function profile_update
     round(tm-profile.start_time),profile.iter,obj,max(max(mu)),min(min(mu)),primal_ub-obj),5,sprintf('/var/tmp/%s.log',params.filestem));
     if params.profiling
         profile.next_profile_tm = profile.next_profile_tm + params.profile_tm_interval;
-        profile.n_err_microlbl_prev = profile.n_err_microlbl;
+        profile.n_err_microlabel_prev = profile.n_err_microlabel;
 
         %% train
         
             [Ypred_tr,~] = compute_error(Y_tr,Kx_tr);
         
         profile.microlabel_errors = sum(abs(Ypred_tr-Y_tr) >0,2);
-        profile.n_err_microlbl = sum(profile.microlabel_errors);
-        profile.p_err_microlbl = profile.n_err_microlbl/numel(Y_tr);
+        profile.n_err_microlabel = sum(profile.microlabel_errors);
+        profile.p_err_microlabel = profile.n_err_microlabel/numel(Y_tr);
         profile.n_err = sum(profile.microlabel_errors > 0);
         profile.p_err = profile.n_err/length(profile.microlabel_errors);
 
@@ -1247,8 +1247,8 @@ function profile_update
             [Ypred_ts,~] = compute_error(Y_ts,Kx_ts);
         
         profile.microlabel_errors_ts = sum(abs(Ypred_ts-Y_ts) > 0,2);
-        profile.n_err_microlbl_ts = sum(profile.microlabel_errors_ts);
-        profile.p_err_microlbl_ts = profile.n_err_microlbl_ts/numel(Y_ts);
+        profile.n_err_microlabel_ts = sum(profile.microlabel_errors_ts);
+        profile.p_err_microlabel_ts = profile.n_err_microlabel_ts/numel(Y_ts);
         profile.n_err_ts = sum(profile.microlabel_errors_ts > 0);
         profile.p_err_ts = profile.n_err_ts/length(profile.microlabel_errors_ts);
 
@@ -1257,8 +1257,8 @@ function profile_update
             round(tm-profile.start_time),...
             profile.n_err,...
             profile.p_err*100,...
-            profile.n_err_microlbl,...
-            profile.p_err_microlbl*100,...
+            profile.n_err_microlabel,...
+            profile.p_err_microlabel*100,...
             round(profile.p_err_ts*size(Y_ts,1)),...
             profile.p_err_ts*100,sum(profile.microlabel_errors_ts),...
             sum(profile.microlabel_errors_ts)/numel(Y_ts)*100),...
@@ -1298,7 +1298,7 @@ function profile_update_tr
     
     if params.profiling
         profile.next_profile_tm = profile.next_profile_tm + params.profile_tm_interval;
-        profile.n_err_microlbl_prev = profile.n_err_microlbl;
+        profile.n_err_microlabel_prev = profile.n_err_microlabel;
         % compute training error
         
             [Ypred_tr,~] = compute_error(Y_tr,Kx_tr);
@@ -1308,8 +1308,8 @@ function profile_update_tr
 
         %[Ypred_tr,~] = compute_error(Y_tr,Kx_tr);
         profile.microlabel_errors = sum(abs(Ypred_tr-Y_tr) >0,2);
-        profile.n_err_microlbl = sum(profile.microlabel_errors);
-        profile.p_err_microlbl = profile.n_err_microlbl/numel(Y_tr);
+        profile.n_err_microlabel = sum(profile.microlabel_errors);
+        profile.p_err_microlabel = profile.n_err_microlabel/numel(Y_tr);
         profile.n_err = sum(profile.microlabel_errors > 0);
         profile.p_err = profile.n_err/length(profile.microlabel_errors);
         %[val_list;Yipos_list;kappa_decrease_flags]
@@ -1321,8 +1321,8 @@ function profile_update_tr
             opt_round,...
             profile.n_err,...
             profile.p_err*100,...
-            profile.n_err_microlbl,...
-            profile.p_err_microlbl*100,...
+            profile.n_err_microlabel,...
+            profile.p_err_microlabel*100,...
             kappa,...
             sum(kappa_decrease_flags<=kappa)/size(Y_tr,1)*100,...
             mean(kappa_decrease_flags(kappa_decrease_flags>0)),...
@@ -1610,16 +1610,16 @@ end
 function profile_init
 
     global profile;
-    profile.start_time = cputime;
-    profile.next_profile_tm = profile.start_time;
-    profile.n_err = 0;
-    profile.p_err = 0; 
-    profile.n_err_microlbl = 0; 
-    profile.p_err_microlbl = 0; 
-    profile.n_err_microlbl_prev = 0;
-    profile.microlabel_errors = [];
-    profile.iter = 0;
-    profile.err_ts = 0;
+    profile.start_time          = cputime;
+    profile.next_profile_tm     = profile.start_time;
+    profile.n_err               = 0;
+    profile.p_err               = 0; 
+    profile.n_err_microlabel    = 0; 
+    profile.p_err_microlabel    = 0; 
+    profile.n_err_microlabel_prev   = 0;
+    profile.microlabel_errors   = [];
+    profile.iter                = 0;
+    profile.err_ts              = 0;
     
 end
 
@@ -1649,17 +1649,17 @@ function optimizer_init
         end
     end
     
-    obj=0;
-    delta_obj=0;
-    opt_round=0;
+    obj         = 0;
+    delta_obj   = 0;
+    opt_round   = 0;
     
 end
 
-%%
+%% Print out message
 function print_message(msg,verbosity_level,filename)
+
     global params;
     if params.verbosity >= verbosity_level
-        %fprintf('%s: %s\n',datestr(clock,13),msg);
         fprintf('\n%s: %s ',datestr(clock,13),msg);
         if nargin == 3
             fid = fopen(filename,'a');
@@ -1667,4 +1667,5 @@ function print_message(msg,verbosity_level,filename)
             fclose(fid);
         end
     end
+    
 end
