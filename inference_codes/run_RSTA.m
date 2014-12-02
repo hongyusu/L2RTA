@@ -1,7 +1,7 @@
 %%
 %
 % CURRENT PROBLEM:
-%   featuer vector should be normalized such that the value start from 0
+%   the current code seems to work with current setting of feature, kernel, etc. need to imporve
 %
 %
 % COMPILE WITH:
@@ -52,7 +52,7 @@ function run_RSTA(filename,graph_type,t,isTest,kth_fold,l_norm,maxkappa,slack_c)
         kth_fold = '1';
     end
     if nargin < 6
-        l_norm = '2'
+        l_norm = '2';
     end
     if nargin < 7
         maxkappa = '2';
@@ -262,10 +262,11 @@ function run_RSTA(filename,graph_type,t,isTest,kth_fold,l_norm,maxkappa,slack_c)
     
     %% Compute performance metrics.
     [acc,vecacc,pre,rec,f1,auc1,auc2]=get_performance(Y(Itest,:),(Ypred(Itest,:)==1),YpredVal(Itest));
+    % print out the performance on screen
     perf = [acc,vecacc,pre,rec,f1,auc1,auc2,norm_const_quadratic_list]
     
     
-    %% If current session is not a test run (is a true run), save the results files, save the log files, and terminate the MATLAB session.
+    %% If current session is not a test run (a true run), save the results files, save the log files, and terminate the MATLAB session.
     if ~isTest
         %% need to save: Ypred, YpredVal, running_time, mu for current baselearner t,filename
         save(sprintf('../outputs/%s.mat', paramsIn.filestem), 'perf','Ypred', 'YpredVal', 'running_times', 'muList','norm_const_quadratic_list');
