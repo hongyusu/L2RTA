@@ -358,7 +358,7 @@ end
 function compute_duality_gap
 
     %% global parameters
-    global obj_list;
+    %global obj_list;
     global duality_gap_on_trees;
     global T_size;
     global Kx_tr;
@@ -385,7 +385,6 @@ function compute_duality_gap
     Y_kappa_val = zeros(size(Y,1)*T_size, kappa);           % Holder for the value achieved by the k-best multilabels
     
     %% Get k best prediction from each random spanning tree
-    
     % result holders
     Kmu_list_local      = cell(1,T_size);
     gradient_list_local = cell(1,T_size);
@@ -416,7 +415,6 @@ function compute_duality_gap
     for i=1:size(Y,1)
         % if the optimization has not been started yet, give default value to the predictions
         if iter==0
-            kappa_decrease_flag = 1;
             Ypred(i,:) = -1*ones(1,size(Y_tr,2));
         else
             IN_E = zeros((l-1)*2,T_size);
@@ -429,7 +427,7 @@ function compute_duality_gap
             end
             Y_kappa((i:size(Y_tr,1):size(Y_kappa,1)),:) = (Y_kappa((i:size(Y_tr,1):size(Y_kappa,1)),:)+1)/2;
             % Compute the worst violator
-            [Ypred(i,:),~,kappa_decrease_flag] = ...
+            [Ypred(i,:),~,~,~] = ...
                 find_worst_violator_new(...
                 Y_kappa((i:size(Y_tr,1):size(Y_kappa,1)),:),...
                 Y_kappa_val((i:size(Y_tr,1):size(Y_kappa_val,1)),:)...
@@ -450,11 +448,11 @@ function compute_duality_gap
         loss = loss_list{t};
         E = E_list{t};
         mu = mu_list{t};
-        Kmu = Kmu_list_local{t};
+        %Kmu = Kmu_list_local{t};
         gradient = gradient_list_local{t};
         loss = reshape(loss,size(loss,1)*size(loss,2),1);
         mu = reshape(mu,size(loss,1)*size(loss,2),1);
-        Kmu = reshape(Kmu,size(loss,1)*size(loss,2),1);
+        %Kmu = reshape(Kmu,size(loss,1)*size(loss,2),1);
         % compute current maxima on function
         %Gcur = norm_const_linear*mu'*loss - 1/2*norm_const_quadratic_list(t)*mu'*Kmu;
         % compute current maxima on gradient
@@ -1126,7 +1124,6 @@ function profile_update
     print_message(sprintf('tm: %d  iter: %d obj: %f mu: max %f min %f dgap: %f',...
     round(tm-profile.start_time),profile.iter,obj,max(max(mu)),min(min(mu)),primal_ub-obj),5,sprintf('/var/tmp/%s.log',params.filestem));
     if params.profiling
-        profile.next_profile_tm = profile.next_profile_tm + params.profile_tm_interval;
         profile.n_err_microlabel_prev = profile.n_err_microlabel;
 
         %% train
@@ -1192,18 +1189,15 @@ function profile_update_tr
     tm = cputime;
     
     if params.profiling
-        profile.next_profile_tm = profile.next_profile_tm + params.profile_tm_interval;
         profile.n_err_microlabel_prev = profile.n_err_microlabel;
+        
         % compute training error
-  
-        % Computer error
         [Ypred_tr,~] = compute_error(Y_tr,Kx_tr);  
         profile.microlabel_errors = sum(abs(Ypred_tr-Y_tr) >0,2);
         profile.n_err_microlabel = sum(profile.microlabel_errors);
         profile.p_err_microlabel = profile.n_err_microlabel/numel(Y_tr);
         profile.n_err = sum(profile.microlabel_errors > 0);
         profile.p_err = profile.n_err/length(profile.microlabel_errors);
-        
         % Print out messages
         print_message(...
             sprintf('t: %d iter: %d 1_er_tr: %d (%3.2f) er_tr: %d (%3.2f) K: %d Y*pos: %3.2f%% %.2f %.2f %d Yipos: %3.2f%% %.2f %.2f %.2f K: %.2f %.2f %d Mg: %.2f%% %.3f %.3f obj: %.2f gap: %.2f%% Update %.2f%% %.2f%% gap: %.2f%%',...
@@ -1238,25 +1232,28 @@ function profile_update_tr
     
 end
 
-%% test error
+%% Compute training or test error
 function [Ypred,YpredVal] = compute_error(Y,Kx) 
-    %% global variable
+
+    % Collect global variables
     global T_size;
     global E_list;
     global Ye_list;
     global mu_list;
     global kappa;
     global iter;
+    global l;
     Ypred = zeros(size(Y));
     YpredVal = zeros(size(Y,1),1);
     Y_kappa = zeros(size(Y,1)*T_size,size(Y,2)*kappa);
     Y_kappa_val = zeros(size(Y,1)*T_size,kappa);
     w_phi_e_local_list = cell(1,T_size);
-    %% compute 'k' best from each random spanning tree
+    
+    % Iteration over a collection of random spanning trees, and compute the K-best multilabel from each tree
     for t=1:T_size
-        E = E_list{t};
-        Ye = Ye_list{t};
-        mu = mu_list{t};
+        E   = E_list{t};
+        Ye  = Ye_list{t};
+        mu  = mu_list{t};
         w_phi_e = compute_w_phi_e(Kx,E,Ye,mu);
         
         
@@ -1271,158 +1268,38 @@ function [Ypred,YpredVal] = compute_error(Y,Kx)
         %[Y_tmp,Y_tmp_val] = compute_topk(w_phi_e,kappa,E);
 
         
-        Y_kappa(((t-1)*size(Y,1)+1):(t*size(Y,1)),:) = Y_tmp;
-        Y_kappa_val(((t-1)*size(Y,1)+1):(t*size(Y,1)),:) = Y_tmp_val;
+        Y_kappa(((t-1)*size(Y,1)+1):(t*size(Y,1)),:)        = Y_tmp;
+        Y_kappa_val(((t-1)*size(Y,1)+1):(t*size(Y,1)),:)    = Y_tmp_val;
     end
     
-    %% compute top '1' for all tree
-    MATLABPAR = 0;
-    if MATLABPAR == 1
-        input_labels = cell(1,size(Y,1));
-        input_scores = cell(1,size(Y,1));
-        for i=1:size(Y,1)
-            input_labels{i} = Y_kappa((i:size(Y_kappa,1)/T_size:size(Y_kappa,1)),:);
-            input_scores{i} = Y_kappa_val((i:size(Y_kappa,1)/T_size:size(Y_kappa_val,1)),:);
-        end
-        
-        if matlabpool('size') == 0
-            matlabpool open;
-        end
-        num_partition = matlabpool('size');
-        ii=1;
-        start_position{ii}=1;
-        while start_position{ii} + ceil(size(Y,1)/num_partition) < size(Y,1)
-            ii=ii+1;
-            start_position{ii}=start_position{ii-1}+ceil(size(Y,1)/num_partition);
-        end
-        start_position{ii+1} = size(Y,1)+1;
-        par_Ypred = cell(size(start_position,2)-1);
-        par_YpredVal = cell(size(start_position,2)-1);
-        parfor partition_i = 1:(size(start_position,2)-1)
-            training_i_range = [start_position{partition_i}:(start_position{partition_i+1}-1)];
-            i_Ypred = zeros(size(training_i_range,1),size(Y,2));
-            i_YpredVal = zeros(size(training_i_range,1),1);
-            for training_i=training_i_range
-                if iter==0
-                    kappa_decrease_flag = 1;
-                    i_Ypred(training_i-training_i_range(1)+1,:) = -1*ones(1,size(Y,2));
-                else
-                    [i_Ypred(training_i-training_i_range(1)+1,:),...
-                        i_YpredVal(training_i-training_i_range(1)+1,:),...
-                        kappa_decrease_flag] = ...
-                        find_worst_violator(input_labels{training_i},input_scores{training_i},[]);
-                end
+    % Collect K-best multilabels and compute the best multilabel from the list
+    for i=1:size(Y,1)
+        % if it is in the initialization step, the prediction will be the default values
+        if iter==0
+            Ypred(i,:) = -1*ones(1,size(Y,2));
+        else
+            IN_E = zeros((l-1)*2,T_size);
+            for t=1:T_size
+                IN_E(:,t) = reshape(E_list{t},(l-1)*2,1);
             end
-            par_Ypred{partition_i} = i_Ypred;
-            par_YpredVal{partition_i} = i_YpredVal;
-        end
-        for partition_i = 1:(size(start_position,2)-1)
-            training_i_range = [start_position{partition_i}:(start_position{partition_i+1}-1)];
-            Ypred(training_i_range,:) = par_Ypred{partition_i};
-            YpredVal(training_i_range,:) = par_YpredVal{partition_i};
-        end
-    else
-        for i=1:size(Y,1)
-            if iter==0
-                kappa_decrease_flag = 1;
-                Ypred(i,:) = -1*ones(1,size(Y,2));
-            else
-                
-%                 [Ypred(i,:),YpredVal(i,:),kappa_decrease_flag] = ...
-%                     find_worst_violator(...
-%                     Y_kappa((i:size(Y_kappa,1)/T_size:size(Y_kappa,1)),:),...
-%                     Y_kappa_val((i:size(Y_kappa,1)/T_size:size(Y_kappa_val,1)),:),[]);
-                
-                
-                IN_E = zeros(size(E_list{1},1)*2,size(E_list,1));
-                for t=1:T_size
-                    IN_E(:,t) = reshape(E_list{t},size(E_list{1},1)*2,1);
-                end
-                IN_gradient = zeros(4*size(E_list{1},1),size(E_list,1));
-                for t=1:T_size
-                    IN_gradient(:,t) = w_phi_e_local_list{t}(((i-1)*4*size(E_list{1},1)+1):i*4*size(E_list{1},1),:);
-                end
-                Y_kappa((i:size(Y_kappa,1)/T_size:size(Y_kappa,1)),:) = (Y_kappa((i:size(Y_kappa,1)/T_size:size(Y_kappa,1)),:)+1)/2;
-                
-                
-          
+            IN_gradient = zeros(4*(l-1),T_size);
+            for t=1:T_size
+                IN_gradient(:,t) = w_phi_e_local_list{t}(((i-1)*4*(l-1)+1):i*4*(l-1),:);
+            end
+            Y_kappa((i:size(Y_kappa,1)/T_size:size(Y_kappa,1)),:) = (Y_kappa((i:size(Y_kappa,1)/T_size:size(Y_kappa,1)),:)+1)/2;
 
-                [Ypred(i,:),YpredVal(i,:),~,~] = ...
-                    find_worst_violator_new(...
-                    Y_kappa((i:size(Y_kappa,1)/T_size:size(Y_kappa,1)),:),...
-                    Y_kappa_val((i:size(Y_kappa,1)/T_size:size(Y_kappa_val,1)),:),...
-                    [],IN_E,IN_gradient);
-                Ypred(i,:) = Ypred(i,:)*2-1;
-                
-            end
+            [Ypred(i,:),YpredVal(i,:),~,~] = find_worst_violator_new(...
+                Y_kappa((i:size(Y_kappa,1)/T_size:size(Y_kappa,1)),:),...
+                Y_kappa_val((i:size(Y_kappa,1)/T_size:size(Y_kappa_val,1)),:),...
+                [],...
+                IN_E,...
+                IN_gradient);
+            Ypred(i,:) = Ypred(i,:)*2-1;
+
         end
-        
-%         parfor i=1:size(Y,1)
-%             pause(0.000);
-%             [Ypred(i,:),YpredVal(i,:),kappa_decrease_flag] = find_worst_violator(input_labels{i},input_scores{i},[]);
-%             if ~kappa_decrease_flag
-%                 [Ypred(i,:),YpredVal(i,:)] = majority_voting(...
-%                 input_labels{i},...
-%                 input_scores{i},...
-%                 size(Y,2));
-%             end
-%         end        
     end
-
-    
-    return;
 end
-% function [Ypred,YpredVal] = par_compute_error(Y,Kx) 
-%     %% global variable
-%     global T_size;
-%     global E_list;
-%     global Ye_list;
-%     global mu_list;
-%     global kappa;
-%     Ypred = zeros(size(Y));
-%     YpredVal = zeros(size(Y,1),1);
-%     Y_kappa = zeros(size(Y,1)*T_size,size(Y,2)*kappa);
-%     Y_kappa_val = zeros(size(Y,1)*T_size,kappa); 
-%     %% compute 'k' best from each random spanning tree
-%     Y_tmp = cell(1,T_size);
-%     Y_tmp_val = cell(1,T_size);
-%     parfor t=1:T_size
-%         pause(0.000);
-%         E = E_list{t};
-%         Ye = Ye_list{t};
-%         mu = mu_list{t};
-%         w_phi_e = compute_w_phi_e(Kx,E,Ye,mu);
-%         [Y_tmp{t},Y_tmp_val{t}] = compute_topk(w_phi_e,kappa,E);
-%     end
-%     for t=1:T_size
-%         Y_kappa(((t-1)*size(Y,1)+1):(t*size(Y,1)),:) = Y_tmp{t};
-%         Y_kappa_val(((t-1)*size(Y,1)+1):(t*size(Y,1)),:) = Y_tmp_val{t};
-%     end
-%     clear Y_tmp;
-%     clear Y_tmp_val;
-%     %% compute top '1' for all tree
-%     input_labels = cell(1,size(Y,1));
-%     input_scores = cell(1,size(Y,1));
-%     for i=1:size(Y,1)
-%         input_labels{i} = Y_kappa((i:size(Y_kappa,1)/T_size:size(Y_kappa,1)),:);
-%         input_scores{i} = Y_kappa_val((i:size(Y_kappa,1)/T_size:size(Y_kappa_val,1)),:);
-%     end
-%    
-%     
-% 
-%     parfor i=1:size(Y,1)
-%         pause(0.000);
-%         [Ypred(i,:),YpredVal(i,:),kappa_decrease_flag] = find_worst_violator(input_labels{i},input_scores{i},[]);
-%         if ~kappa_decrease_flag
-%             [Ypred(i,:),YpredVal(i,:)] = majority_voting(...
-%             input_labels{i},...
-%             input_scores{i},...
-%             size(Y,2));
-%         end
-%     end
-%     
-%     return;
-% end
+
 
 %% for testing
 % Input: test kernel, tree index
@@ -1502,7 +1379,6 @@ function profile_init
 
     global profile;
     profile.start_time          = cputime;
-    profile.next_profile_tm     = profile.start_time;
     profile.n_err               = 0;
     profile.p_err               = 0; 
     profile.n_err_microlabel    = 0; 

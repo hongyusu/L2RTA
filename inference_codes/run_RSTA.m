@@ -221,7 +221,6 @@ function run_RSTA(filename,graph_type,t,isTest,kth_fold,l_norm,maxkappa,slack_c)
         paramsIn.max_CGD_iter   = 1;            % maximum number of conditional gradient iterations per example
         paramsIn.max_LBP_iter   = 3;            % number of Loopy belief propagation iterations
         paramsIn.tolerance      = 1E-10;        % numbers smaller than this are treated as zero
-        paramsIn.profile_tm_interval = 10;      % how often to test during learning
         paramsIn.maxiter        = mmcrf_i;      % maximum number of iterations in the outer loop
         paramsIn.verbosity      = 1;
         paramsIn.debugging      = 3;
