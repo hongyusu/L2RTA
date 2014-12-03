@@ -148,21 +148,21 @@ function run_RSTA(filename,graph_type,t,isTest,kth_fold,l_norm,maxkappa,slack_c)
         Ind=Ind(1:ntrain);
     end
 
-    %% Perform parameter selection.
-    % TODO: to be better implemented
-    % ues results from parameter selection, otherwise use fixed parameters
-    para_n=11;
-    parameters=zeros(para_n,10);
-    for i=1:para_n
-        try
-            load(sprintf('../parameters/%s_%s_1_f%d_l2_i%d_RSTAp.mat',filename,graph_type,kth_fold,i));
-            parameters(i,:) = perf;
-        catch err
-            parameters(i,:) = [i,10,zeros(1,8)];
-        end
-    end
-    parameters=sortrows(parameters,[3,2]);
-    mmcrf_c = parameters(para_n,2);
+%     %% Perform parameter selection.
+%     % TODO: to be better implemented
+%     % ues results from parameter selection, otherwise use fixed parameters
+%     para_n=11;
+%     parameters=zeros(para_n,10);
+%     for i=1:para_n
+%         try
+%             load(sprintf('../parameters/%s_%s_1_f%d_l2_i%d_RSTAp.mat',filename,graph_type,kth_fold,i));
+%             parameters(i,:) = perf;
+%         catch err
+%             parameters(i,:) = [i,10,zeros(1,8)];
+%         end
+%     end
+%     parameters=sortrows(parameters,[3,2]);
+%     mmcrf_c = parameters(para_n,2);
     
     % currently use following parameters
     mmcrf_c         = slack_c;      % margin slack parameter
