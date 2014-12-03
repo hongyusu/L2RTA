@@ -127,8 +127,10 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn)
     primal_ub = Inf;    % primal upper bound
     opt_round = 0;      % the number of optimization
 
+    % Compute dualit gap
 	compute_duality_gap;
-   
+
+    % compute the profiling statistics before optimization
     profile_update_tr;
        
     
@@ -1166,19 +1168,18 @@ function profile_update
     end
 end
 
-%% training profile
+%% Profiling during training phase
 function profile_update_tr
+
     global params;
     global profile;
     global Y_tr;
     global Kx_tr;
     global obj;
     global primal_ub;
-    
     global kappa;
     global opt_round;
     global kappa_decrease_flags;
-    
     global val_list;
     global kappa_list;
     global Yipos_list;
@@ -1188,30 +1189,24 @@ function profile_update_tr
     global duality_gap_on_trees;
     global obj_list;
 
-
     tm = cputime;
     
     if params.profiling
         profile.next_profile_tm = profile.next_profile_tm + params.profile_tm_interval;
         profile.n_err_microlabel_prev = profile.n_err_microlabel;
         % compute training error
-        
-            [Ypred_tr,~] = compute_error(Y_tr,Kx_tr);
-        
-        
-
-
-        %[Ypred_tr,~] = compute_error(Y_tr,Kx_tr);
+  
+        % Computer error
+        [Ypred_tr,~] = compute_error(Y_tr,Kx_tr);  
         profile.microlabel_errors = sum(abs(Ypred_tr-Y_tr) >0,2);
         profile.n_err_microlabel = sum(profile.microlabel_errors);
         profile.p_err_microlabel = profile.n_err_microlabel/numel(Y_tr);
         profile.n_err = sum(profile.microlabel_errors > 0);
         profile.p_err = profile.n_err/length(profile.microlabel_errors);
-        %[val_list;Yipos_list;kappa_decrease_flags]
-        %duality_gap_on_trees./(obj_list+duality_gap_on_trees)
-        %Yipos_list
+        
+        % Print out messages
         print_message(...
-            sprintf('tm: %d iter: %d 1_er_tr: %d (%3.2f) er_tr: %d (%3.2f) K: %d Y*pos: %3.2f%% %.2f %.2f %d Yipos: %3.2f%% %.2f %.2f %.2f K: %.2f %.2f %d Mg: %.2f%% %.3f %.3f obj: %.2f gap: %.2f%% Update %.2f%% %.2f%% gap: %.2f%%',...
+            sprintf('t: %d iter: %d 1_er_tr: %d (%3.2f) er_tr: %d (%3.2f) K: %d Y*pos: %3.2f%% %.2f %.2f %d Yipos: %3.2f%% %.2f %.2f %.2f K: %.2f %.2f %d Mg: %.2f%% %.3f %.3f obj: %.2f gap: %.2f%% Update %.2f%% %.2f%% gap: %.2f%%',...
             round(tm-profile.start_time),...
             opt_round,...
             profile.n_err,...
@@ -1240,6 +1235,7 @@ function profile_update_tr
             (primal_ub - obj)/(primal_ub)*100),...
             0,sprintf('/var/tmp/%s.log',params.filestem));
     end
+    
 end
 
 %% test error
