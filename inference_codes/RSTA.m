@@ -47,7 +47,7 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn)
     global norm_const_quadratic_list;
     global Kxx_mu_x_list;
     global kappa;               % K best
-    global kappa_decrease_flags;  
+    global Yspos_list;  
     global iter;                % the indicator for the number of iteration
     global duality_gap_on_trees;
     global val_list;
@@ -96,7 +96,7 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn)
     end
     
     
-    kappa_decrease_flags = zeros(1,m);
+    Yspos_list = ones(1,m)*(params.maxkappa);
     kappa = kappa_INIT;
     
     
@@ -111,7 +111,7 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn)
     
     
     val_list        = zeros(1,m);
-    Yipos_list      = zeros(1,m)*T_size;
+    Yipos_list      = ones(1,m)*(params.maxkappa+1);
     kappa_list      = zeros(1,m);
     GmaxG0_list     = zeros(1,m);
     GoodUpdate_list = zeros(1,m);
@@ -181,7 +181,7 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn)
         
         %% iterate over examples 
         iter = iter +1;   
-        kappa_decrease_flags = ones(1,m);
+        Yspos_list = ones(1,m);
         %Yipos_list = ones(1,m);
         val_list = zeros(1,m);
 
@@ -195,28 +195,28 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn)
             print_message(sprintf('Start descend on example %d initial k %d',xi,kappa),3)
 
                 kappa_decrease_flag(xi)=0;
-                [delta_obj_list,kappa_decrease_flags(xi)] = conditional_gradient_descent(xi,kappa);    % optimize on single example
+                [delta_obj_list] = conditional_gradient_descent(xi,kappa);    % optimize on single example
 %                 
 %                 kappa0=kappa;
-%                 while ( kappa_decrease_flags(xi)==0 ) && kappa0 < params.maxkappa 
+%                 while ( Yspos_list(xi)==0 ) && kappa0 < params.maxkappa 
 %                     kappa0=kappa0*2;
-%                     [delta_obj_list,kappa_decrease_flags(xi)] = conditional_gradient_descent(xi,kappa0);    % optimize on single example
+%                     [delta_obj_list,Yspos_list(xi)] = conditional_gradient_descent(xi,kappa0);    % optimize on single example
 %                 end
                 kappa_list(xi)=kappa;
             
             obj_list = obj_list + delta_obj_list;
             obj = obj + sum(delta_obj_list);
             % update kappa
-            if kappa_decrease_flags(xi)==0
+            if Yspos_list(xi)==0
                 kappa = min(kappa*2,kappa_MAX);
             else
                 kappa = max(ceil(kappa/2),kappa_MIN);
             end
         end
         
-        %[kappa_decrease_flags;Yipos_list]
+        %[Yspos_list;Yipos_list]
         %GmaxG0_list
-        %kappa_decrease_flags
+        %Yspos_list
         %Yipos_list
         %obj_list
         
@@ -355,6 +355,8 @@ end
 
 
 %% Function to compute the relative duality gap
+% REVISIONS:
+%       03/12/2014
 function compute_duality_gap
 
     %% global parameters
@@ -493,11 +495,14 @@ end
 
 %% Perform conditional gradient optimization on single training example, upadte corresponding marginal dual variable.
 % Reviewed on 16/05/2014
+% working in progress on 03/12/2014
+%
 % input: 
 %   x:      the id of current training example
 %   obj:    current objective
 %   kappa:  current kappa
-function [delta_obj_list,kappa_decrease_flag] = conditional_gradient_descent(x, kappa)
+%
+function [delta_obj_list] = conditional_gradient_descent(x, kappa)
     %% Parameter definition
     global loss_list;
     global loss;
@@ -520,28 +525,29 @@ function [delta_obj_list,kappa_decrease_flag] = conditional_gradient_descent(x, 
     global T_size;
     global params;
     global iter;
-    
     global val_list;
     global Yipos_list;
+    global Yspos_list;
     global GmaxG0_list;
     global GoodUpdate_list;
+    global node_degree_list;
     
     
     %% Collect top-K prediction from each tree.
     % Define variables to collect results.
-    Y_kappa = zeros(T_size,kappa*l);
+    Y_kappa     = zeros(T_size,kappa*l);
     Y_kappa_val = zeros(T_size,kappa);
     gradient_list_local = cell(1,T_size);
-    Kmu_x_list_local = cell(1,T_size);
+    Kmu_x_list_local    = cell(1,T_size);
     
-    % Iterate over spanning trees.
+    % Iterate over a collection of spanning trees and compute K-best multilabel on each spanning tree
     for t=1:T_size
         % Variables located for tree t and example x.
         loss = loss_list{t}(:,x);
-        Ye = Ye_list{t}(:,x);
+        Ye  = Ye_list{t}(:,x);
         ind_edge_val = ind_edge_val_list{t};
-        mu = mu_list{t}(:,x);
-        E = E_list{t};
+        mu  = mu_list{t}(:,x);
+        E   = E_list{t};
         Rmu = Rmu_list{t};
         Smu = Smu_list{t};    
         % Compute some quantities for tree t.
@@ -552,58 +558,33 @@ function [delta_obj_list,kappa_decrease_flag] = conditional_gradient_descent(x, 
         gradient_list_local{t} =  norm_const_linear*loss - norm_const_quadratic_list(t)*Kmu_x;
         gradient = gradient_list_local{t};
         
-        % Find top K violator.
-%         [Ymax,YmaxVal] = compute_topk(gradient,kappa,E);
-        node_degree = zeros(1,l);
-        for i=1:l
-            node_degree(i) = sum(sum(E==i));
-        end
-        
-        [Ymax,YmaxVal] = compute_topk_omp(gradient,kappa,E,node_degree);
+        % Compute the K-best multilabels.
+        [Ymax,YmaxVal] = compute_topk_omp(gradient,kappa,E,node_degree_list{t});
 
-        if iter==0
-            adfs
-        end
-        if x==0
-            disp('1. k best from all trees');
-            reshape(mu,4,size(gradient,1)/4)  
-            reshape(gradient,4,size(gradient,1)/4)  
-            Y_tr(x,:)
-            Ymax
-            gradient
-        end
-        
-
-        
         % Save results.
-        Y_kappa(t,:) = Ymax;
+        Y_kappa(t,:)    = Ymax;
         Y_kappa_val(t,:) = YmaxVal;
     end
     
     
-    %% Get worst violating multilabel from K best list.
-    if iter==0
-        % TODO, the condition might not be satisfied
-        % the first iteration: set default violator
-        Ymax = ones(1,l)*(-1);
-        kappa_decrease_flag=1;
-    else
-        IN_E = zeros(size(E_list{1},1)*2,size(E_list,1));
-        for t=1:T_size
-            IN_E(:,t) = reshape(E_list{t},size(E_list{1},1)*2,1);
-        end
-        IN_gradient = zeros(size(gradient_list_local{1},1),size(E_list,1));
-        for t=1:T_size
-            IN_gradient(:,t) = gradient_list_local{t};
-        end
-        Y_kappa = (Y_kappa+1)/2;
-        Yi = (Y_tr(x,:)+1)/2;
-
-        [Ymax, val, kappa_decrease_flag,Yi_pos] = find_worst_violator_new(Y_kappa,Y_kappa_val,Yi,IN_E,IN_gradient);
-        val_list(x) = val;
-        Yipos_list(x) = Yi_pos;
-        Ymax = Ymax*2-1;
+    %% Compute the worst violating multilabel from the K best list.
+    IN_E = zeros(size(E_list{1},1)*2,size(E_list,1));
+    for t=1:T_size
+        IN_E(:,t) = reshape(E_list{t},size(E_list{1},1)*2,1);
     end
+    IN_gradient = zeros(size(gradient_list_local{1},1),size(E_list,1));
+    for t=1:T_size
+        IN_gradient(:,t) = gradient_list_local{t};
+    end
+    Y_kappa = (Y_kappa+1)/2;
+    Yi = (Y_tr(x,:)+1)/2;
+
+    [Ymax, Ymax_val, Ys_pos, Yi_pos] = find_worst_violator_new(Y_kappa,Y_kappa_val,Yi,IN_E,IN_gradient);
+
+    val_list(x) = Ymax_val;
+    Yipos_list(x) = Yi_pos;
+    Yspos_list(x) = Ys_pos;
+    Ymax = Ymax*2-1;
      
 
     %% If the worst violator is the correct label, exit without update mu.
@@ -723,13 +704,15 @@ function [delta_obj_list,kappa_decrease_flag] = conditional_gradient_descent(x, 
     %%
     return;
 end
+
+
 %% Perform conditional gradient optimization on single training example, upadte corresponding marginal dual variable.
 % Reviewed on 16/05/2014
 % input: 
 %   x:      the id of current training example
 %   obj:    current objective
 %   kappa:  current kappa
-function [delta_obj_list,kappa_decrease_flag] = conditional_gradient_descent_convex(x, kappa)
+function [delta_obj_list,kappa_decrease_flag] = conditional_gradient_descent_convex_combination(x, kappa)
     %% Parameter definition
     global loss_list;
     global loss;
@@ -925,162 +908,6 @@ function [delta_obj_list,kappa_decrease_flag] = conditional_gradient_descent_con
     %%
     return;
 end
-% function [delta_obj_list,kappa_decrease_flag] = par_conditional_gradient_descent(x, kappa)
-%     global loss_list;
-%     global loss;
-%     global Ye_list;
-%     global Ye;
-%     global E_list;
-%     global E;
-%     global mu_list;
-%     global mu;
-%     global ind_edge_val_list;
-%     global ind_edge_val;
-%     global Rmu_list;
-%     global Smu_list;
-%     global Kxx_mu_x_list;
-%     global norm_const_linear;
-%     global norm_const_quadratic_list;
-%     global l;
-%     global Kx_tr;
-%     global Y_tr;
-%     global T_size;
-%     global params;
-%     
-%     Y_kappa = zeros(T_size,kappa*l);        % label prediction
-%     Y_kappa_val = zeros(T_size,kappa);      % score    
-%     gradient_list_local = cell(1,T_size);
-%     Kmu_x_list_local = cell(1,T_size);
-% 
-%     %% collect top-K prediction from each tree
-%     print_message(sprintf('Collect top-k prediction from each tree T-size %d', T_size),3)
-%     parfor t=1:T_size
-%         pause(0.000);
-%         loss = loss_list{t}(:,x);
-%         Ye = Ye_list{t}(:,x);
-%         ind_edge_val = ind_edge_val_list{t};
-%         mu = mu_list{t}(:,x);
-%         E = E_list{t};
-%         Rmu = Rmu_list{t};
-%         Smu = Smu_list{t};
-%         % compute the quantity for tree t
-%         Kmu_x_list_local{t} = compute_Kmu_x(x,Kx_tr(:,x),E,ind_edge_val,Rmu,Smu); % Kmu_x = K_x*mu_x
-%         Kmu_x = Kmu_x_list_local{t};
-%         gradient_list_local{t} =  norm_const_linear*loss - norm_const_quadratic_list(t)*Kmu_x;    % current gradient    
-%         gradient = gradient_list_local{t};
-%         % find top k violator
-%         [Ymax,YmaxVal] = compute_topk(gradient,kappa,E);
-%         % save result
-%         Y_kappa(t,:) = Ymax;
-%         Y_kappa_val(t,:) = YmaxVal;
-%     end
-%     
-%     %% get worst violator from top K
-%     print_message(sprintf('Get worst violator'),3)
-%     [Ymax, ~, kappa_decrease_flag] = find_worst_violator(Y_kappa,Y_kappa_val,[]);
-%     
-%     if ~kappa_decrease_flag
-%         [Ymax,~] = majority_voting(Y_kappa,Y_kappa_val,l);
-%     end
-% 
-%     %% if the worst violator is the correct label, exit without update mu
-%     if sum(Ymax~=Y_tr(x,:))==0
-%         delta_obj_list = zeros(1,T_size);
-%         return;
-%     end
-% 
-%     
-% %% otherwise line serach
-%     mu_d_list = mu_list;
-%     nomi=zeros(1,T_size);
-%     denomi=zeros(1,T_size);
-%     kxx_mu_0 = cell(1,T_size);
-%     Gmax = zeros(1,T_size);
-%     G0 = zeros(1,T_size);
-%     Kmu_d_list = cell(1,T_size);
-%     parfor t=1:T_size
-%         pause(0.000);
-%         % variables located for tree t and example x
-%         loss = loss_list{t}(:,x);
-%         Ye = Ye_list{t}(:,x);
-%         ind_edge_val = ind_edge_val_list{t};
-%         mu = mu_list{t}(:,x);
-%         E = E_list{t};
-%         Rmu = Rmu_list{t};
-%         Smu = Smu_list{t};
-% 
-%         %% 
-%         Kmu_x = Kmu_x_list_local{t};
-%         gradient = gradient_list_local{t};
-%         Gmax(t) = compute_Gmax(gradient,Ymax,E);            % objective under best labeling
-%         G0(t) = -mu'*gradient;                               % current objective
-% 
-%         %% best margin violator into update direction mu_0
-%         Umax_e = 1+2*(Ymax(:,E(:,1))>0) + (Ymax(:,E(:,2)) >0);
-%         mu_0 = zeros(size(mu));
-%         for u = 1:4
-%             mu_0(4*(1:size(E,1))-4 + u) = params.C*(Umax_e == u);
-%         end
-%         % compute Kmu_0
-%         if sum(mu_0) > 0
-%             smu_1_te = sum(reshape(mu_0.*Ye,4,size(E,1)),1);
-%             smu_1_te = reshape(smu_1_te(ones(4,1),:),length(mu),1);
-%             kxx_mu_0{t} = ~Ye*params.C+mu_0-smu_1_te;
-%         else
-%             kxx_mu_0{t} = zeros(size(mu));
-%         end
-% 
-%         
-%         Kmu_0 = Kmu_x + kxx_mu_0{t} - Kxx_mu_x_list{t}(:,x);
-% 
-%         mu_d = mu_0 - mu;
-%         Kmu_d = Kmu_0-Kmu_x;
-%         
-%         Kmu_d_list{t} = Kmu_d;
-%         mu_d_list{t} = mu_d;
-%         nomi(t) = mu_d'*gradient;
-%         denomi(t) = norm_const_quadratic_list(t)*Kmu_d' * mu_d;
-% 
-%         
-%     end
-%     
-%     
-%     % decide whether to update or not
-%     if sum(Gmax)>=sum(G0) %&& sum(Gmax>G0)>T_size/2
-%         tau = min(sum(nomi)/sum(denomi),1);
-%     else
-%         tau=0;
-%     end
-%     
-%     %% update for each tree
-%     delta_obj_list = zeros(1,T_size);
-%     parfor t=1:T_size
-%         % variables located for tree t and example x
-%         loss = loss_list{t}(:,x);
-%         Ye = Ye_list{t}(:,x);
-%         ind_edge_val = ind_edge_val_list{t};
-%         mu = mu_list{t}(:,x);
-%         E = E_list{t};
-%         gradient =  gradient_list_local{t};
-%         mu_d = mu_d_list{t};
-%         Kmu_d = Kmu_d_list{t};
-%         % 
-%         delta_obj_list(t) = gradient'*mu_d*tau - norm_const_quadratic_list(t)*tau^2/2*mu_d'*Kmu_d;
-%         mu = mu + tau*mu_d;
-%         Kxx_mu_x_list{t}(:,x) = (1-tau)*Kxx_mu_x_list{t}(:,x) + tau*kxx_mu_0{t};
-%         % update Smu Rmu
-%         mu = reshape(mu,4,size(E,1));
-%         for u = 1:4
-%             Smu_list{t}{u}(:,x) = (sum(mu)').*ind_edge_val{u}(:,x);
-%             Rmu_list{t}{u}(:,x) = mu(u,:)';
-%         end
-%         
-%         mu = reshape(mu,4*size(E,1),1);
-%         mu_list{t}(:,x) = mu;
-%     end
-%      
-%     return;
-% end
 
 
 
@@ -1176,7 +1003,7 @@ function profile_update_tr
     global primal_ub;
     global kappa;
     global opt_round;
-    global kappa_decrease_flags;
+    global Yspos_list;
     global val_list;
     global kappa_list;
     global Yipos_list;
@@ -1208,10 +1035,10 @@ function profile_update_tr
             profile.n_err_microlabel,...
             profile.p_err_microlabel*100,...
             kappa,...
-            sum(kappa_decrease_flags<=kappa)/size(Y_tr,1)*100,...
-            mean(kappa_decrease_flags(kappa_decrease_flags>0)),...
-            std(kappa_decrease_flags(kappa_decrease_flags>0)),...
-            max(kappa_decrease_flags(kappa_decrease_flags>0)),...
+            sum(Yspos_list<=kappa)/size(Y_tr,1)*100,...
+            mean(Yspos_list(Yspos_list>0)),...
+            std(Yspos_list(Yspos_list>0)),...
+            max(Yspos_list(Yspos_list>0)),...
             sum(Yipos_list<=kappa)/size(Y_tr,1)*100,...
             mean(Yipos_list(Yipos_list>0)),...
             std(Yipos_list(Yipos_list>0)),...

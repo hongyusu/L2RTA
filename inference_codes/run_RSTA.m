@@ -140,7 +140,7 @@ function run_RSTA(filename,graph_type,t,isTest,kth_fold,l_norm,maxkappa,slack_c)
     Ind = getCVIndex(Y,nfold);
     
     %% Select part of the data for code sanity check if 'isTest==1'.
-    ntrain = 50;
+    ntrain = 100;
     if isTest==1
         X=X(1:ntrain,:);
         Y=Y(1:ntrain,:);
@@ -171,7 +171,7 @@ function run_RSTA(filename,graph_type,t,isTest,kth_fold,l_norm,maxkappa,slack_c)
     mmcrf_maxkappa  = maxkappa;     % length of the K-best list
     
     % Print out all parameters
-    fprintf('\n\tC:%d G:%.2f Iteration:%d MaxKappa:%d\n', mmcrf_c,mmcrf_g,mmcrf_i,mmcrf_maxkappa);
+    fprintf('\n\tC:%d G:%.2f Iteration:%d MaxKappa:%d T:%d \n', mmcrf_c,mmcrf_g,mmcrf_i,mmcrf_maxkappa, t);
     
     %% Generate random graphs.
     rand('twister', 0);    
