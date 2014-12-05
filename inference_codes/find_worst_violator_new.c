@@ -3,14 +3,14 @@
  * MATLAB C GATEWAY FUNCTON:   
  *      find_worst_violator_new.c
  *
- * Compile wth:
+ * COMPILE THE FUNCTION WITH THE FOLLOWINGS:
  *      mex find_worst_violator_new.c
  *
- * Ver 0.0
+ * VERSION:
+ * 0.0  : 01/03/2014
+ *      : 05/12/2014
  *
- * March 2014
- *
- * Input:
+ * INPUT:
  *      1. Y_kappa:
  *          matrix of K*|Y||T| dimension, containing K best multilabel from all tree
  *      2. Y_kappa_val:
@@ -23,7 +23,7 @@
  *      5. gradient
  *          gradient of all trees pooled together
  *
- * Output:
+ * OUTPUT:
  *      1. Ymax:
  *          best multilabel from the k best list
  *      2. YmaxVal:
@@ -33,7 +33,7 @@
  *      4. Yi_pos:
  *          best position of best multilabel
  *
- * Note:
+ * NOTE:
  *      1. No memeory lead, last check on 26/03/2014
  *      2. Median function is implemented by qsort, could be improved with a O(n) algorithm
  *      3. Searching K best list for Y* is improved with algorithm that increases threshold
@@ -50,11 +50,13 @@
 // MATLAB GATEWAY FUNCTION
 void mexFunction ( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
 {
+    // Input
     #define IN_Y_kappa          prhs[0] // MATRIX OF MULTILABELS
-    #define IN_Y_kappa_val      prhs[1] // MATRIX OF MULTILABEL SCORES
-    #define IN_Y                prhs[2] // CORRECT MULTILABEL COULD BE EMPTY
+    #define IN_Y_kappa_val      prhs[1] // MATRIX OF the scores of multilabels
+    #define IN_Y                prhs[2] // CORRECT MULTILABEL (COULD BE EMPTY)
     #define IN_E                prhs[3] // EDGES OF TREES
     #define IN_gradient         prhs[4] // GREDIENTS OF TREES
+    // Output
     #define OUT_Ymax            plhs[0] // OUTPUT BEST MULTILABEL
     #define OUT_YmaxVal         plhs[1] // OUTPUT MARGIN
     #define OUT_break_flag      plhs[2] // HIGHEST POSITION OF MULTILABEL IN THE LIST
