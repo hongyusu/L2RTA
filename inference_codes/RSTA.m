@@ -945,36 +945,36 @@ function profile_update
     global mu;
     global obj;
     global primal_ub;
+    global kappa;
     global norm_const_quadratic_list;
     m = size(Ye,2);
     tm = cputime;
+    
     print_message(sprintf('tm: %d  iter: %d obj: %f mu: max %f min %f dgap: %f',...
     round(tm-profile.start_time),profile.iter,obj,max(max(mu)),min(min(mu)),primal_ub-obj),5,sprintf('/var/tmp/%s.log',params.filestem));
+
     if params.profiling
         profile.n_err_microlabel_prev = profile.n_err_microlabel;
-
-        %% train
         
-            [Ypred_tr,~] = compute_error(Y_tr,Kx_tr);
-        
+        % Compute training error and statistics
+        [Ypred_tr,~,Ys_positions_tr,Yi_positions_tr] = compute_error(Y_tr,Kx_tr,1);
         profile.microlabel_errors = sum(abs(Ypred_tr-Y_tr) >0,2);
         profile.n_err_microlabel = sum(profile.microlabel_errors);
         profile.p_err_microlabel = profile.n_err_microlabel/numel(Y_tr);
         profile.n_err = sum(profile.microlabel_errors > 0);
         profile.p_err = profile.n_err/length(profile.microlabel_errors);
-
-        %% test
         
-            [Ypred_ts,~] = compute_error(Y_ts,Kx_ts);
-        
+        % Compute test error and statistics
+        [Ypred_ts,~,Ys_positions_ts,Yi_positions_ts] = compute_error(Y_ts,Kx_ts,1);
         profile.microlabel_errors_ts = sum(abs(Ypred_ts-Y_ts) > 0,2);
         profile.n_err_microlabel_ts = sum(profile.microlabel_errors_ts);
         profile.p_err_microlabel_ts = profile.n_err_microlabel_ts/numel(Y_ts);
         profile.n_err_ts = sum(profile.microlabel_errors_ts > 0);
         profile.p_err_ts = profile.n_err_ts/length(profile.microlabel_errors_ts);
-
+        
+        % Print out message
         print_message(...
-            sprintf('tm: %d 1_er_tr: %d (%3.2f) er_tr: %d (%3.2f) 1_er_ts: %d (%3.2f) er_ts: %d (%3.2f)',...
+            sprintf('tm: %d 1_er_tr: %d (%3.2f) er_tr: %d (%3.2f) 1_er_ts: %d (%3.2f) er_ts: %d (%3.2f) Y*tr %3.2f Yitr %3.2f Y*ts %3.2f Yits %3.2f ',...
             round(tm-profile.start_time),...
             profile.n_err,...
             profile.p_err*100,...
@@ -982,10 +982,14 @@ function profile_update
             profile.p_err_microlabel*100,...
             round(profile.p_err_ts*size(Y_ts,1)),...
             profile.p_err_ts*100,sum(profile.microlabel_errors_ts),...
-            sum(profile.microlabel_errors_ts)/numel(Y_ts)*100),...
+            sum(profile.microlabel_errors_ts)/numel(Y_ts)*100,...
+            sum(Ys_positions_tr<=kappa)/size(Y_tr,1)*100,...
+            sum(Yi_positions_tr<=kappa)/size(Y_tr,1)*100,...
+            sum(Ys_positions_ts<=kappa)/size(Y_ts,1)*100,...
+            sum(Yi_positions_ts<=kappa)/size(Y_ts,1)*100),...
             0,sprintf('/var/tmp/%s.log',params.filestem));
 
-        running_time = tm-profile.start_time;
+        running_time = tm - profile.start_time;
         sfile = sprintf('/var/tmp/Ypred_%s.mat',params.filestem);
         save(sfile,'Ypred_tr','Ypred_ts','params','running_time','norm_const_quadratic_list');
         Ye = reshape(Ye,4*size(E,1),m);
@@ -1019,7 +1023,7 @@ function profile_update_tr
         profile.n_err_microlabel_prev = profile.n_err_microlabel;
         
         % compute training error
-        [Ypred_tr,~] = compute_error(Y_tr,Kx_tr);  
+        [Ypred_tr,~,~,~] = compute_error(Y_tr,Kx_tr,0);  
         profile.microlabel_errors = sum(abs(Ypred_tr-Y_tr) >0,2);
         profile.n_err_microlabel = sum(profile.microlabel_errors);
         profile.p_err_microlabel = profile.n_err_microlabel/numel(Y_tr);
@@ -1060,7 +1064,7 @@ function profile_update_tr
 end
 
 %% Compute training or test error
-function [Ypred,YpredVal] = compute_error(Y,Kx) 
+function [Ypred,YpredVal,Ys_positions,Yi_positions] = compute_error(Y,Kx,inTest)
 
     % Collect global variables
     global T_size;
@@ -1075,6 +1079,9 @@ function [Ypred,YpredVal] = compute_error(Y,Kx)
     Y_kappa = zeros(size(Y,1)*T_size,size(Y,2)*kappa);
     Y_kappa_val = zeros(size(Y,1)*T_size,kappa);
     w_phi_e_local_list = cell(1,T_size);
+    Ys_positions = zeros(size(Y,1),1);
+    Yi_positions = zeros(size(Y,1),1);
+    
     
     % Iteration over a collection of random spanning trees, and compute the K-best multilabel from each tree
     for t=1:T_size
@@ -1115,14 +1122,28 @@ function [Ypred,YpredVal] = compute_error(Y,Kx)
             end
             Y_kappa((i:size(Y_kappa,1)/T_size:size(Y_kappa,1)),:) = (Y_kappa((i:size(Y_kappa,1)/T_size:size(Y_kappa,1)),:)+1)/2;
 
-            [Ypred(i,:),YpredVal(i,:),~,~] = find_worst_violator_new(...
+            if inTest
+                [Ypred(i,:),YpredVal(i,:),Ys_pos,Yi_pos] = find_worst_violator_new(...
+                    Y_kappa((i:size(Y_kappa,1)/T_size:size(Y_kappa,1)),:),...
+                    Y_kappa_val((i:size(Y_kappa,1)/T_size:size(Y_kappa_val,1)),:),...
+                    (Y(i,:)+1)/2,...
+                    IN_E,...
+                    IN_gradient);
+                
+                
+                Ys_positions(i) = Ys_pos;
+                Yi_positions(i) = Yi_pos;
+            
+            else
+                [Ypred(i,:),YpredVal(i,:),~,~] = find_worst_violator_new(...
                 Y_kappa((i:size(Y_kappa,1)/T_size:size(Y_kappa,1)),:),...
                 Y_kappa_val((i:size(Y_kappa,1)/T_size:size(Y_kappa_val,1)),:),...
                 [],...
                 IN_E,...
                 IN_gradient);
+            end
+            
             Ypred(i,:) = Ypred(i,:)*2-1;
-
         end
     end
 end
