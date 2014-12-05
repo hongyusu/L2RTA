@@ -140,7 +140,7 @@ function run_RSTA(filename,graph_type,t,isTest,kth_fold,l_norm,maxkappa,slack_c)
     Ind = getCVIndex(Y,nfold);
     
     %% Select part of the data for code sanity check if 'isTest==1'.
-    ntrain = 50;
+    ntrain = 200;
     ntrain = min(ntrain,size(Y,1));
     if isTest==1
         X=X(1:ntrain,:);
@@ -168,7 +168,7 @@ function run_RSTA(filename,graph_type,t,isTest,kth_fold,l_norm,maxkappa,slack_c)
     % currently use following parameters
     mmcrf_c         = slack_c;      % margin slack parameter
     mmcrf_g         = -1e10;%0.01;  % relative duality gap
-    mmcrf_i         = 80;          % number of iteration
+    mmcrf_i         = 120;          % number of iteration
     mmcrf_maxkappa  = maxkappa;     % length of the K-best list
     
     % Print out all parameters
