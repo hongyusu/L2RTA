@@ -29,7 +29,7 @@
  *          best multilabel from the k best list
  *      2. YmaxVal:
  *          score of the best multilabel
- *      3. break_flag:
+ *      3. Ys_pos:
  *          if the best multilabel is found evidentally, meaning the score of the multilabel is higher than the threshold
  *      4. Yi_pos:
  *          best position of best multilabel
@@ -61,7 +61,7 @@ void mexFunction ( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
     // Output
     #define OUT_Ymax            plhs[0] // OUTPUT BEST MULTILABEL
     #define OUT_YmaxVal         plhs[1] // OUTPUT MARGIN
-    #define OUT_break_flag      plhs[2] // HIGHEST POSITION OF MULTILABEL IN THE LIST
+    #define OUT_Ys_pos          plhs[2] // HIGHEST POSITION OF MULTILABEL IN THE LIST
     #define OUT_Yi_pos          plhs[3] // MEDIAN AVERAGE POSITION OF Yi given K
     
     double * Y_kappa;
@@ -70,7 +70,7 @@ void mexFunction ( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
     double * E;
     double * gradient;
     double * Ymax;
-    double break_flag=0;
+    double Ys_pos=0;
     double Yi_pos=-1;
     double Yi_ind;
     
@@ -99,7 +99,7 @@ void mexFunction ( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
     // OUTPUT STUFFS
     OUT_Ymax        = mxCreateDoubleMatrix(1,nlabel,mxREAL);
     OUT_YmaxVal     = mxCreateDoubleScalar(1);
-    OUT_break_flag  = mxCreateDoubleScalar(1);
+    OUT_Ys_pos      = mxCreateDoubleScalar(1);
     OUT_Yi_pos      = mxCreateDoubleScalar(1);
     Ymax            = mxGetPr(OUT_Ymax);
 
@@ -396,9 +396,9 @@ void mexFunction ( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
     /* COLLECT RESULTS */
     *(mxGetPr(OUT_YmaxVal)) = F_Y-best_F;
 //     *(mxGetPr(OUT_YmaxVal)) = best_F;
-//     *(mxGetPr(OUT_break_flag)) = 0;
+//     *(mxGetPr(OUT_Ys_pos)) = 0;
 //     if(find==1)
-//     {*(mxGetPr(OUT_break_flag)) = cur_col+1;}
+//     {*(mxGetPr(OUT_Ys_pos)) = cur_col+1;}
     *(mxGetPr(OUT_Yi_pos)) = Yi_pos;
     //printf("%.3f \n",Yi_pos+1);
     //printf("\n%d %.2f %d : %.3f %.3f %.3f\n",find, Yi_pos+1,cur_col+1,F_Y,best_F,F_Y-best_F);
@@ -419,12 +419,12 @@ void mexFunction ( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
             }
         }
     }
-    *(mxGetPr(OUT_break_flag)) = Y_kappa_val_ncol+1; // minimum position
+    *(mxGetPr(OUT_Ys_pos)) = Y_kappa_val_ncol+1; // minimum position
     if(find == 1)
     {
         qsort(Y_positions, Y_kappa_val_nrow, sizeof(double), sortcompare);
-        //*(mxGetPr(OUT_break_flag)) = Y_positions[Y_kappa_val_nrow/2]; // average position
-        *(mxGetPr(OUT_break_flag)) = Y_positions[0]; // minimum position
+        //*(mxGetPr(OUT_Ys_pos)) = Y_positions[Y_kappa_val_nrow/2]; // average position
+        *(mxGetPr(OUT_Ys_pos)) = Y_positions[0]; // minimum position
     }
     free(Y_positions);
     free(Y_kappa_ind);
