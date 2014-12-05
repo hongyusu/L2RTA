@@ -8,6 +8,7 @@
  *
  * VERSION:
  * 0.0  : 01/03/2014
+ *      : 25/04/2014
  *      : 05/12/2014
  *
  * INPUT:
@@ -38,6 +39,7 @@
  *      2. Median function is implemented by qsort, could be improved with a O(n) algorithm
  *      3. Searching K best list for Y* is improved with algorithm that increases threshold
  *      4. Add annotation on 25/04/2014
+ *      5. If the true multilabel is given, the algorithm will locate the worst violator, otherwise the algorithm will find the best multilabel
  *
  */
 
