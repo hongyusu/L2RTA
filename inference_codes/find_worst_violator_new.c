@@ -98,30 +98,31 @@ void mexFunction ( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
     OUT_Ymax        = mxCreateDoubleMatrix(1,nlabel,mxREAL);
     OUT_YmaxVal     = mxCreateDoubleScalar(1);
     OUT_break_flag  = mxCreateDoubleScalar(1);
-    OUT_Yi_pos       = mxCreateDoubleScalar(1);
+    OUT_Yi_pos      = mxCreateDoubleScalar(1);
     Ymax            = mxGetPr(OUT_Ymax);
 
-    // assign id to each unique label in the list from 1 to the number of element
-    // assign id to Yi, initial Yi to 0
-    // also get Yi position in all row
+    // Assign an ID to each unique label in the K-best list, starting from 1 to the number of unique elements.
+    // Assign an ID to the true multilabel Yi, initial Yi to be 0.
+    // Get the position of Yi in each row during the process.
     Yi_ind = 0.0;
     double * Y_kappa_ind;
     Y_kappa_ind = (double *) malloc (sizeof(double) * Y_kappa_val_nrow* Y_kappa_val_ncol);
     struct type_arr2id_list * arr2id_head;
     struct type_arr2id_list * arr2id_curpos;
     struct type_arr2id_list * arr2id_prevpos;
-    arr2id_head = NULL;
-    arr2id_curpos = NULL;
+    arr2id_head     = NULL;
+    arr2id_curpos   = NULL;
     int num_uelement = 1;
     double * Yi_positions;
     Yi_positions = (double *) malloc (sizeof(double) * Y_kappa_val_nrow);
+    // Initialize the position of Yi in each row as the number of column plus 1
     for(int ii=0;ii<Y_kappa_val_nrow;ii++)
     {Yi_positions[ii] = Y_kappa_val_ncol+1;}
     for(int ii=0;ii<Y_kappa_nrow;ii++)
     {
         for(int jj=0;jj<Y_kappa_val_ncol;jj++)
         {
-            // current Y in the top k list
+            // Retrieve current multilabel Y from the K-best list
             double * tmp;
             tmp = (double *) malloc (sizeof(double ) * nlabel);
             for(int kk=0;kk<nlabel;kk++)
@@ -147,20 +148,22 @@ void mexFunction ( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
             {
                 Yi_positions[ii]=jj+1;
             }
-            // EMPTY LIST -> INITIALIZE THE LIST BY THE ELEMENT
+            // If the list is empty, initialize the list with the current multilabel
             if(!arr2id_head)
             {
                 Y_kappa_ind[ii+jj*Y_kappa_nrow] = num_uelement;
                 arr2id_head = (struct type_arr2id_list * ) malloc (sizeof(struct type_arr2id_list));
-                arr2id_head->arr = tmp;
-                arr2id_head->id = num_uelement;
-                arr2id_head->next=NULL;
+                arr2id_head->arr    = tmp;
+                arr2id_head->id     = num_uelement;
+                arr2id_head->next   = NULL;
                 if(Yi_find==1)
-                {Yi_ind = arr2id_head->id;}
+                {
+                    Yi_ind = arr2id_head->id;
+                }
                 num_uelement++;
                 continue;
             }
-            // NOT EMPTY GO THROUGH
+            // If the list is not empty, go through the list till find the current multilabel in the list
             arr2id_curpos = arr2id_head;
             int find=0;
             while(arr2id_curpos)
@@ -174,16 +177,16 @@ void mexFunction ( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
                         break;
                     }
                 }
-                if(Ytmp_find==1)
+                if(Ytmp_find)
                 {
                     Y_kappa_ind[ii+jj*Y_kappa_nrow] = arr2id_curpos->id;
-                    find=1;
+                    find = 1;
                     break;
                 }
-                arr2id_prevpos = arr2id_curpos;
-                arr2id_curpos = arr2id_curpos->next;
+                arr2id_prevpos  = arr2id_curpos;
+                arr2id_curpos   = arr2id_curpos->next;
             }
-            // ELEMENE NOT FOUND, ADD IT TO CURRENT LIST
+            // If the current multilabel is not found in the list, add it to the list as the last element
             if(!find)
             {
                 arr2id_curpos           = arr2id_prevpos;
@@ -196,40 +199,20 @@ void mexFunction ( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
                 num_uelement ++;
             }
             if(Yi_find==1)
-            {Yi_ind = arr2id_curpos->id;}
+            {
+                Yi_ind = arr2id_curpos->id;
+            }
         }
     }
+    // Sort the position of Yi in each row and obtain the highest position.
+    // Now Yi with position:Yi_pos, ID:Yi_ind, and score: F_Y
     qsort(Yi_positions, Y_kappa_val_nrow, sizeof(double), sortcompare);
     //Yi_pos = Yi_positions[Y_kappa_val_nrow/2]; 
     Yi_pos = Yi_positions[0];  
     //printm(Yi_positions,1,Y_kappa_val_nrow);
     //printf("%.2f\n",Yi_pos);
     free(Yi_positions);
-    // ASSIGN ID TO TRUE LABEL IN THE LIST
-//     Yi_ind = 0.0;
-//     if(Y_ncol>0)
-//     {
-//         arr2id_curpos = arr2id_head;
-//         while(arr2id_curpos)
-//         {
-//             int not_equ = 0;
-//             for(int kk=0;kk<nlabel;kk++)
-//             {
-//                 if(Y[kk]!=arr2id_curpos->arr[kk])
-//                 {
-//                     not_equ = 1;
-//                     break;
-//                 }
-//             }
-//             if(!not_equ)
-//             {
-//                 Yi_ind = arr2id_curpos->id;
-//                 Yi_pos = 1;
-//                 break;
-//             }
-//             arr2id_curpos = arr2id_curpos->next;
-//         }
-//     }
+
     // get F_Y
     double F_Y=0; 
     double * Ytmp;
@@ -290,7 +273,8 @@ void mexFunction ( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
         free(arr2id_curpos->arr);
         free(arr2id_curpos);
     }
-    // DEFINE THE THRESHOLD
+    
+    // Define the threshold as the sum of the scores from last column
     double theta_K=0;
     for(int ii=0;ii<Y_kappa_val_nrow;ii++)
     {theta_K += Y_kappa_val[ii+(Y_kappa_val_ncol-1)*Y_kappa_val_nrow];}
@@ -342,7 +326,7 @@ void mexFunction ( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
             {
                 Ytmp[kk] = Y_kappa[jj+(ii*nlabel+kk)*Y_kappa_val_nrow];
             }
-            // EVALUATE OVER TREE
+            // Evaluate the score of the current multilabels over a collection of random spanning trees
             cur_F=0;
             for(int tt=0; tt<Y_kappa_val_nrow; tt++)
             {

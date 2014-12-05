@@ -957,7 +957,7 @@ function profile_update
         profile.n_err_microlabel_prev = profile.n_err_microlabel;
         
         % Compute training error and statistics
-        [Ypred_tr,~,Ys_positions_tr,Yi_positions_tr] = compute_error(Y_tr,Kx_tr,1);
+        [Ypred_tr,~,Ys_positions_tr,Yi_positions_tr] = compute_error(Y_tr,Kx_tr,0);
         profile.microlabel_errors = sum(abs(Ypred_tr-Y_tr) >0,2);
         profile.n_err_microlabel = sum(profile.microlabel_errors);
         profile.p_err_microlabel = profile.n_err_microlabel/numel(Y_tr);
@@ -965,7 +965,7 @@ function profile_update
         profile.p_err = profile.n_err/length(profile.microlabel_errors);
         
         % Compute test error and statistics
-        [Ypred_ts,~,Ys_positions_ts,Yi_positions_ts] = compute_error(Y_ts,Kx_ts,1);
+        [Ypred_ts,~,Ys_positions_ts,Yi_positions_ts] = compute_error(Y_ts,Kx_ts,0);
         profile.microlabel_errors_ts = sum(abs(Ypred_ts-Y_ts) > 0,2);
         profile.n_err_microlabel_ts = sum(profile.microlabel_errors_ts);
         profile.p_err_microlabel_ts = profile.n_err_microlabel_ts/numel(Y_ts);
