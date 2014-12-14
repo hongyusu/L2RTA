@@ -621,11 +621,11 @@ function [delta_obj_list] = conditional_gradient_descent(x, kappa)
         G0(t) = -mu'*gradient;
         %G0(t) = norm_const_linear*loss'*mu - 1/2*norm_const_quadratic_list(t)*Kmu_x'*mu;
         
-        %% Compte mu_0, which is the best margin violator into update direction.
+        %% Compute mu_0, which is the best margin violator into the update direction.
         Umax_e = 1+2*(Ymax(:,E(:,1))>0) + (Ymax(:,E(:,2)) >0);
         mu_0 = zeros(size(mu));
         for u = 1:4
-            mu_0(4*(1:size(E,1))-4 + u) = params.C*(Umax_e == u);
+            mu_0(4*(1:(l-1))-4 + u) = params.C*(Umax_e == u);
         end
         
         %% compute Kmu_0
