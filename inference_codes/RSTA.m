@@ -532,37 +532,34 @@ function [delta_obj_list] = conditional_gradient_descent(x, kappa)
     global node_degree_list;
     
     
-    %% Collect top-K prediction from each tree.
-    % Define variables to collect results.
-    Y_kappa     = zeros(T_size,kappa*l);
-    Y_kappa_val = zeros(T_size,kappa);
-    gradient_list_local = cell(1,T_size);
-    Kmu_x_list_local    = cell(1,T_size);
-    
-    % Iterate over a collection of spanning trees and compute K-best multilabel on each spanning tree
+    %% Compute K best multilabels from a collection of random spanning trees.
+    % Define variables to store results.
+    Y_kappa     = zeros(T_size, kappa*l);
+    Y_kappa_val = zeros(T_size, kappa);
+    gradient_list_local = cell(1, T_size);
+    Kmu_x_list_local    = cell(1, T_size);
+    % Iterate over a collection of random spanning trees and compute the K best multilabels on each spanning tree by Dynamic Programming.
     for t=1:T_size
-        % Variables located for tree t and example x.
-        loss = loss_list{t}(:,x);
-        Ye  = Ye_list{t}(:,x);
+        % Variables located on the spanning tree T_t and example x.
+        loss    = loss_list{t}(:,x);
+        Ye      = Ye_list{t}(:,x);
         ind_edge_val = ind_edge_val_list{t};
-        mu  = mu_list{t}(:,x);
-        E   = E_list{t};
-        Rmu = Rmu_list{t};
-        Smu = Smu_list{t};    
-        % Compute some quantities for tree t.
+        mu      = mu_list{t}(:,x);
+        E       = E_list{t};
+        Rmu     = Rmu_list{t};
+        Smu     = Smu_list{t};    
+        % Compute some necessary quantities for the spanning tree T_t.
         % Kmu_x = K_x*mu_x
         Kmu_x_list_local{t} = compute_Kmu_x(x,Kx_tr(:,x),E,ind_edge_val,Rmu,Smu);
         Kmu_x = Kmu_x_list_local{t};
         % current gradient    
         gradient_list_local{t} =  norm_const_linear*loss - norm_const_quadratic_list(t)*Kmu_x;
         gradient = gradient_list_local{t};
-        
         % Compute the K-best multilabels.
         [Ymax,YmaxVal] = compute_topk_omp(gradient,kappa,E,node_degree_list{t});
-
         % Save results.
-        Y_kappa(t,:)    = Ymax;
-        Y_kappa_val(t,:) = YmaxVal;
+        Y_kappa(t,:)        = Ymax;
+        Y_kappa_val(t,:)    = YmaxVal;
     end
     
     
