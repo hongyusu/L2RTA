@@ -502,7 +502,7 @@ end
 %   kappa:  current kappa
 %
 function [delta_obj_list] = conditional_gradient_descent(x, kappa)
-    %% Parameter definition
+    %% Definition of the parameters
     global loss_list;
     global loss;
     global Ye_list;
