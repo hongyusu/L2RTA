@@ -766,6 +766,55 @@ function [delta_obj_list] = newton(x, kappa)
     end
     
     
+    
+    %% convex combination of update directions
+    % Compute unique collection of edges from a set of random spanning trees.
+    % Compute the unqiue collection of corresponding marginal dual variables.
+    EMu = [];
+    for t=1:T_size
+        E   = E_list{t};
+        mu  = mu_list{t}(:,x);
+        mu  = reshape(mu,4,l-1)';
+        EMu = [EMu;[E,mu]];
+    end
+    EMu     = [min(EMu(:,1:2)',[],1);max(EMu(:,1:2)',[],1);EMu(:,3:6)']';
+    [~,I,~] = unique(EMu(:,1:2),'rows');
+    EMu = EMu(I,:);
+    E_global    = EMu(:,1:2);
+    mu_global   = reshape(EMu(:,3:6)',4*size(E_global,1),1);
+    % For each multilabel compute the best update direction in term of marginal dual variables
+    mu0_set=[];
+    for t=1:T_size
+        Ymax    = Y_kappa(t,1:l);
+        Umax_e  = 1+2*(Ymax(:,E_global(:,1))>0) + (Ymax(:,E_global(:,2)) >0);
+        mu_0    = zeros(4*size(E_global,1),1);
+        for u = 1:4
+            mu_0(4*(1:size(E_global,1))-4 + u) = params.C*(Umax_e == u);
+        end
+        mu0_set=[mu0_set,mu_0];
+    end
+    % define the coefficient for each update direction
+    mu_lambda = zeros(T_size,1);
+    
+    
+    Kmu_x = Kmu_x_list_local{t};
+    size(Kmu_x)
+    
+    % 
+    
+    
+    
+    
+    
+    asdfs
+    
+    
+    
+    
+    
+    
+    
+    
     %% Compute the worst violating multilabel from the K best list.
     IN_E = zeros(size(E_list{1},1)*2,size(E_list,1));
     for t=1:T_size
