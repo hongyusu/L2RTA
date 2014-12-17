@@ -298,29 +298,27 @@ function Kmu = compute_Kmu(Kx,mu,E,ind_edge_val)
 
     m_oup = size(Kx,2);
     m = size(Kx,1);
-    if  0 %and(params.debugging, nargin == 2)
-        for x = 1:m
-           Kmu(:,x) = compute_Kmu_x(x,Kx(:,x));
-        end
-        Kmu = reshape(Kmu,4,size(E,1)*m);
-    else
-        mu = reshape(mu,4,size(E,1)*m);
-        Smu = reshape(sum(mu),size(E,1),m);
-        term12 =zeros(1,size(E,1)*m_oup);
-        Kmu = zeros(4,size(E,1)*m_oup);
-        for u = 1:4
-            IndEVu = full(ind_edge_val{u});    
-            Rmu_u = reshape(mu(u,:),size(E,1),m);
-            H_u = Smu.*IndEVu;
-            H_u = H_u - Rmu_u;
-            Q_u = H_u*Kx;
-            term12 = term12 + reshape(Q_u.*IndEVu,1,m_oup*size(E,1));
-            Kmu(u,:) = reshape(-Q_u,1,m_oup*size(E,1));
-        end
-        for u = 1:4
-            Kmu(u,:) = Kmu(u,:) + term12;
-        end
+    mp = size(mu,2);
+    
+    mu = reshape(mu,4,size(E,1)*mp);
+    Smu = reshape(sum(mu),size(E,1),mp);
+    term12 =zeros(1,size(E,1)*m_oup);
+    Kmu = zeros(4,size(E,1)*m_oup);
+    for u = 1:4
+        IndEVu = full(ind_edge_val{u});    
+        Rmu_u = reshape(mu(u,:),size(E,1),mp);
+        
+        H_u = Smu.*IndEVu;
+        H_u = H_u - Rmu_u;
+        
+        Q_u = H_u*Kx;
+        term12 = term12 + reshape(Q_u.*IndEVu,1,m_oup*size(E,1));
+        Kmu(u,:) = reshape(-Q_u,1,m_oup*size(E,1));
     end
+    for u = 1:4
+        Kmu(u,:) = Kmu(u,:) + term12;
+    end
+    
     %mu = reshape(mu,mu_siz);
     return;
 end
@@ -821,14 +819,53 @@ function [delta_obj_list] = newton(x, kappa)
     Ye_global = reshape(Ye_global,4*size(E_global,1),m);
     % Compute Smu and Rmu
     mu_global = reshape(mu_global,4,size(E_global,1));
-    for u=1:4
-        Smu_global{u} = (sum(mu_global)').*ind_edge_val_global{u}(:,x);
-        Rmu_global{u} = mu(u,:)';
+    for i_example = 1:m
+        for u=1:4
+            Smu_global{u}(:,i_example) = (sum(mu_global)').*ind_edge_val_global{u}(:,i_example);
+            Rmu_global{u}(:,i_example) = mu_global(u,:)';
+        end
     end
     mu_global = reshape(mu_global,4*size(E_global,1),1);
-
-    
-    
+    % Compute Kmu
+    Kx = Kx_tr(:,x);
+    term12_global = zeros(1, size(E_global,1));
+    term34_global = zeros(4, size(E_global,1));
+    for u=1:4
+        Ind_te_u_global = full(ind_edge_val_global{u}(:,x));
+        H_u_global = Smu_global{u}*Kx-Rmu_global{u}*Kx;
+        term12_global(1,Ind_te_u_global) = H_u_global(Ind_te_u_global)';
+        term34_global(u,:) = -H_u_global';
+    end
+    Kmu_x_global = reshape(term12_global(ones(4,1),:) + term34_global,4*size(E_global,1),1);
+    % compute the f'(x)
+    f_prim = loss_global(:,x)-Kmu_x_global;
+    % compute g
+    g_global = f_prim' * mu0_set;
+    % compute Q
+    for i_mu0 = 1:size(mu0_set,2)
+        mu_global = reshape(mu0_set(:,i_mu0),4,size(E_global,1));
+        for i_example = 1:m
+            for u=1:4
+                Smu_global{u}(:,i_example) = (sum(mu_global)').*ind_edge_val_global{u}(:,i_example);
+                Rmu_global{u}(:,i_example) = mu_global(u,:)';
+            end
+        end
+        mu_global = reshape(mu_global,4*size(E_global,1),1);
+        Kx = Kx_tr(:,x);
+        term12_global = zeros(1, size(E_global,1));
+        term34_global = zeros(4, size(E_global,1));
+        for u=1:4
+            Ind_te_u_global = full(ind_edge_val_global{u}(:,x));
+            H_u_global = Smu_global{u}*Kx-Rmu_global{u}*Kx;
+            term12_global(1,Ind_te_u_global) = H_u_global(Ind_te_u_global)';
+            term34_global(u,:) = -H_u_global';
+        end
+       Kmu0 = reshape(term12_global(ones(4,1),:) + term34_global,4*size(E_global,1),1);
+       Kmu0_set(:,i_mu0) = Kmu0;
+    end
+    Q = Kmu0_set' * mu0_set;
+    size(g_global)
+    size(Q)
     
     
     fadfasd
@@ -1507,6 +1544,7 @@ function [loss,Ye,ind_edge_val] = compute_loss_vector(Y,t,scaling)
     Ye = reshape(loss==0,4,size(E,1)*m);
     for u = 1:4
         ind_edge_val{u} = sparse(reshape(Ye(u,:)~=0,size(E,1),m));
+        %full(ind_edge_val{u})
     end
     Ye = reshape(Ye,4*size(E,1),m);
     if params.losstype == 'r'   % uniform loss
