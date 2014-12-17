@@ -733,6 +733,7 @@ function [delta_obj_list] = newton(x, kappa)
     global GmaxG0_list;
     global GoodUpdate_list;
     global node_degree_list;
+    global m;
     
     
     %% Compute K best multilabels from a collection of random spanning trees.
@@ -768,8 +769,8 @@ function [delta_obj_list] = newton(x, kappa)
     
     
     %% convex combination of update directions
-    % Compute unique collection of edges from a set of random spanning trees.
-    % Compute the unqiue collection of corresponding marginal dual variables.
+    % Compute a unique collection of edges from a set of random spanning trees.
+    % Compute a unqiue collection of corresponding marginal dual variables.
     EMu = [];
     for t=1:T_size
         E   = E_list{t};
@@ -793,6 +794,47 @@ function [delta_obj_list] = newton(x, kappa)
         end
         mu0_set=[mu0_set,mu_0];
     end
+    % Compute the node degree vector for the consensus graph.
+    NodeDegree_global = ones(l,1);
+    for v = 1:l
+        NodeDegree_global(v) = sum(E_global(:) == v);
+    end
+    NodeDegree_global = repmat(NodeDegree_global,1,m);
+    % Compute the loss vector for the global consensus graph.
+    loss_global     = zeros(4, m*size(E_global,1));
+    Te1_global      = Y_tr(:,E_global(:,1))';
+    Te2_global      = Y_tr(:,E_global(:,2))';
+    u = 0;
+    for u_1 = [-1, 1]
+        for u_2 = [-1, 1]
+            u = u + 1;
+            loss_global(u,:) = reshape((Te1_global ~= u_1).*NodeDegree_global(E_global(:,1),:)+(Te2_global ~= u_2).*NodeDegree_global(E_global(:,2),:),m*size(E_global,1),1);
+        end
+    end     
+    loss_global = reshape(loss_global,4*size(E_global,1),m);
+    % Compute the vector of Ye and ind_edge_val
+    Ye_global = reshape(loss_global==0,4,size(E_global,1)*m);
+    ind_edge_val_global = cell(4,1);
+    for u=1:4
+        ind_edge_val_global{u} = sparse(reshape(Ye_global(u,:)~=0,size(E_global,1),m));
+    end
+    Ye_global = reshape(Ye_global,4*size(E_global,1),m);
+    % Compute Smu and Rmu
+    mu_global = reshape(mu_global,4,size(E_global,1));
+    for u=1:4
+        Smu_global{u} = (sum(mu_global)').*ind_edge_val_global{u}(:,x);
+        Rmu_global{u} = mu(u,:)';
+    end
+    mu_global = reshape(mu_global,4*size(E_global,1),1);
+
+    
+    
+    
+    
+    fadfasd
+    
+    
+    
     % define the coefficient for each update direction
     mu_lambda = zeros(T_size,1);
     
