@@ -292,6 +292,56 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn)
     ts_err = 0;
 end
 
+%% Compose the global marginal dual variables from local for the x'th example
+% Input:    x is the x'th training example
+% Output:   mu_global
+%           E_global
+%           ind_backwards:  reverse mapping from global to the collection of local
+%           inverse_flag:   positions that corresponds to the change of edge directions
+function [mu_global,E_global,ind_backwards,inverse_flag] = compose_global_from_local(x)
+
+    global E_list;
+    global mu_list;
+    global T_size;
+    global l;
+    
+    % TODO: initial Emu
+    % Pool all edges and corresponding marginal dual variables together.
+    Emu = [];
+    for t=1:T_size
+        E   = E_list{t};
+        mu  = reshape(mu_list{t}(:,x), 4, l-1)';
+        Emu = [Emu; [E,mu]];
+    end
+    % Clear the repeating rows.
+    inverse_flag = Emu(:,1)>Emu(:,2);
+    Emu(inverse_flag,:) = Emu(inverse_flag,[2,1,3,5,4,6]);
+    [Emu, ~, ind_backwards] = unique(Emu,'rows');
+    E_global    = Emu(:,1:2);
+    mu_global   = Emu(:,3:6);
+    
+end
+
+%% Decompose the global mu into a set of mu defined on a collection of spanning trees
+% Input:    mu_global
+%           E_global
+%           ind_backwards
+%           inverse_flag
+% Output:   mu0_list
+function [mu0_list] = decompose_local_from_global(mu_global, E_global, ind_backwards, inverse_flag)
+    
+    global T_size;
+    Emu = [E_global, mu_global];
+    Emu = Emu(ind_backwards,:);
+    Emu(inverse_flag,:) = Emu(inverse_flag,[2,1,3,5,4,6]);
+    mu0_list = cell(T_size,1);
+    for t=1:T_size
+        mu0_list{t} = Emu(((t-1)*(size(Emu,1)/T_size)+1):(t*(size(Emu,1)/T_size)),3:6);
+    end
+    
+end
+
+
 
 %% Complete part of gradient for everything
 function Kmu = compute_Kmu(Kx,mu,E,ind_edge_val)
@@ -766,6 +816,13 @@ function [delta_obj_list] = newton(x, kappa)
     
     
     
+    
+    [mu_global,E_global,ind_backwards,inverse_flag] = compose_global_from_local(x);
+    
+    mu0_list = decompose_local_from_global(mu_global, E_global, ind_backwards, inverse_flag);
+    
+    mu0_list
+    adfasdf
     %% convex combination of update directions
     % Compute a unique collection of edges from a set of random spanning trees.
     % Compute a unqiue collection of corresponding marginal dual variables.
@@ -864,28 +921,21 @@ function [delta_obj_list] = newton(x, kappa)
        Kmu0_set(:,i_mu0) = Kmu0;
     end
     Q = Kmu0_set' * mu0_set;
-    size(g_global)
-    size(Q)
+    lmd = g_global * pinv(Q);
+    
+    % round lambda to satisfy constran
+    lmd = lmd.*(lmd >= 0);
+    lmd = lmd / sum(lmd);
+    % compute the mu
+    mu0_global =mu0_set * lmd';
+    
+    mu0_set
+    mu0_global'
     
     
     fadfasd
     
     
-    
-    % define the coefficient for each update direction
-    mu_lambda = zeros(T_size,1);
-    
-    
-    Kmu_x = Kmu_x_list_local{t};
-    size(Kmu_x)
-    
-    % 
-    
-    
-    
-    
-    
-    asdfs
     
     
     
