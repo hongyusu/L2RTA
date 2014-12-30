@@ -318,7 +318,7 @@ function [mu_global,E_global,ind_backwards,inverse_flag] = compose_global_from_l
     Emu(inverse_flag,:) = Emu(inverse_flag,[2,1,3,5,4,6]);
     [Emu, ~, ind_backwards] = unique(Emu,'rows');
     E_global    = Emu(:,1:2);
-    mu_global   = Emu(:,3:6);
+    mu_global   = reshape(Emu(:,3:6)',4*size(E_global,1),1);
     
 end
 
@@ -331,12 +331,13 @@ end
 function [mu0_list] = decompose_local_from_global(mu_global, E_global, ind_backwards, inverse_flag)
     
     global T_size;
-    Emu = [E_global, mu_global];
+    Emu = [E_global, reshape(mu_global,4,size(E_global,1))'];
     Emu = Emu(ind_backwards,:);
     Emu(inverse_flag,:) = Emu(inverse_flag,[2,1,3,5,4,6]);
     mu0_list = cell(T_size,1);
     for t=1:T_size
         mu0_list{t} = Emu(((t-1)*(size(Emu,1)/T_size)+1):(t*(size(Emu,1)/T_size)),3:6);
+        mu0_list{t} = reshape(mu0_list{t}',size(mu0_list{t},1)*size(mu0_list{t},2),1);
     end
     
 end
@@ -814,31 +815,11 @@ function [delta_obj_list] = newton(x, kappa)
         Y_kappa_val(t,:)    = YmaxVal;
     end
     
-    
-    
-    
+    %% Compose current global marginal dual variable (mu) from local mu
     [mu_global,E_global,ind_backwards,inverse_flag] = compose_global_from_local(x);
     
-    mu0_list = decompose_local_from_global(mu_global, E_global, ind_backwards, inverse_flag);
-    
-    mu0_list
-    adfasdf
-    %% convex combination of update directions
-    % Compute a unique collection of edges from a set of random spanning trees.
-    % Compute a unqiue collection of corresponding marginal dual variables.
-    EMu = [];
-    for t=1:T_size
-        E   = E_list{t};
-        mu  = mu_list{t}(:,x);
-        mu  = reshape(mu,4,l-1)';
-        EMu = [EMu;[E,mu]];
-    end
-    EMu     = [min(EMu(:,1:2)',[],1);max(EMu(:,1:2)',[],1);EMu(:,3:6)']';
-    [~,I,~] = unique(EMu(:,1:2),'rows');
-    EMu = EMu(I,:);
-    E_global    = EMu(:,1:2);
-    mu_global   = reshape(EMu(:,3:6)',4*size(E_global,1),1);
-    % For each multilabel compute the best update direction in term of marginal dual variables
+    %% convex combination of update directions, combination is given by lmd
+    % For each update direction in terms of multilabels, compute the corresponding mu
     mu0_set=[];
     for t=1:T_size
         Ymax    = Y_kappa(t,1:l);
@@ -847,7 +828,7 @@ function [delta_obj_list] = newton(x, kappa)
         for u = 1:4
             mu_0(4*(1:size(E_global,1))-4 + u) = params.C*(Umax_e == u);
         end
-        mu0_set=[mu0_set,mu_0];
+        mu0_set=[mu0_set,mu_0-mu_global];
     end
     % Compute the node degree vector for the consensus graph.
     NodeDegree_global = ones(l,1);
@@ -922,19 +903,18 @@ function [delta_obj_list] = newton(x, kappa)
     end
     Q = Kmu0_set' * mu0_set;
     lmd = g_global * pinv(Q);
-    
     % round lambda to satisfy constran
     lmd = lmd.*(lmd >= 0);
     lmd = lmd / sum(lmd);
     % compute the mu
-    mu0_global =mu0_set * lmd';
+    mud_global = mu0_set * lmd';
+    mud_set = decompose_local_from_global(mu_global,E_global,ind_backwards,inverse_flag);
+
+    lmd
+    reshape(mud_set{1},4,13)
     
-    mu0_set
-    mu0_global'
     
-    
-    fadfasd
-    
+    adfs
     
     
     
