@@ -786,14 +786,14 @@ function [delta_obj_list] = newton(x, kappa)
     
     
     %% Compute K best multilabels from a collection of random spanning trees.
-    % Define variables to store results.
+    % Define variables to save results.
     Y_kappa     = zeros(T_size, kappa*l);
     Y_kappa_val = zeros(T_size, kappa);
     gradient_list_local = cell(1, T_size);
     Kmu_x_list_local    = cell(1, T_size);
     % Iterate over a collection of random spanning trees and compute the K best multilabels on each spanning tree by Dynamic Programming.
     for t=1:T_size
-        % Variables located on the spanning tree T_t and example x.
+        % Variables located on the spanning tree T_t of the current example x.
         loss    = loss_list{t}(:,x);
         Ye      = Ye_list{t}(:,x);
         ind_edge_val = ind_edge_val_list{t};
@@ -802,13 +802,13 @@ function [delta_obj_list] = newton(x, kappa)
         Rmu     = Rmu_list{t};
         Smu     = Smu_list{t};    
         % Compute some necessary quantities for the spanning tree T_t.
-        % Kmu_x = K_x*mu_x
+        % compute Kmu_x = K_x*mu_x
         Kmu_x_list_local{t} = compute_Kmu_x(x,Kx_tr(:,x),E,ind_edge_val,Rmu,Smu);
         Kmu_x = Kmu_x_list_local{t};
-        % current gradient    
-        gradient_list_local{t} =  norm_const_linear*loss - norm_const_quadratic_list(t)*Kmu_x;
+        % compute current gradient    
+        gradient_list_local{t} = norm_const_linear*loss - norm_const_quadratic_list(t)*Kmu_x;
         gradient = gradient_list_local{t};
-        % Compute the K-best multilabels.
+        % Compute the K-best multilabels
         [Ymax,YmaxVal] = compute_topk_omp(gradient,kappa,E,node_degree_list{t});
         % Save results.
         Y_kappa(t,:)        = Ymax;
@@ -820,7 +820,7 @@ function [delta_obj_list] = newton(x, kappa)
     
     %% convex combination of update directions, combination is given by lmd
     % For each update direction in terms of multilabels, compute the corresponding mu
-    mu0_set=[];
+    dmu_set=[];
     for t=1:T_size
         Ymax    = Y_kappa(t,1:l);
         Umax_e  = 1+2*(Ymax(:,E_global(:,1))>0) + (Ymax(:,E_global(:,2)) >0);
@@ -828,15 +828,15 @@ function [delta_obj_list] = newton(x, kappa)
         for u = 1:4
             mu_0(4*(1:size(E_global,1))-4 + u) = params.C*(Umax_e == u);
         end
-        mu0_set=[mu0_set,mu_0-mu_global];
+        dmu_set=[dmu_set,mu_0-mu_global];
     end
-    % Compute the node degree vector for the consensus graph.
+    % -Compute the node degree vector for the consensus graph.
     NodeDegree_global = ones(l,1);
     for v = 1:l
         NodeDegree_global(v) = sum(E_global(:) == v);
     end
     NodeDegree_global = repmat(NodeDegree_global,1,m);
-    % Compute the loss vector for the global consensus graph.
+    % -Compute the loss vector for the global consensus graph.
     loss_global     = zeros(4, m*size(E_global,1));
     Te1_global      = Y_tr(:,E_global(:,1))';
     Te2_global      = Y_tr(:,E_global(:,2))';
@@ -848,7 +848,7 @@ function [delta_obj_list] = newton(x, kappa)
         end
     end     
     loss_global = reshape(loss_global,4*size(E_global,1),m);
-    % Compute the vector of Ye and ind_edge_val
+    % -Compute the vector of Ye and ind_edge_val
     Ye_global = reshape(loss_global==0,4,size(E_global,1)*m);
     ind_edge_val_global = cell(4,1);
     for u=1:4
@@ -878,10 +878,10 @@ function [delta_obj_list] = newton(x, kappa)
     % compute the f'(x)
     f_prim = loss_global(:,x)-Kmu_x_global;
     % compute g
-    g_global = f_prim' * mu0_set;
+    g_global = f_prim' * dmu_set;
     % compute Q
-    for i_mu0 = 1:size(mu0_set,2)
-        mu_global = reshape(mu0_set(:,i_mu0),4,size(E_global,1));
+    for i_mu0 = 1:size(dmu_set,2)
+        mu_global = reshape(dmu_set(:,i_mu0),4,size(E_global,1));
         for i_example = 1:m
             for u=1:4
                 Smu_global{u}(:,i_example) = (sum(mu_global)').*ind_edge_val_global{u}(:,i_example);
@@ -901,20 +901,21 @@ function [delta_obj_list] = newton(x, kappa)
        Kmu0 = reshape(term12_global(ones(4,1),:) + term34_global,4*size(E_global,1),1);
        Kmu0_set(:,i_mu0) = Kmu0;
     end
-    Q = Kmu0_set' * mu0_set;
+    Q = Kmu0_set' * dmu_set;
     lmd = g_global * pinv(Q);
-    % round lambda to satisfy constran
+    % round and normalize lambda to satisfy constraint
     lmd = lmd.*(lmd >= 0);
     lmd = lmd / sum(lmd);
-    % compute the mu
-    mud_global = mu0_set * lmd';
-    mud_set = decompose_local_from_global(mu_global,E_global,ind_backwards,inverse_flag);
-
-    lmd
-    reshape(mud_set{1},4,13)
+    % compute dmu by combination
+    dmu_global = dmu_set * lmd';
+    % decompose global update into a set of local update on individual trees
+    dmu_set = decompose_local_from_global(dmu_global,E_global,ind_backwards,inverse_flag);
+    
+  
+    
+    faasfsfs
     
     
-    adfs
     
     
     
