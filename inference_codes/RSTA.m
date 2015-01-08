@@ -345,7 +345,9 @@ end
 
 
 %% Complete part of gradient for everything
+% 05/01/2015
 function Kmu = compute_Kmu(Kx,mu,E,ind_edge_val)
+
 
     m_oup = size(Kx,2);
     m = size(Kx,1);
@@ -355,10 +357,11 @@ function Kmu = compute_Kmu(Kx,mu,E,ind_edge_val)
     Smu = reshape(sum(mu),size(E,1),mp);
     term12 =zeros(1,size(E,1)*m_oup);
     Kmu = zeros(4,size(E,1)*m_oup);
+    
+    
     for u = 1:4
         IndEVu = full(ind_edge_val{u});    
         Rmu_u = reshape(mu(u,:),size(E,1),mp);
-        
         H_u = Smu.*IndEVu;
         H_u = H_u - Rmu_u;
         
@@ -371,11 +374,12 @@ function Kmu = compute_Kmu(Kx,mu,E,ind_edge_val)
     end
     
     %mu = reshape(mu,mu_siz);
-    return;
+    asdfasdf
 end
 
 
-%% Compute gradient on example x, gradient is l-uk, this function will compute uk
+%% Compute part of the gradient of current example x, gradient is l-ku, this function will compute ku, which is a vector of 4*|E| dimension
+% update 08/01/2015
 % Input:
 %   x,Kx,t
 % Output
@@ -913,9 +917,37 @@ function [delta_obj_list] = newton(x, kappa)
     
   
     
-    faasfsfs
     
     
+    
+    dmu_set{1}'
+    
+    %% update the marginal dual variable on each individual tree
+    % NOTE: the current strategy is to always update
+    for t=1:T_size
+        % retrieve variables locally on each spanning tree for the example x
+        loss    = loss_list{t}(:,x);
+        Ye      = Ye_list{t}(:,x);
+        ind_edge_val = ind_edge_val_list{t};
+        mu      = mu_list{t}(:,x);
+        E       = E_list{t};
+        gradient    =  gradient_list_local{t};
+        dmu        = dmu_set{t};
+        Kmu_d       = Kmu_d_list{t};
+        %
+        delta_obj_list(t) = gradient'*dmu - norm_const_quadratic_list(t)*tau^2/2*mu_d'*Kmu_d;
+        mu = mu + tau*mu_d;
+        Kxx_mu_x_list{t}(:,x) = (1-tau)*Kxx_mu_x_list{t}(:,x) + tau*kxx_mu_0{t};
+        % update Smu Rmu
+        mu = reshape(mu,4,size(E,1));
+        for u = 1:4
+            Smu_list{t}{u}(:,x) = (sum(mu)').*ind_edge_val{u}(:,x);
+            Rmu_list{t}{u}(:,x) = mu(u,:)';
+        end
+        
+        mu = reshape(mu,4*size(E,1),1);
+        mu_list{t}(:,x) = mu;
+    end
     
     
     
