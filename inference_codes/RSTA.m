@@ -187,10 +187,10 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn)
         if iter <= 30
             Yipos_list = ones(1,m)*(params.maxkappa+1);
         end
-        for xi = randsample(1:m,m,true,Yipos_list/sum(Yipos_list))
+%        for xi = randsample(1:m,m,true,Yipos_list/sum(Yipos_list))
 %        for xi = selected_samples
 %         for xi = randsample(1:m,m)
-%         for xi = 1:m
+         for xi = 1:m
             print_message(sprintf('Start descend on example %d initial k %d',xi,kappa),3)
 
                 kappa_decrease_flag(xi)=0;
@@ -374,11 +374,10 @@ function Kmu = compute_Kmu(Kx,mu,E,ind_edge_val)
     end
     
     %mu = reshape(mu,mu_siz);
-    asdfasdf
 end
 
 
-%% Compute part of the gradient of current example x, gradient is l-ku, this function will compute ku, which is a vector of 4*|E| dimension
+%% Compute the part of the gradient of current example x, gradient is l-ku, this function will compute ku, which is a vector of 4*|E| dimension
 % update 08/01/2015
 % Input:
 %   x,Kx,t
@@ -396,14 +395,32 @@ function Kmu_x = compute_Kmu_x(x,Kx,E,ind_edge_val,Rmu,Smu)
     % true edge values into Smu
     % store marginal dual variables, distributed by the
     % pseudo edge values into Rmu
+    
+    % Smu : true edge values
+    % Rmu : Pseudo edge values
    
+    global iter
+    if x==1 & iter ==2
+        global mu_list
+        mu_list{1}(:,1:2)'
+        ind_edge_val{1}(:,1)
+        for u=1:4
+        Smu{u}(:,1)'
+        end
+        Rmu{1}(:,1)
+        adfs
+    end
+    
     for u = 1:4
         Ind_te_u = full(ind_edge_val{u}(:,x));
         H_u = Smu{u}*Kx-Rmu{u}*Kx;
         term12(1,Ind_te_u) = H_u(Ind_te_u)';
         term34(u,:) = -H_u';
     end
+    
+    
     Kmu_x = reshape(term12(ones(4,1),:) + term34,4*size(E,1),1);
+    
 end
 
 
@@ -819,7 +836,7 @@ function [delta_obj_list] = newton(x, kappa)
         Y_kappa_val(t,:)    = YmaxVal;
     end
     
-    %% Compose current global marginal dual variable (mu) from local mu
+    %% Compose current global marginal dual variable (mu) from local marginal dual variables {mu_t}_{t=1}^{T}
     [mu_global,E_global,ind_backwards,inverse_flag] = compose_global_from_local(x);
     
     %% convex combination of update directions, combination is given by lmd
@@ -912,15 +929,14 @@ function [delta_obj_list] = newton(x, kappa)
     lmd = lmd / sum(lmd);
     % compute dmu by combination
     dmu_global = dmu_set * lmd';
-    % decompose global update into a set of local update on individual trees
+    % decompose global update into a set of local updates on individual trees, assuming the quantities are correctly computed
     dmu_set = decompose_local_from_global(dmu_global,E_global,ind_backwards,inverse_flag);
+    
     
   
     
     
     
-    
-    dmu_set{1}'
     
     %% update the marginal dual variable on each individual tree
     % NOTE: the current strategy is to always update
@@ -936,6 +952,11 @@ function [delta_obj_list] = newton(x, kappa)
         Kmu_d       = Kmu_d_list{t};
         %
         delta_obj_list(t) = gradient'*dmu - norm_const_quadratic_list(t)*tau^2/2*mu_d'*Kmu_d;
+        
+        % -update marginal dual variable located on this particular tree
+        mu = mu + dmu_set(:,t);
+        % -update Smu and Rmu located on this particular tree
+        
         mu = mu + tau*mu_d;
         Kxx_mu_x_list{t}(:,x) = (1-tau)*Kxx_mu_x_list{t}(:,x) + tau*kxx_mu_0{t};
         % update Smu Rmu
