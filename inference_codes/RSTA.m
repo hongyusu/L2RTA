@@ -840,7 +840,7 @@ function [delta_obj_list] = newton(x, kappa)
     [mu_global,E_global,ind_backwards,inverse_flag] = compose_global_from_local(x);
     
     %% convex combination of update directions, combination is given by lmd
-    % -For each update direction in terms of multilabels, compute the corresponding mu
+    % -For each update direction in terms of multilabels, compute the corresponding mu_0, and compute the different mu_0-mu
     dmu_set=[];
     for t=1:T_size
         Ymax    = Y_kappa(t,1:l);
@@ -869,7 +869,7 @@ function [delta_obj_list] = newton(x, kappa)
         end
     end     
     loss_global = reshape(loss_global,4*size(E_global,1),m);
-    % -Compute the vector of Ye and ind_edge_val
+    % -Compute the vector of Ye and ind_edge_val of the global consensus graph
     Ye_global = reshape(loss_global==0,4,size(E_global,1)*m);
     ind_edge_val_global = cell(4,1);
     for u=1:4
@@ -885,7 +885,7 @@ function [delta_obj_list] = newton(x, kappa)
         end
     end
     mu_global = reshape(mu_global,4*size(E_global,1),1);
-    % Compute Kmu
+    % -Compute Kmu on the global consensus graph
     Kx = Kx_tr(:,x);
     term12_global = zeros(1, size(E_global,1));
     term34_global = zeros(4, size(E_global,1));
@@ -927,15 +927,10 @@ function [delta_obj_list] = newton(x, kappa)
     % round and normalize lambda to satisfy constraint
     lmd = lmd.*(lmd >= 0);
     lmd = lmd / sum(lmd);
-    % compute dmu by combination
+    % compute dmu with a convex combination of multiple update directions
     dmu_global = dmu_set * lmd';
     % decompose global update into a set of local updates on individual trees, assuming the quantities are correctly computed
-    dmu_set = decompose_local_from_global(dmu_global,E_global,ind_backwards,inverse_flag);
-    
-    
-  
-    
-    
+    dmu_set = decompose_local_from_global ( dmu_global, E_global, ind_backwards, inverse_flag );
     
     
     %% update the marginal dual variable on each individual tree
@@ -949,10 +944,9 @@ function [delta_obj_list] = newton(x, kappa)
         E       = E_list{t};
         gradient    =  gradient_list_local{t};
         dmu        = dmu_set{t};
-        Kmu_d       = Kmu_d_list{t};
+        % //Kmu_d       = Kmu_d_list{t};
         % -update the score of the objective function
-        %TODO
-        delta_obj_list(t) = gradient'*dmu - norm_const_quadratic_list(t)*tau^2/2*mu_d'*Kmu_d;
+        % //delta_obj_list(t) = gradient'*dmu - norm_const_quadratic_list(t)*tau^2/2*mu_d'*Kmu_d;
         % -update marginal dual variable located on this particular tree
         mu = mu + dmu_set(:,t);
         % -update Smu and Rmu located on this particular tree
@@ -964,8 +958,6 @@ function [delta_obj_list] = newton(x, kappa)
         % -save marginal dual variables
         mu = reshape(mu, 4*size(E,1),1);
         mu_list{t}(:,x) = mu;
-        
-        %Kxx_mu_x_list{t}(:,x) = (1-tau)*Kxx_mu_x_list{t}(:,x) + tau*kxx_mu_0{t};
        
     end
 
