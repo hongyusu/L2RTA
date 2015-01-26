@@ -935,6 +935,7 @@ function [delta_obj_list] = newton(x, kappa)
     
     %% update the marginal dual variable on each individual tree
     % NOTE: the current strategy is to always update
+    delta_obj_list = zeros(1,T_size);
     for t=1:T_size
         % -retrieve variables locally on each spanning tree for the example x
         loss    = loss_list{t}(:,x);
@@ -944,11 +945,11 @@ function [delta_obj_list] = newton(x, kappa)
         E       = E_list{t};
         gradient    =  gradient_list_local{t};
         dmu        = dmu_set{t};
-        % //Kmu_d       = Kmu_d_list{t};
         % -update the score of the objective function
-        % //delta_obj_list(t) = gradient'*dmu - norm_const_quadratic_list(t)*tau^2/2*mu_d'*Kmu_d;
+        delta_obj_list(t) = gradient'*dmu;
+        % delta_obj_list(t) = gradient'*dmu - norm_const_quadratic_list(t)*tau^2/2*mu_d'*Kmu_d;
         % -update marginal dual variable located on this particular tree
-        mu = mu + dmu_set(:,t);
+        mu = mu + dmu_set{t};
         % -update Smu and Rmu located on this particular tree
         mu = reshape(mu, 4, size(E,1));
         for u = 1:4
@@ -961,6 +962,8 @@ function [delta_obj_list] = newton(x, kappa)
        
     end
 
+    
+    
     return;
 end
 
