@@ -137,7 +137,6 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn)
     %% Iteration over examples untile convergece ?
     % parameters
     
-    
     prev_obj = 0;
     
     nflip=Inf;
@@ -194,8 +193,8 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn)
             print_message(sprintf('Start descend on example %d initial k %d',xi,kappa),3)
 
                 kappa_decrease_flag(xi)=0;
-                %[delta_obj_list] = conditional_gradient_desnewcent(xi,kappa);    % optimize on single example
-                [delta_obj_list] = newton(xi,kappa);    % optimize on single example
+                [delta_obj_list] = conditional_gradient_descent(xi,kappa);    % optimize on single example
+                %[delta_obj_list] = conditional_gradient_optimization_with_Newton(xi,kappa);    % optimize on single example
 %                 
 %                 kappa0=kappa;
 %                 while ( Yspos_list(xi)==0 ) && kappa0 < params.maxkappa 
@@ -400,7 +399,7 @@ function Kmu_x = compute_Kmu_x(x,Kx,E,ind_edge_val,Rmu,Smu)
     % Rmu : Pseudo edge values
    
     global iter
-    if x==1 & iter ==2
+    if x==-1 & iter ==2
         global mu_list
         mu_list{1}(:,1:2)'
         ind_edge_val{1}(:,1)
@@ -774,7 +773,7 @@ end
 
 
 %% Conditional gradient optimization with Newton method to find the best update direction by a convex combination of multiple update directions.
-function [delta_obj_list] = newton(x, kappa)
+function [delta_obj_list] = conditional_gradient_optimization_with_Newton(x, kappa)
 
     %% Definition of the parameters
     global loss_list;
@@ -805,6 +804,7 @@ function [delta_obj_list] = newton(x, kappa)
     global node_degree_list;
     global m;
     
+    sprintf('newton 0 %d %d',iter,x);
     
     %% Compute K best multilabels from a collection of random spanning trees.
     % Define variables to save results.
@@ -838,6 +838,8 @@ function [delta_obj_list] = newton(x, kappa)
     
     %% Compose current global marginal dual variable (mu) from local marginal dual variables {mu_t}_{t=1}^{T}
     [mu_global,E_global,ind_backwards,inverse_flag] = compose_global_from_local(x);
+    
+    sprintf('newton 1 %d %d',iter,x);
     
     %% convex combination of update directions, combination is given by lmd
     % -For each update direction in terms of multilabels, compute the corresponding mu_0, and compute the different mu_0-mu
@@ -932,6 +934,7 @@ function [delta_obj_list] = newton(x, kappa)
     % decompose global update into a set of local updates on individual trees, assuming the quantities are correctly computed
     dmu_set = decompose_local_from_global ( dmu_global, E_global, ind_backwards, inverse_flag );
     
+    sprintf('newton 2 %d %d',iter,x);
     
     %% update the marginal dual variable on each individual tree
     % NOTE: the current strategy is to always update
@@ -962,7 +965,7 @@ function [delta_obj_list] = newton(x, kappa)
        
     end
 
-    
+    sprintf('newton 3 %d %d',iter,x);
     
     return;
 end
@@ -1038,17 +1041,6 @@ function [delta_obj_list,kappa_decrease_flag] = conditional_gradient_descent_con
         
         [Ymax,YmaxVal] = compute_topk_omp(gradient,kappa,E,node_degree);
 
-        if iter==0
-            adfs
-        end
-        if x==0
-            disp('1. k best from all trees');
-            reshape(mu,4,size(gradient,1)/4)  
-            reshape(gradient,4,size(gradient,1)/4)  
-            Y_tr(x,:)
-            Ymax
-            gradient
-        end
         
         % Save results.
         Y_kappa(t,:) = Ymax;
