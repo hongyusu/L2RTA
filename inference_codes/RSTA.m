@@ -291,7 +291,7 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn)
     ts_err = 0;
 end
 
-%% 
+%% Compute marginal dual variables on global consensus graph mu_global for all marginal dual variables mu over all examples
 % Input:    x is the x'th training example
 % Output:   mu_global
 %           E_global
