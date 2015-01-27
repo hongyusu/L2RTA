@@ -344,24 +344,27 @@ end
 
 
 %% Compute <K^{delta}(i,:),mu>, which is the part of the gradient, the dimenson of Kmu is m*4*|E|
+% mu is the compute mu matrix of all examples
+% kx is the kernel for current training examples
 % 27/01/2015
-function Kmu = compute_Kmu_matrix ( Kx, mu, E, ind_edge_val )
+function Kmu = compute_Kmu_matrix ( Kx, mu, E, ind_edge_val, x )
 
-    numExample = size(mu,2);
-    numE       = size(E,1);
+    numExample = size(x,2);   % number of example in this computation
+    m = size(mu,2);         % total number of examples
+    numE = size(E,1);       % number of edges
     
-    mu = reshape(mu, 4, numE * numExample);         % 4 by |E|*m
-    sum_mu = reshape(sum(mu), numE, numExample);    % |E| by m
+    mu = reshape(mu, 4, numE * m);         % 4 by |E|*m
+    sum_mu = reshape(sum(mu), numE, m);    % |E| by m
     
     term12 = zeros(1, numE * numExample);	% 1 by (|E|*m)
     Kmu = zeros(4, numE * numExample);      % 4 by (|E|*m)
     
     for u = 1:4
         edgeLabelIndicator = full(ind_edge_val{u});     % |E| by m 
-        real_mu_u = reshape(mu(u,:),numE,numExample);   % |E| by m
+        real_mu_u = reshape(mu(u,:),numE,m);   % |E| by m
         H_u = sum_mu.*edgeLabelIndicator - real_mu_u;   % |E| by m
         Q_u = H_u * Kx; % |E| by m   
-        term12 = term12 + reshape(Q_u.*edgeLabelIndicator, 1, numE * numExample);   % 1 by |E|*m
+        term12 = term12 + reshape(Q_u.*edgeLabelIndicator(:,x), 1, numE * numExample);   % 1 by |E|*m
         Kmu(u,:) = reshape(-Q_u, 1, numE*numExample);
     end
     
@@ -427,17 +430,6 @@ function Kmu_x = compute_Kmu_x(x,Kx,E,ind_edge_val,Rmu,Smu)
     % Smu : true edge values
     % Rmu : Pseudo edge values
    
-    global iter
-    if x==-1 & iter ==2
-        global mu_list
-        mu_list{1}(:,1:2)'
-        ind_edge_val{1}(:,1)
-        for u=1:4
-        Smu{u}(:,1)'
-        end
-        Rmu{1}(:,1)
-        adfs
-    end
     
     for u = 1:4
         Ind_te_u = full(ind_edge_val{u}(:,x));
@@ -853,6 +845,9 @@ function [delta_obj_list] = conditional_gradient_optimization_with_Newton(x, kap
         % compute Kmu_x = K_x*mu_x
         Kmu_x_list_local{t} = compute_Kmu_x(x,Kx_tr(:,x),E,ind_edge_val,Rmu,Smu); % this function can be merged with another function
         Kmu_x = Kmu_x_list_local{t};
+        a=reshape(Kmu_x,4,13);
+        b=compute_Kmu_matrix(Kx_tr(:,x),mu_list{t},E,ind_edge_val,x);
+        (a-b<0.00001)
         % compute the gradient vector on the current spanning tree  
         gradient_list_local{t} = norm_const_linear*loss - norm_const_quadratic_list(t)*Kmu_x;
         gradient = gradient_list_local{t};
