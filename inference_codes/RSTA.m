@@ -291,7 +291,7 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn)
     ts_err = 0;
 end
 
-%% Compose the global marginal dual variables from local for the x'th example
+%% 
 % Input:    x is the x'th training example
 % Output:   mu_global
 %           E_global
@@ -349,9 +349,15 @@ end
 % 27/01/2015
 function Kmu = compute_Kmu_matrix ( Kx, mu, E, ind_edge_val, x )
 
+
     numExample = size(x,2);   % number of example in this computation
-    m = size(mu,2);         % total number of examples
+    m = size(Kx,1);         % total number of examples
     numE = size(E,1);       % number of edges
+
+    size(mu)    
+    numExample
+    m
+    numE
     
     mu = reshape(mu, 4, numE * m);         % 4 by |E|*m
     sum_mu = reshape(sum(mu), numE, m);    % |E| by m
@@ -362,6 +368,8 @@ function Kmu = compute_Kmu_matrix ( Kx, mu, E, ind_edge_val, x )
     for u = 1:4
         edgeLabelIndicator = full(ind_edge_val{u});     % |E| by m 
         real_mu_u = reshape(mu(u,:),numE,m);   % |E| by m
+        size(sum_mu)
+        size(edgeLabelIndicator)
         H_u = sum_mu.*edgeLabelIndicator - real_mu_u;   % |E| by m
         Q_u = H_u * Kx; % |E| by m   
         term12 = term12 + reshape(Q_u.*edgeLabelIndicator(:,x), 1, numE * numExample);   % 1 by |E|*m
