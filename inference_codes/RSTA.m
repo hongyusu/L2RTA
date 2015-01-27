@@ -303,21 +303,34 @@ function [mu_global,E_global,ind_backwards,inverse_flag] = compose_global_from_l
     global mu_list;
     global T_size;
     global l;
+    global m;
     
-    % TODO: initial Emu
     % Pool all edges and corresponding marginal dual variables together.
+    % TODO: initialize Emu
     Emu = [];
     for t=1:T_size
         E   = E_list{t};
-        mu  = reshape(mu_list{t}(:,x), 4, l-1)';
-        Emu = [Emu; [E,mu]];
+        % make a new mu
+        mu = reshape(mu_list{t}, 4, (l-1)*m);
+        % TODO: initialize newMu
+        newMu = [];
+        for u=1:4
+            newMu = [ newMu, reshape(mu(u,:), l-1, m) ];
+        end
+        Emu = [Emu;[E,newMu]];
     end
     % Clear the repeating rows.
     inverse_flag = Emu(:,1)>Emu(:,2);
-    Emu(inverse_flag,:) = Emu(inverse_flag,[2,1,3,5,4,6]);
+    Emu(inverse_flag,:) = Emu(inverse_flag,[2,1, 3:(m+2), (2*m+3):(2*m+m+2), (m+3):(m+m+2), (3*m+3):(3*m+m+2)]);
     [Emu, ~, ind_backwards] = unique(Emu,'rows');
     E_global    = Emu(:,1:2);
-    mu_global   = reshape(Emu(:,3:6)',4*size(E_global,1),1);
+    newMu = Emu(:,3:size(Emu,2));
+    mu_global = [];
+    for u=1:4
+        mu_global = [mu_global; reshape(newMu(:,((u-1)*m+1):(u*m)), 1, size(E_global,1)*m)];
+    end
+    
+    mu_global = reshape(mu_global, 4*size(E_global,1), m);
     
 end
 
@@ -354,10 +367,6 @@ function Kmu = compute_Kmu_matrix ( Kx, mu, E, ind_edge_val, x )
     m = size(Kx,1);         % total number of examples
     numE = size(E,1);       % number of edges
 
-    size(mu)    
-    numExample
-    m
-    numE
     
     mu = reshape(mu, 4, numE * m);         % 4 by |E|*m
     sum_mu = reshape(sum(mu), numE, m);    % |E| by m
@@ -368,8 +377,6 @@ function Kmu = compute_Kmu_matrix ( Kx, mu, E, ind_edge_val, x )
     for u = 1:4
         edgeLabelIndicator = full(ind_edge_val{u});     % |E| by m 
         real_mu_u = reshape(mu(u,:),numE,m);   % |E| by m
-        size(sum_mu)
-        size(edgeLabelIndicator)
         H_u = sum_mu.*edgeLabelIndicator - real_mu_u;   % |E| by m
         Q_u = H_u * Kx; % |E| by m   
         term12 = term12 + reshape(Q_u.*edgeLabelIndicator(:,x), 1, numE * numExample);   % 1 by |E|*m
@@ -878,7 +885,7 @@ function [delta_obj_list] = conditional_gradient_optimization_with_Newton(x, kap
         for u = 1:4
             mu_0(4*(1:size(E_global,1))-4 + u) = params.C*(Umax_e == u);
         end
-        dmu_set=[dmu_set,mu_0-mu_global];
+        dmu_set=[dmu_set,mu_0-mu_global(:,x)];
     end
     % -Compute the node degree vector for the consensus graph.
     NodeDegree_global = ones(l,1);
@@ -905,15 +912,15 @@ function [delta_obj_list] = conditional_gradient_optimization_with_Newton(x, kap
         ind_edge_val_global{u} = sparse(reshape(Ye_global(u,:)~=0,size(E_global,1),m));
     end
     Ye_global = reshape(Ye_global,4*size(E_global,1),m);
+    
     % Compute Smu and Rmu
-    mu_global = reshape(mu_global,4,size(E_global,1));
     for i_example = 1:m
+        mu_global_i = reshape(mu_global(:,i_example),4,size(E_global,1));
         for u=1:4
-            Smu_global{u}(:,i_example) = (sum(mu_global)').*ind_edge_val_global{u}(:,i_example);
-            Rmu_global{u}(:,i_example) = mu_global(u,:)';
+            Smu_global{u}(:,i_example) = (sum(mu_global_i)').*ind_edge_val_global{u}(:,i_example);
+            Rmu_global{u}(:,i_example) = mu_global_i(u,:)';
         end
     end
-    mu_global = reshape(mu_global,4*size(E_global,1),1);
     % -Compute Kmu on the global consensus graph
     Kx = Kx_tr(:,x);
     term12_global = zeros(1, size(E_global,1));
@@ -926,8 +933,12 @@ function [delta_obj_list] = conditional_gradient_optimization_with_Newton(x, kap
     end
     Kmu_x_global = reshape(term12_global(ones(4,1),:) + term34_global,4*size(E_global,1),1);
     
-    a = compute_Kmu_matrix(Kx_tr(:,x),mu_global, E_global, ind_edge_val_global, x)
-    (a==Kmu_x_global)
+    % compute Kmu matrix on global conseneus graph, the dimension of the Kmu matrix is 4*|E_global|  by 1
+    a = compute_Kmu_matrix(Kx_tr(:,x),mu_global, E_global, ind_edge_val_global, x);
+    %(a-Kmu_x_global < params.tolerance)'
+    [a,Kmu_x_global]'
+    
+    
     
     % compute the f'(x)
     f_prim = loss_global(:,x)-Kmu_x_global;
