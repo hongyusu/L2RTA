@@ -357,8 +357,12 @@ end
 
 
 %% New function to compute <K^{delta}(i,:),mu>, which is the part of the gradient, the dimenson of Kmu is m*4*|E|
-% mu is the compute mu matrix of all examples
-% kx is the kernel for current training examples
+% Input:
+%       Kx: part of the kernel matrix for current examples
+%       mu: complete marginal dual variable
+%       E:  complete set of edges
+%       ind_edge_val: edge value indicator
+%       x:  indicator for current set of examples
 % 27/01/2015
 function Kmu = compute_Kmu_matrix ( Kx, mu, E, ind_edge_val, x )
 
