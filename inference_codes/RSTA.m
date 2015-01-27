@@ -343,6 +343,14 @@ end
 
 
 
+%% Compute <K^{delta}(i,:),mu>, which is the part of the gradient, the dimenson of Kmu is m*4*|E|
+% 27/01/2015
+function Kmu = compute_Kmu_matrix ( Kx, mu, E, ind_edge_val )
+    
+    
+end
+
+
 %% Complete part of gradient for everything
 % 05/01/2015
 function Kmu = compute_Kmu(Kx,mu,E,ind_edge_val)
@@ -804,7 +812,6 @@ function [delta_obj_list] = conditional_gradient_optimization_with_Newton(x, kap
     global node_degree_list;
     global m;
     
-    sprintf('newton 0 %d %d',iter,x);
     
     %% Compute K best multilabels from a collection of random spanning trees.
     % Define variables to save results.
@@ -822,7 +829,6 @@ function [delta_obj_list] = conditional_gradient_optimization_with_Newton(x, kap
         E       = E_list{t};
         Rmu     = Rmu_list{t};
         Smu     = Smu_list{t};    
-        % Compute some necessary quantities for the spanning tree T_t.
         % compute Kmu_x = K_x*mu_x
         Kmu_x_list_local{t} = compute_Kmu_x(x,Kx_tr(:,x),E,ind_edge_val,Rmu,Smu); % this function can be merged with another function
         Kmu_x = Kmu_x_list_local{t};
@@ -838,8 +844,6 @@ function [delta_obj_list] = conditional_gradient_optimization_with_Newton(x, kap
     
     %% Compose current global marginal dual variable (mu) from local marginal dual variables {mu_t}_{t=1}^{T}
     [mu_global,E_global,ind_backwards,inverse_flag] = compose_global_from_local(x);
-    
-    sprintf('newton 1 %d %d',iter,x);
     
     %% convex combination of update directions, combination is given by lmd
     % -For each update direction in terms of multilabels, compute the corresponding mu_0, and compute the different mu_0-mu
