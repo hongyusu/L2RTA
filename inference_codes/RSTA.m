@@ -193,8 +193,8 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn)
             print_message(sprintf('Start descend on example %d initial k %d',xi,kappa),3)
 
                 kappa_decrease_flag(xi)=0;
-                [delta_obj_list] = conditional_gradient_descent(xi,kappa);    % optimize on single example
-                %[delta_obj_list] = conditional_gradient_optimization_with_Newton(xi,kappa);    % optimize on single example
+                %[delta_obj_list] = conditional_gradient_descent(xi,kappa);    % optimize on single example
+                [delta_obj_list] = conditional_gradient_optimization_with_Newton(xi,kappa);    % optimize on single example
 %                 
 %                 kappa0=kappa;
 %                 while ( Yspos_list(xi)==0 ) && kappa0 < params.maxkappa 
@@ -346,7 +346,28 @@ end
 %% Compute <K^{delta}(i,:),mu>, which is the part of the gradient, the dimenson of Kmu is m*4*|E|
 % 27/01/2015
 function Kmu = compute_Kmu_matrix ( Kx, mu, E, ind_edge_val )
+
+    numExample = size(mu,2);
+    numE       = size(E,1);
     
+    mu = reshape(mu, 4, numE * numExample);         % 4 by |E|*m
+    sum_mu = reshape(sum(mu), numE, numExample);    % |E| by m
+    
+    term12 = zeros(1, numE * numExample);	% 1 by (|E|*m)
+    Kmu = zeros(4, numE * numExample);      % 4 by (|E|*m)
+    
+    for u = 1:4
+        edgeLabelIndicator = full(ind_edge_val{u});     % |E| by m 
+        real_mu_u = reshape(mu(u,:),numE,numExample);   % |E| by m
+        H_u = sum_mu.*edgeLabelIndicator - real_mu_u;   % |E| by m
+        Q_u = H_u * Kx; % |E| by m   
+        term12 = term12 + reshape(Q_u.*edgeLabelIndicator, 1, numE * numExample);   % 1 by |E|*m
+        Kmu(u,:) = reshape(-Q_u, 1, numE*numExample);
+    end
+    
+    for u = 1:4
+        Kmu(u,:) = Kmu(u,:) + term12;
+    end
     
 end
 
