@@ -844,10 +844,8 @@ function [delta_obj_list] = conditional_gradient_optimization_with_Newton(x, kap
         Smu     = Smu_list{t};    
         % compute Kmu_x = K_x*mu_x
         Kmu_x_list_local{t} = compute_Kmu_x(x,Kx_tr(:,x),E,ind_edge_val,Rmu,Smu); % this function can be merged with another function
+        %Kmu_x_list_local{t} = compute_Kmu_matrix(Kx_tr(:,x),mu_list{t},E,ind_edge_val,x);
         Kmu_x = Kmu_x_list_local{t};
-        a=reshape(Kmu_x,4,13);
-        b=compute_Kmu_matrix(Kx_tr(:,x),mu_list{t},E,ind_edge_val,x);
-        (a-b<0.00001)
         % compute the gradient vector on the current spanning tree  
         gradient_list_local{t} = norm_const_linear*loss - norm_const_quadratic_list(t)*Kmu_x;
         gradient = gradient_list_local{t};
