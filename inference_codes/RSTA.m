@@ -343,7 +343,7 @@ end
 
 
 
-%% Compute <K^{delta}(i,:),mu>, which is the part of the gradient, the dimenson of Kmu is m*4*|E|
+%% New function to compute <K^{delta}(i,:),mu>, which is the part of the gradient, the dimenson of Kmu is m*4*|E|
 % mu is the compute mu matrix of all examples
 % kx is the kernel for current training examples
 % 27/01/2015
@@ -372,6 +372,7 @@ function Kmu = compute_Kmu_matrix ( Kx, mu, E, ind_edge_val, x )
         Kmu(u,:) = Kmu(u,:) + term12;
     end
     
+    Kmu = reshape(Kmu, 4*numE, numExample);
 end
 
 
@@ -842,7 +843,7 @@ function [delta_obj_list] = conditional_gradient_optimization_with_Newton(x, kap
         E       = E_list{t};
         Rmu     = Rmu_list{t};
         Smu     = Smu_list{t};    
-        % compute Kmu_x = K_x*mu_x
+        % compute Kmu_x = K_x*mu, which is a part of the gradient, of dimension 4*|E| by m
         Kmu_x_list_local{t} = compute_Kmu_x(x,Kx_tr(:,x),E,ind_edge_val,Rmu,Smu); % this function can be merged with another function
         %Kmu_x_list_local{t} = compute_Kmu_matrix(Kx_tr(:,x),mu_list{t},E,ind_edge_val,x);
         Kmu_x = Kmu_x_list_local{t};
@@ -916,6 +917,10 @@ function [delta_obj_list] = conditional_gradient_optimization_with_Newton(x, kap
         term34_global(u,:) = -H_u_global';
     end
     Kmu_x_global = reshape(term12_global(ones(4,1),:) + term34_global,4*size(E_global,1),1);
+    
+    a = compute_Kmu_matrix(Kx_tr(:,x),mu_global, E_global, ind_edge_val_global, x)
+    (a==Kmu_x_global)
+    
     % compute the f'(x)
     f_prim = loss_global(:,x)-Kmu_x_global;
     % compute g
