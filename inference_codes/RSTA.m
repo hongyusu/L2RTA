@@ -936,11 +936,9 @@ function [delta_obj_list] = conditional_gradient_optimization_with_Newton(x, kap
         term34_global(u,:) = -H_u_global';
     end
     Kmu_x_global = reshape(term12_global(ones(4,1),:) + term34_global,4*size(E_global,1),1);
-    
     % compute Kmu matrix on global conseneus graph, the dimension of the Kmu matrix is 4*|E_global|  by 1
-    a = compute_Kmu_matrix(Kx_tr(:,x),mu_global, E_global, ind_edge_val_global, x);
+    %a = compute_Kmu_matrix(Kx_tr(:,x),mu_global, E_global, ind_edge_val_global, x);
     %(a-Kmu_x_global < params.tolerance)'
-    [a,Kmu_x_global]'
     
     
     
