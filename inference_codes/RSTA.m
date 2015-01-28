@@ -193,8 +193,8 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn)
             print_message(sprintf('Start descend on example %d initial k %d',xi,kappa),3)
 
                 kappa_decrease_flag(xi)=0;
-                %[delta_obj_list] = conditional_gradient_descent(xi,kappa);    % optimize on single example
-                [delta_obj_list] = conditional_gradient_optimization_with_Newton(xi,kappa);    % optimize on single example
+                [delta_obj_list] = conditional_gradient_descent(xi,kappa);    % optimize on single example
+                %[delta_obj_list] = conditional_gradient_optimization_with_Newton(xi,kappa);    % optimize on single example
 %                 
 %                 kappa0=kappa;
 %                 while ( Yspos_list(xi)==0 ) && kappa0 < params.maxkappa 
@@ -745,7 +745,18 @@ function [delta_obj_list] = conditional_gradient_descent(x, kappa)
             kxx_mu_0{t} = zeros(size(mu));
         end
         
+        reshape(Ye,4,13)
+        reshape(mu_0,4,13)
+        reshape(-smu_1_te,4,13)
+        reshape(~Ye*params.C,4,13)
+        
+        reshape(kxx_mu_0{t},4,13)
+        asdfs
+        
+        ~Ye*params.C
+        [Kmu_x ,kxx_mu_0{t} , Kxx_mu_x_list{t}(:,x)]
         Kmu_0 = Kmu_x + kxx_mu_0{t} - Kxx_mu_x_list{t}(:,x);
+
 
         mu_d = mu_0 - mu;
         Kmu_d = Kmu_0-Kmu_x;
