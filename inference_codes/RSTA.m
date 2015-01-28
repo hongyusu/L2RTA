@@ -944,7 +944,7 @@ function [delta_obj_list] = conditional_gradient_optimization_with_Newton(x, kap
     
     % compute the f'(x)
     f_prim = loss_global(:,x)-Kmu_x_global;
-    % compute g
+    % compute g = <f'(x),M>
     g_global = f_prim' * dmu_set;
     % compute Q
     for i_mu0 = 1:size(dmu_set,2)
