@@ -18,7 +18,6 @@
 %   This function is called by run_RSTA(.)
 %
 %
-
 function [rtn, ts_err] = RSTA(paramsIn, dataIn)
 
     %% Definition of global variables
@@ -189,20 +188,19 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn)
 %        for xi = randsample(1:m,m,true,Yipos_list/sum(Yipos_list))
 %        for xi = selected_samples
 %         for xi = randsample(1:m,m)
-         for xi = 1:m
+        for xi = 1:m
             print_message(sprintf('Start descend on example %d initial k %d',xi,kappa),3)
-
-                kappa_decrease_flag(xi)=0;
-                [delta_obj_list] = conditional_gradient_descent(xi,kappa);    % optimize on single example
-                %[delta_obj_list] = conditional_gradient_optimization_with_Newton(xi,kappa);    % optimize on single example
-%                 
+            kappa_decrease_flag(xi)=0;
+            [delta_obj_list] = conditional_gradient_descent(xi,kappa);    % optimize on single example
+            %[delta_obj_list] = conditional_gradient_optimization_with_Newton(xi,kappa);    % optimize on single example
+                 
 %                 kappa0=kappa;
 %                 while ( Yspos_list(xi)==0 ) && kappa0 < params.maxkappa 
 %                     kappa0=kappa0*2;
 %                     [delta_obj_list,Yspos_list(xi)] = conditional_gradient_descent(xi,kappa0);    % optimize on single example
 %                 end
-                kappa_list(xi)=kappa;
-            
+
+            kappa_list(xi)=kappa;
             obj_list = obj_list + delta_obj_list;
             obj = obj + sum(delta_obj_list);
             % update kappa
@@ -213,35 +211,29 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn)
             end
         end
         
-        %[Yspos_list;Yipos_list]
-        %GmaxG0_list
-        %Yspos_list
-        %Yipos_list
-        %obj_list
         
         if mod(iter, params.profileiter)==0
             progress_made = (obj >= prev_obj);  
             prev_obj = obj;
             
-                compute_duality_gap;
-            
-            profile_update_tr;          % profile update for training
-            % update flip number
+            % Compute duality gap and update profile for all training examples.
+            compute_duality_gap;            
+            profile_update_tr;          
+            % Update flip number.
             if profile.n_err_microlabel > profile.n_err_microlabel_prev
                 nflip = nflip - 1;
             end
             % update current best solution
             if profile.n_err_microlabel < best_n_err_microlabel || 1
-                best_n_err_microlabel=profile.n_err_microlabel;
-                best_iter = iter;
-                best_kappa = kappa;
-                best_mu_list=mu_list;
-                best_Kxx_mu_x_list=Kxx_mu_x_list;
-                best_Rmu_list=Rmu_list;
-                best_Smu_list=Smu_list;
+                best_n_err_microlabel = profile.n_err_microlabel;
+                best_iter   = iter;
+                best_kappa  = kappa;
+                best_mu_list        = mu_list;
+                best_Kxx_mu_x_list  = Kxx_mu_x_list;
+                best_Rmu_list       = Rmu_list;
+                best_Smu_list       = Smu_list;
                 best_norm_const_quadratic_list = norm_const_quadratic_list;
             end
-            %mu_list{1}
         end
         
         
