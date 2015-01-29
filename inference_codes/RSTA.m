@@ -715,24 +715,20 @@ function [delta_obj_list] = conditional_gradient_descent(x, kappa)
         E   = E_list{t};
         Rmu = Rmu_list{t};
         Smu = Smu_list{t};
+        Kmu_x       = Kmu_x_list_local{t};
+        gradient    = gradient_list_local{t};
         
-        % compute Gmax and G0
-        Kmu_x = Kmu_x_list_local{t};
-        gradient = gradient_list_local{t};
-        % Compute Gmax, which is the best objective value along gradient.
+        % Compute Gmax, which is the best objective value along the gradient.
         Gmax(t) = compute_Gmax(gradient,Ymax,E);
         Gmax(t) = Gmax(t)*params.C;
-        % Compute G0, which is current objective value. 
+        % Compute G0, which is current objective value along the gradient.
         G0(t) = -mu'*gradient;
-        %G0(t) = norm_const_linear*loss'*mu - 1/2*norm_const_quadratic_list(t)*Kmu_x'*mu;
-        
-        % Compute mu_0, which is the best margin violator into the update direction.
+        % Compute mu_0, which is the best point along the descent direction.
         Umax_e = 1+2*(Ymax(:,E(:,1))>0) + (Ymax(:,E(:,2)) >0);
         mu_0 = zeros(size(mu));
         for u = 1:4
             mu_0(4*(1:(l-1))-4 + u) = params.C*(Umax_e == u);
         end
-        
         % compute Kmu_0
         if sum(mu_0) > 0
             smu_1_te = sum(reshape(mu_0.*Ye,4,size(E,1)),1);
@@ -741,22 +737,20 @@ function [delta_obj_list] = conditional_gradient_descent(x, kappa)
         else
             kxx_mu_0{t} = zeros(size(mu));
         end
-        
         Kmu_0 = Kmu_x + kxx_mu_0{t} - Kxx_mu_x_list{t}(:,x);
 
-
-        mu_d = mu_0 - mu;
-        Kmu_d = Kmu_0-Kmu_x;
-              
-        Kmu_d_list{t} = Kmu_d;
-        mu_d_list{t} = mu_d;
-        nomi(t) = mu_d'*gradient;
-        denomi(t) = norm_const_quadratic_list(t) * Kmu_d' * mu_d;
+        mu_d    = mu_0 - mu;
+        Kmu_d   = Kmu_0 - Kmu_x;      
+        Kmu_d_list{t}   = Kmu_d;
+        mu_d_list{t}    = mu_d;
         
-
+        nomi(t)     = mu_d' * gradient;
+        denomi(t)   = norm_const_quadratic_list(t) * Kmu_d' * mu_d;
+        
     end
     
-    %% Decide whether to update or not.
+    %% Decide whether to update the marginal dual variable on a collection of spanning trees by looking at the maximum objective along the gradient.
+    % TODO: this can be very problemetic, as using global tau, the quality on individual random spanning tree can be very bad.
     if sum(Gmax)>=sum(G0)
         tau = min(sum(nomi)/sum(denomi),1);
     else
