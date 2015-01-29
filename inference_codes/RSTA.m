@@ -440,24 +440,12 @@ function Kmu_x = compute_Kmu_x(x,Kx,E,ind_edge_val,Rmu,Smu)
     term12 = zeros(1,size(E,1));
     term34 = zeros(4,size(E,1));
     
-    % main
-    % For speeding up gradient computations: 
-    % store sums of marginal dual variables, distributed by the
-    % true edge values into Smu
-    % store marginal dual variables, distributed by the
-    % pseudo edge values into Rmu
-    
-    % Smu : true edge values
-    % Rmu : Pseudo edge values
-   
-    
     for u = 1:4
         Ind_te_u = full(ind_edge_val{u}(:,x));
         H_u = Smu{u}*Kx-Rmu{u}*Kx;
         term12(1,Ind_te_u) = H_u(Ind_te_u)';
         term34(u,:) = -H_u';
     end
-    
     
     Kmu_x = reshape(term12(ones(4,1),:) + term34,4*size(E,1),1);
     
@@ -603,17 +591,22 @@ end
 
 
 
-%% Perform conditional gradient optimization on single training example, upadte corresponding marginal dual variable.
-% Reviewed on 16/05/2014
+%%
+% Perform conditional gradient descend on individual training example,
+% to update corresponding marginal dual variables of that training example on a collection of random spanning trees
+%
+% working in progress on 16/05/2014
 % working in progress on 03/12/2014
 % working in progress on 29/01/2015
 %
-% input: 
-%   x:      the id of the current training examples
-%   obj:    current objective
-%   kappa:  current kappa
+% PARAMETERS: 
+%   x:      index of the current example under optimization
+%   kappa:  number of best multilabel computed from each individual random spanning tree
+%   delta_obj_list:     difference in terms of objective value on each random spanning tree
+%
 %
 function [delta_obj_list] = conditional_gradient_descent(x, kappa)
+
     %% Definition of the parameters
     global loss_list;
     global loss;
@@ -659,15 +652,15 @@ function [delta_obj_list] = conditional_gradient_descent(x, kappa)
         Rmu     = Rmu_list{t};
         Smu     = Smu_list{t};    
         % Compute some necessary quantities for the spanning tree T_t.
-        % Kmu_x = K_x*mu_x
+        % Kmu_x = K_x*mu
         Kmu_x_list_local{t} = compute_Kmu_x(x,Kx_tr(:,x),E,ind_edge_val,Rmu,Smu);
         Kmu_x = Kmu_x_list_local{t};
         % current gradient    
         gradient_list_local{t} =  norm_const_linear*loss - norm_const_quadratic_list(t)*Kmu_x;
         gradient = gradient_list_local{t};
-        % Compute the K-best multilabels.
+        % Compute top K-best multilabels
         [Ymax,YmaxVal] = compute_topk_omp(gradient,kappa,E,node_degree_list{t});
-        % Save results.
+        % Save results
         Y_kappa(t,:)        = Ymax;
         Y_kappa_val(t,:)    = YmaxVal;
     end
