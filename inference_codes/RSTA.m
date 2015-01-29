@@ -669,23 +669,29 @@ function [delta_obj_list] = conditional_gradient_descent(x, kappa)
     %% Compute the worst violating multilabel from the K best list.
     IN_E = zeros((l-1)*2,(l-1));
     for t=1:T_size
-        IN_E(:,t) = reshape(E_list{t},size(E_list{1},1)*2,1);
+        IN_E(:,t) = reshape(E_list{t},(l-1)*2,1);
     end
-    IN_gradient = zeros(size(gradient_list_local{1},1),size(E_list,1));
+    IN_gradient = zeros((l-1)*4,(l-1));
     for t=1:T_size
         IN_gradient(:,t) = gradient_list_local{t};
     end
+    % change label from -1/+1 to 0/+1
     Y_kappa = (Y_kappa+1)/2;
     Yi = (Y_tr(x,:)+1)/2;
-
+    
+    % find the worst violating multilabel from the K best list
+    %   Ymax:         best multilabel
+    %   Ymax_val:     
+    %   Yi_pos:       position of the true multilabel in the K best list
     [Ymax, Ymax_val, ~, Yi_pos] = find_worst_violator_new(Y_kappa,Y_kappa_val,Yi,IN_E,IN_gradient);
-
+    % save results to global variables
     val_list(x) = Ymax_val;
     Yipos_list(x) = Yi_pos;
+    % change label back from 0/+1 to -1/+1
     Ymax = Ymax*2-1;
      
 
-    %% If the worst violator is the correct label, exit without update mu.
+    %% If the worst violator is the correct label, exit without update current marginal dual variable of current example.
     if sum(Ymax~=Y_tr(x,:))==0 %|| ( ( (kappa_decrease_flag==0) && kappa < params.maxkappa) && iter~=1 )
         delta_obj_list = zeros(1,T_size);
         return;
