@@ -756,37 +756,37 @@ function [delta_obj_list] = conditional_gradient_descent(x, kappa)
     else
         tau=0;
     end
-    % Step size should not be negative.
     tau = max(tau,0);
-
 	GmaxG0_list(x) = sum(Gmax>=G0);
     GoodUpdate_list(x) = (tau>0);
     
     
-    %% update for each tree
+    %% Update marginal dual variables based on the step size given by the line search on each individual random spanning tree.
+    % TODO: as mentioned the update might not optimal for a step size given by tau
     delta_obj_list = zeros(1,T_size);
     for t=1:T_size
-        % variables located for tree t and example x
-        loss = loss_list{t}(:,x);
-        Ye = Ye_list{t}(:,x);
+        % Obtain variables that are local on each random spanning tree.
+        loss    = loss_list{t}(:,x);
+        Ye      = Ye_list{t}(:,x);
         ind_edge_val = ind_edge_val_list{t};
-        mu = mu_list{t}(:,x);
-        E = E_list{t};
-        gradient =  gradient_list_local{t};
-        mu_d = mu_d_list{t};
-        Kmu_d = Kmu_d_list{t};
-        %
+        mu      = mu_list{t}(:,x);
+        E       = E_list{t};
+        gradient    =  gradient_list_local{t};
+        mu_d    = mu_d_list{t};
+        Kmu_d   = Kmu_d_list{t};
+        
+        % Compute the difference in the objective in individual random spanning tree.
         delta_obj_list(t) = gradient'*mu_d*tau - norm_const_quadratic_list(t)*tau^2/2*mu_d'*Kmu_d;
         mu = mu + tau*mu_d;
         Kxx_mu_x_list{t}(:,x) = (1-tau)*Kxx_mu_x_list{t}(:,x) + tau*kxx_mu_0{t};
-        % update Smu Rmu
+        % Update Smu and Rmu
         mu = reshape(mu,4,size(E,1));
         for u = 1:4
             Smu_list{t}{u}(:,x) = (sum(mu)').*ind_edge_val{u}(:,x);
             Rmu_list{t}{u}(:,x) = mu(u,:)';
         end
-        
         mu = reshape(mu,4*size(E,1),1);
+        % Update marginal dual variable on individual spanning tree.
         mu_list{t}(:,x) = mu;
     end
     
