@@ -747,7 +747,7 @@ function [delta_obj_list] = conditional_gradient_descent(x, kappa)
         
         reshape(Ye,4,13)
         reshape(mu_0,4,13)
-        reshape(-smu_1_te,4,13)
+        reshape(smu_1_te,4,13)
         reshape(~Ye*params.C,4,13)
         
         reshape(kxx_mu_0{t},4,13)
