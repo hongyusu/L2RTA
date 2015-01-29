@@ -606,9 +606,10 @@ end
 %% Perform conditional gradient optimization on single training example, upadte corresponding marginal dual variable.
 % Reviewed on 16/05/2014
 % working in progress on 03/12/2014
+% working in progress on 29/01/2015
 %
 % input: 
-%   x:      the id of current training example
+%   x:      the id of the current training examples
 %   obj:    current objective
 %   kappa:  current kappa
 %
@@ -634,10 +635,8 @@ function [delta_obj_list] = conditional_gradient_descent(x, kappa)
     global Y_tr;
     global T_size;
     global params;
-    global iter;
     global val_list;
     global Yipos_list;
-    global Yspos_list;
     global GmaxG0_list;
     global GoodUpdate_list;
     global node_degree_list;
@@ -745,16 +744,6 @@ function [delta_obj_list] = conditional_gradient_descent(x, kappa)
             kxx_mu_0{t} = zeros(size(mu));
         end
         
-        reshape(Ye,4,13)
-        reshape(mu_0,4,13)
-        reshape(smu_1_te,4,13)
-        reshape(~Ye*params.C,4,13)
-        
-        reshape(kxx_mu_0{t},4,13)
-        asdfs
-        
-        ~Ye*params.C
-        [Kmu_x ,kxx_mu_0{t} , Kxx_mu_x_list{t}(:,x)]
         Kmu_0 = Kmu_x + kxx_mu_0{t} - Kxx_mu_x_list{t}(:,x);
 
 
@@ -766,15 +755,6 @@ function [delta_obj_list] = conditional_gradient_descent(x, kappa)
         nomi(t) = mu_d'*gradient;
         denomi(t) = norm_const_quadratic_list(t) * Kmu_d' * mu_d;
         
-            
-        if x==0
-            %reshape(mu_d,4,size(E,1))
-            [nomi(t),denomi(t)]
-            [nomi(t)/denomi(t)]
-            if iter == 10
-                asdfad
-            end
-        end
 
     end
     
