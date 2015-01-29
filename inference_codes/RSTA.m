@@ -667,7 +667,7 @@ function [delta_obj_list] = conditional_gradient_descent(x, kappa)
     
     
     %% Compute the worst violating multilabel from the K best list.
-    IN_E = zeros(size(E_list{1},1)*2,size(E_list,1));
+    IN_E = zeros((l-1)*2,(l-1));
     for t=1:T_size
         IN_E(:,t) = reshape(E_list{t},size(E_list{1},1)*2,1);
     end
