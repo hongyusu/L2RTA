@@ -699,25 +699,24 @@ function [delta_obj_list] = conditional_gradient_descent(x, kappa)
     
     
     %% Otherwise we need line serach to find optimal step size to the saddle point.
-    % reviewed on 16/05/2014
-    mu_d_list = mu_list;
-    nomi=zeros(1,T_size);
-    denomi=zeros(1,T_size);
-    kxx_mu_0 = cell(1,T_size);
-    Gmax = zeros(1,T_size);
-    G0 = zeros(1,T_size);
-    Kmu_d_list = cell(1,T_size);
+    mu_d_list   = mu_list;
+    nomi        = zeros(1,T_size);
+    denomi      = zeros(1,T_size);
+    kxx_mu_0    = cell(1,T_size);
+    Gmax        = zeros(1,T_size);
+    G0          = zeros(1,T_size);
+    Kmu_d_list  = cell(1,T_size);
     for t=1:T_size
-        %% Obtain variables located for tree t and example x.
+        % Obtain variables located for tree t and example x.
         loss = loss_list{t}(:,x);
-        Ye = Ye_list{t}(:,x);
+        Ye  = Ye_list{t}(:,x);
         ind_edge_val = ind_edge_val_list{t};
-        mu = mu_list{t}(:,x);
-        E = E_list{t};
+        mu  = mu_list{t}(:,x);
+        E   = E_list{t};
         Rmu = Rmu_list{t};
         Smu = Smu_list{t};
         
-        %% compute Gmax and G0
+        % compute Gmax and G0
         Kmu_x = Kmu_x_list_local{t};
         gradient = gradient_list_local{t};
         % Compute Gmax, which is the best objective value along gradient.
@@ -727,14 +726,14 @@ function [delta_obj_list] = conditional_gradient_descent(x, kappa)
         G0(t) = -mu'*gradient;
         %G0(t) = norm_const_linear*loss'*mu - 1/2*norm_const_quadratic_list(t)*Kmu_x'*mu;
         
-        %% Compute mu_0, which is the best margin violator into the update direction.
+        % Compute mu_0, which is the best margin violator into the update direction.
         Umax_e = 1+2*(Ymax(:,E(:,1))>0) + (Ymax(:,E(:,2)) >0);
         mu_0 = zeros(size(mu));
         for u = 1:4
             mu_0(4*(1:(l-1))-4 + u) = params.C*(Umax_e == u);
         end
         
-        %% compute Kmu_0
+        % compute Kmu_0
         if sum(mu_0) > 0
             smu_1_te = sum(reshape(mu_0.*Ye,4,size(E,1)),1);
             smu_1_te = reshape(smu_1_te(ones(4,1),:),length(mu),1);
