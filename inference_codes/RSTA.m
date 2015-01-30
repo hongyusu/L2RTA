@@ -191,8 +191,8 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn)
         for xi = 1:m
             print_message(sprintf('Start descend on example %d initial k %d',xi,kappa),3)
             kappa_decrease_flag(xi)=0;
-            [delta_obj_list] = conditional_gradient_descent(xi,kappa);    % optimize on single example
-            %[delta_obj_list] = conditional_gradient_optimization_with_Newton(xi,kappa);    % optimize on single example
+            %[delta_obj_list] = conditional_gradient_descent(xi,kappa);    % optimize on single example
+            [delta_obj_list] = conditional_gradient_optimization_with_Newton(xi,kappa);    % optimize on single example
                  
 %                 kappa0=kappa;
 %                 while ( Yspos_list(xi)==0 ) && kappa0 < params.maxkappa 
@@ -623,7 +623,7 @@ function [delta_obj_list] = conditional_gradient_descent(x, kappa)
         Rmu     = Rmu_list{t};
         Smu     = Smu_list{t};    
         % Compute some necessary quantities for the spanning tree T_t.
-        % Kmu_x = K_x*mu
+        % Compute Kmu_x = K_x*mu
         Kmu_x_list_local{t} = compute_Kmu_x(x,Kx_tr(:,x),E,ind_edge_val,Rmu,Smu);
         Kmu_x = Kmu_x_list_local{t};
         % current gradient    
@@ -730,7 +730,6 @@ function [delta_obj_list] = conditional_gradient_descent(x, kappa)
     tau = max(tau,0);
 	GmaxG0_list(x) = sum(Gmax>=G0);
     GoodUpdate_list(x) = (tau>0);
-    
     
     %% Update marginal dual variables based on the step size given by the line search on each individual random spanning tree.
     % TODO: as mentioned the update might not optimal for a step size given by tau
@@ -880,49 +879,41 @@ function [delta_obj_list] = conditional_gradient_optimization_with_Newton(x, kap
         end
     end
     % -Compute Kmu on the global consensus graph
-    Kx = Kx_tr(:,x);
-    term12_global = zeros(1, size(E_global,1));
-    term34_global = zeros(4, size(E_global,1));
-    for u=1:4
-        Ind_te_u_global = full(ind_edge_val_global{u}(:,x));
-        H_u_global = Smu_global{u}*Kx-Rmu_global{u}*Kx;
-        term12_global(1,Ind_te_u_global) = H_u_global(Ind_te_u_global)';
-        term34_global(u,:) = -H_u_global';
-    end
-    Kmu_x_global = reshape(term12_global(ones(4,1),:) + term34_global,4*size(E_global,1),1);
-    % compute Kmu matrix on global conseneus graph, the dimension of the Kmu matrix is 4*|E_global|  by 1
-    %a = compute_Kmu_matrix(Kx_tr(:,x),mu_global, E_global, ind_edge_val_global, x);
+%     Kx = Kx_tr(:,x);
+%     term12_global = zeros(1, size(E_global,1));
+%     term34_global = zeros(4, size(E_global,1));
+%     for u=1:4
+%         Ind_te_u_global = full(ind_edge_val_global{u}(:,x));
+%         H_u_global = Smu_global{u}*Kx-Rmu_global{u}*Kx;
+%         term12_global(1,Ind_te_u_global) = H_u_global(Ind_te_u_global)';
+%         term34_global(u,:) = -H_u_global';
+%     end
+%     Kmu_x_global = reshape(term12_global(ones(4,1),:) + term34_global,4*size(E_global,1),1);
+%     % compute Kmu matrix on global conseneus graph, the dimension of the Kmu matrix is 4*|E_global|  by 1
+%     %a = compute_Kmu_matrix(Kx_tr(:,x),mu_global, E_global, ind_edge_val_global, x);
+    Kmu_x_global = compute_Kmu_x(x,Kx_tr(:,x),E_global,ind_edge_val_global,Rmu_global,Smu_global);
+    %[a,Kmu_x_global]'
     %(a-Kmu_x_global < params.tolerance)'
     
     
-    
+       
     % compute the f'(x)
-    f_prim = loss_global(:,x)-Kmu_x_global;
+    % TODO: need normalization constant, linear term and quadratic term
+    f_prim = loss_global(:,x) - Kmu_x_global;
     % compute g = <f'(x),M>
     g_global = f_prim' * dmu_set;
-    % compute Q
+    
+    % Compute Q
+    Km=[];
     for i_mu0 = 1:size(dmu_set,2)
-        mu_global = reshape(dmu_set(:,i_mu0),4,size(E_global,1));
-        for i_example = 1:m
-            for u=1:4
-                Smu_global{u}(:,i_example) = (sum(mu_global)').*ind_edge_val_global{u}(:,i_example);
-                Rmu_global{u}(:,i_example) = mu_global(u,:)';
-            end
-        end
-        mu_global = reshape(mu_global,4*size(E_global,1),1);
-        Kx = Kx_tr(:,x);
-        term12_global = zeros(1, size(E_global,1));
-        term34_global = zeros(4, size(E_global,1));
-        for u=1:4
-            Ind_te_u_global = full(ind_edge_val_global{u}(:,x));
-            H_u_global = Smu_global{u}*Kx-Rmu_global{u}*Kx;
-            term12_global(1,Ind_te_u_global) = H_u_global(Ind_te_u_global)';
-            term34_global(u,:) = -H_u_global';
-        end
-       Kmu0 = reshape(term12_global(ones(4,1),:) + term34_global,4*size(E_global,1),1);
-       Kmu0_set(:,i_mu0) = Kmu0;
+        d_mu_global = dmu_set(:,i_mu0);
+        d_smu = sum(reshape(d_mu_global.*Ye_global(:,x),4,size(E_global,1)),1);
+        d_smu = reshape(d_smu(ones(4,1),:),length(d_mu_global),1);
+        %kxx_mu_0{t} 
+        Km = [Km,~Ye_global(:,x)*params.C+d_mu_global-d_smu];
     end
-    Q = Kmu0_set' * dmu_set;
+    Q = dmu_set' * Km;
+
     lmd = g_global * pinv(Q);
     % round and normalize lambda to satisfy constraint
     lmd = lmd.*(lmd >= 0);
@@ -932,38 +923,42 @@ function [delta_obj_list] = conditional_gradient_optimization_with_Newton(x, kap
     % decompose global update into a set of local updates on individual trees, assuming the quantities are correctly computed
     dmu_set = decompose_local_from_global ( dmu_global, E_global, ind_backwards, inverse_flag );
     
-    sprintf('newton 2 %d %d',iter,x);
+    %% Compute the difference in terms of the global objective
+    dmu_global = reshape(dmu_global,4,size(E_global,1));
+    smu = reshape(sum(dmu_global),size(E_global,1),1);
+    term12 = zeros(1,size(E_global,1));
+    Kxx_dmu = zeros(4,size(E_global,1));
+    for u=1:4
+        edgelabelindicator = full(ind_edge_val_global{u}(:,x));
+        real_dmu_global = reshape(dmu_global(u,:),size(E_global,1),1);
+        H_u = smu.*edgelabelindicator - real_dmu_global;
+        term12 = term12 + reshape(H_u.*edgelabelindicator,1,size(E_global,1));
+        Kxx_dmu(u,:) = reshape(-H_u,1,size(E_global,1));
+    end
+    for u=1:4
+        Kxx_dmu(u,:) = Kxx_dmu(u,:) + term12;
+    end
+    Kxx_dmu = reshape(Kxx_dmu,4*size(E_global,1),1);
+    
+    
+    delta_obj_list = zeros(1,T_size);
+    delta_obj_list(1) = f_prim'*reshape(dmu_global,size(E_global,1)*4,1) - 0.5*Kxx_dmu'*reshape(dmu_global,size(E_global,1)*4,1);
+    
+    
     
     %% update the marginal dual variable on each individual tree
-    % NOTE: the current strategy is to always update
-    delta_obj_list = zeros(1,T_size);
     for t=1:T_size
-        % -retrieve variables locally on each spanning tree for the example x
-        loss    = loss_list{t}(:,x);
-        Ye      = Ye_list{t}(:,x);
         ind_edge_val = ind_edge_val_list{t};
-        mu      = mu_list{t}(:,x);
-        E       = E_list{t};
-        gradient    =  gradient_list_local{t};
-        dmu        = dmu_set{t};
-        % -update the score of the objective function
-        delta_obj_list(t) = gradient'*dmu;
-        % delta_obj_list(t) = gradient'*dmu - norm_const_quadratic_list(t)*tau^2/2*mu_d'*Kmu_d;
-        % -update marginal dual variable located on this particular tree
+        mu = mu_list{t}(:,x);
         mu = mu + dmu_set{t};
-        % -update Smu and Rmu located on this particular tree
         mu = reshape(mu, 4, size(E,1));
         for u = 1:4
             Smu_list{t}{u}(:,x) = (sum(mu)').*ind_edge_val{u}(:,x);
             Rmu_list{t}{u}(:,x) = mu(u,:)';
         end
-        % -save marginal dual variables
-        mu = reshape(mu, 4*size(E,1),1);
+        mu = reshape(mu, 4*(l-1),1);
         mu_list{t}(:,x) = mu;
-       
     end
-
-    sprintf('newton 3 %d %d',iter,x);
     
     return;
 end
