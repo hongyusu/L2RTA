@@ -502,11 +502,11 @@ function compute_duality_gap
     %% Get the worst violator from the K best predictions of each example
     for i = 1:size(Y,1)
         % Assign default value to the worst violating multilabel when the gradient descent has not started.
-        if iter==0
+        if iter == 0
             Ypred(i,:) = -1*ones(1,size(Y_tr,2));
         else
             IN_E = zeros((l-1)*2,T_size);
-            for t=1:T_size
+            for t = 1:T_size
                 IN_E(:,t) = reshape(E_list{t},(l-1)*2,1);
             end
             IN_gradient = zeros(4*(l-1),T_size);
@@ -527,19 +527,20 @@ function compute_duality_gap
     clear Y_kappa;
     clear Y_kappa_val;
     
-    %% Compute duality gap of all training examples from each random spanning tree
+    %% Compute duality gap for all training examples on each individual random spanning tree
+    % TODO: duality gap computation is based on G0 and Gmax
     % Define variable to save the results
     dgap = zeros(1,T_size);
     % Iterate over a collection of random spanning trees
-    for t=1:T_size
+    for t = 1:T_size
         % compute or collect variables locally on each spanning tree
-        loss = loss_list{t};
-        E = E_list{t};
-        mu = mu_list{t};
+        loss    = loss_list{t};
+        E       = E_list{t};
+        mu      = mu_list{t};
         %Kmu = Kmu_list_local{t};
         gradient = gradient_list_local{t};
-        loss = reshape(loss,size(loss,1)*size(loss,2),1);
-        mu = reshape(mu,size(loss,1)*size(loss,2),1);
+        loss	= reshape(loss,size(loss,1)*size(loss,2),1);
+        mu      = reshape(mu,size(loss,1)*size(loss,2),1);
         %Kmu = reshape(Kmu,size(loss,1)*size(loss,2),1);
         % compute current maxima on function
         %Gcur = norm_const_linear*mu'*loss - 1/2*norm_const_quadratic_list(t)*mu'*Kmu;
@@ -550,29 +551,11 @@ function compute_duality_gap
         % the difference is estimated as duality gap
         dgap(t) = params.C*sum(Gmax)-Gcur;
     end
-% %     % Comment out old duality gap computation
-% %     for t=1:T_size
-% %         %loss = loss_list{t};
-% %         E = E_list{t};
-% %         mu = mu_list{t};
-% %         %ind_edge_val = ind_edge_val_list{t};
-% %         %Kmu = Kmu_list_local{t};
-% %         gradient = gradient_list_local{t};
-% %         
-% %         Gmax = compute_Gmax(gradient,Ypred,E);
-% %         mu = reshape(mu,4,m*size(E,1));
-% % 
-% %         %[params.C*max(Gmax,0), sum(reshape(sum(gradient.*mu),size(E,1),m),1)']'
-% %         duality_gap = params.C*max(Gmax,0) - sum(reshape(sum(gradient.*mu),size(E,1),m),1)';
-% %         
-% %         dgap(t) = sum(duality_gap);
-% %     end
 
     %% Compute primal upper bound, which is obj+duality gap
     dgap = max(0,dgap);
     %duality_gap_on_trees = min(dgap,duality_gap_on_trees);
     duality_gap_on_trees = dgap;
-    
     primal_ub = obj + sum(dgap);
     
 end
