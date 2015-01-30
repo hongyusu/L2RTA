@@ -924,6 +924,10 @@ function [delta_obj_list] = conditional_gradient_optimization_with_Newton(x, kap
     dmu_set = decompose_local_from_global ( dmu_global, E_global, ind_backwards, inverse_flag );
     
     %% Compute the difference in terms of the global objective
+    delta_obj_first = f_prim' * d_mu_global;
+    size(d_mu_global)
+    size(E_global)
+    
     dmu_global = reshape(dmu_global,4,size(E_global,1));
     smu = reshape(sum(dmu_global),size(E_global,1),1);
     term12 = zeros(1,size(E_global,1));
@@ -940,13 +944,13 @@ function [delta_obj_list] = conditional_gradient_optimization_with_Newton(x, kap
     end
     Kxx_dmu = reshape(Kxx_dmu,4*size(E_global,1),1);
     
-    
+
     delta_obj_list = zeros(1,T_size);
     delta_obj_list(1) = f_prim'*reshape(dmu_global,size(E_global,1)*4,1) - 0.5*Kxx_dmu'*reshape(dmu_global,size(E_global,1)*4,1);
+    delta_obj_list(1) = delta_obj_first;
     
     
-    
-    %% update the marginal dual variable on each individual tree
+    %% Update the marginal dual variable on each individual random spanning tree
     for t=1:T_size
         ind_edge_val = ind_edge_val_list{t};
         mu = mu_list{t}(:,x);
