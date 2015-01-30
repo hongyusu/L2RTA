@@ -15,7 +15,7 @@
 %
 %
 % USAGE:
-%   This function is called by run_RSTA(.)
+%   This function is called by run_RSTA()
 %
 %
 function [rtn, ts_err] = RSTA(paramsIn, dataIn)
@@ -275,7 +275,7 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn)
     Rmu_list = best_Rmu_list;
     Smu_list = best_Smu_list;
     norm_const_quadratic_list = best_norm_const_quadratic_list;
-    profile_update;
+    profile_update_ts;
     
     
 
@@ -1184,8 +1184,8 @@ end
 
 
 
-%% train profile and test profile update
-function profile_update
+%% Profile during test
+function profile_update_ts
     global params;
     global profile;
     global E;
@@ -1252,7 +1252,7 @@ function profile_update
     end
 end
 
-%% Profiling during training phase
+%% Profile during training
 function profile_update_tr
 
     global params;
@@ -1260,7 +1260,6 @@ function profile_update_tr
     global Y_tr;
     global Kx_tr;
     global obj;
-    global primal_ub;
     global kappa;
     global opt_round;
     global val_list;
