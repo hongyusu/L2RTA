@@ -444,13 +444,13 @@ function Kmu_x = compute_Kmu_x(x,Kx,E,ind_edge_val,Rmu,Smu)
 end
 
 
-%% Function to compute the relative duality gap
-% REVISIONS:
+%% Compute relative duality gap.
 %       03/12/2014
+%       30/01/2014
+%
 function compute_duality_gap
 
     %% global parameters
-    %global obj_list;
     global duality_gap_on_trees;
     global T_size;
     global Kx_tr;
@@ -470,42 +470,38 @@ function compute_duality_gap
     global l;
     global node_degree_list;
     
-    
     Y           = Y_tr;                                     % the true multilabel
     Ypred       = zeros(size(Y));                           % the predicted best multilabel
     Y_kappa     = zeros(size(Y,1)*T_size, size(Y,2)*kappa); % Holder for the k-best multilabels
     Y_kappa_val = zeros(size(Y,1)*T_size, kappa);           % Holder for the value achieved by the k-best multilabels
     
-    %% Get k best prediction from each random spanning tree
-    % result holders
+    %% Compute K best multilabel from a collection of random spanning trees
     Kmu_list_local      = cell(1,T_size);
-    gradient_list_local = cell(1,T_size);
-    
-    % iteration over a collection of spanning trees
+    gradient_list_local = cell(1,T_size);    
     for t = 1:T_size
-        % retrieve or compute variables locally on each spanning tree
-        loss = loss_list{t};
-        E = E_list{t};
-        mu = mu_list{t};
+        % obtain or compute variables locally on each spanning tree
+        loss    = loss_list{t};
+        E       = E_list{t};
+        mu      = mu_list{t};
         ind_edge_val = ind_edge_val_list{t};
-        loss = reshape(loss,4,size(E,1)*m);
+        loss    = reshape(loss,4,size(E,1)*m);
         Kmu_list_local{t} = compute_Kmu(Kx_tr, mu, E, ind_edge_val);
         Kmu_list_local{t} = reshape(Kmu_list_local{t}, 4, size(E,1)*m);
         Kmu = Kmu_list_local{t};
-        gradient_list_local{t} = norm_const_linear*loss - norm_const_quadratic_list(t)*Kmu;
+        gradient_list_local{t}  = norm_const_linear*loss - norm_const_quadratic_list(t)*Kmu;
         gradient = gradient_list_local{t};
         node_degree = node_degree_list{t};
         in_gradient = reshape(gradient,numel(gradient),1);
-        
-        % compute and save the K-best multilabels and their scores
+        % Compute K best multilabel
         [Y_tmp,Y_tmp_val] = compute_topk_omp(in_gradient, kappa, E, node_degree);
+        % Save the result
         Y_kappa(((t-1)*size(Y,1)+1):(t*size(Y,1)),:)        = Y_tmp;
         Y_kappa_val(((t-1)*size(Y,1)+1):(t*size(Y,1)),:)    = Y_tmp_val;
     end
     
     %% Get the worst violator from the K best predictions of each example
-    for i=1:size(Y,1)
-        % if the optimization has not been started yet, give default value to the predictions
+    for i = 1:size(Y,1)
+        % Assign default value to the worst violating multilabel when the gradient descent has not started.
         if iter==0
             Ypred(i,:) = -1*ones(1,size(Y_tr,2));
         else
