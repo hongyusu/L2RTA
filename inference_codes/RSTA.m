@@ -290,6 +290,7 @@ end
 %           ind_backwards:  reverse mapping from global to the collection of local
 %           inverse_flag:   positions that corresponds to the change of edge directions
 function [mu_global,E_global,ind_backwards,inverse_flag] = compose_global_from_local(x)
+    
 
     global E_list;
     global mu_list;
@@ -324,6 +325,11 @@ function [mu_global,E_global,ind_backwards,inverse_flag] = compose_global_from_l
     end
     
     mu_global = reshape(mu_global, 4*size(E_global,1), m);
+    
+    if sum(sum(isnan(mu_global)))>0
+        [x,sum(sum(isnan(mu_global)))]
+        asdfasd
+    end
 end
 
 %% Decompose the global mu into a set of mu defined on a collection of spanning trees
@@ -831,7 +837,6 @@ function [delta_obj_list] = conditional_gradient_optimization_with_Newton(x, kap
     
     %% Compose current global marginal dual variable (mu) from local marginal dual variables {mu_t}_{t=1}^{T}
     [mu_global,E_global,ind_backwards,inverse_flag] = compose_global_from_local(x);
-    [x,size(E_global)]
     
     %% convex combination of update directions, combination is given by lmd
     % -For each update direction in terms of multilabels, compute the corresponding mu_0, and compute the different mu_0-mu
@@ -879,28 +884,14 @@ function [delta_obj_list] = conditional_gradient_optimization_with_Newton(x, kap
             Rmu_global{u}(:,i_example) = mu_global_i(u,:)';
         end
     end
-    % -Compute Kmu on the global consensus graph
-%     Kx = Kx_tr(:,x);
-%     term12_global = zeros(1, size(E_global,1));
-%     term34_global = zeros(4, size(E_global,1));
-%     for u=1:4
-%         Ind_te_u_global = full(ind_edge_val_global{u}(:,x));
-%         H_u_global = Smu_global{u}*Kx-Rmu_global{u}*Kx;
-%         term12_global(1,Ind_te_u_global) = H_u_global(Ind_te_u_global)';
-%         term34_global(u,:) = -H_u_global';
-%     end
-%     Kmu_x_global = reshape(term12_global(ones(4,1),:) + term34_global,4*size(E_global,1),1);
-%     % compute Kmu matrix on global conseneus graph, the dimension of the Kmu matrix is 4*|E_global|  by 1
-%     %a = compute_Kmu_matrix(Kx_tr(:,x),mu_global, E_global, ind_edge_val_global, x);
     Kmu_x_global = compute_Kmu_x(x,Kx_tr(:,x),E_global,ind_edge_val_global,Rmu_global,Smu_global);
-    %[a,Kmu_x_global]'
-    %(a-Kmu_x_global < params.tolerance)'
     
     
        
     % compute the f'(x)
     % TODO: need normalization constant, linear term and quadratic term
     f_prim = loss_global(:,x) - Kmu_x_global;
+    
     % compute g = <f'(x),M>
     g_global = f_prim' * dmu_set;
     
@@ -912,13 +903,19 @@ function [delta_obj_list] = conditional_gradient_optimization_with_Newton(x, kap
     Q = Hdmu'*Hdmu;
     
     % Compute lambda and round it
-    lmd = g_global * pinv(Q);
-    lmd = lmd.*(lmd >= 0);
-    lmd = lmd / sum(lmd);
+    lambda_original = g_global * pinv(Q);
+    if sum(lambda_original <= 0) ==0
+        lambda = lambda_original / sum(lambda_original);
+    else
+        lambda = zeros(size(lambda_original));
+    end
+    
     % compute dmu with a convex combination of multiple update directions
-    dmu_global = dmu_set * lmd';
+    dmu_global = dmu_set * lambda';
+    
     % decompose global update into a set of local updates on individual trees, assuming the quantities are correctly computed
     dmu_set = decompose_local_from_global ( dmu_global, E_global, ind_backwards, inverse_flag );
+    
     
     
     %% Compute the difference in terms of the global objective
@@ -957,6 +954,13 @@ function [delta_obj_list] = conditional_gradient_optimization_with_Newton(x, kap
         end
         mu = reshape(mu, 4*(l-1),1);
         mu_list{t}(:,x) = mu;
+        
+    if sum(sum(isnan(mu)))~=0
+        dmu_set{t}'
+        [x,t]
+        
+    end
+       
     end
     
     return;
