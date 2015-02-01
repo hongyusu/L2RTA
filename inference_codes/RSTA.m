@@ -314,16 +314,16 @@ function [mu_global,E_global,ind_backwards,inverse_flag] = compose_global_from_l
     % Clear the repeating rows.
     inverse_flag = Emu(:,1)>Emu(:,2);
     Emu(inverse_flag,:) = Emu(inverse_flag,[2,1, 3:(m+2), (2*m+3):(2*m+m+2), (m+3):(m+m+2), (3*m+3):(3*m+m+2)]);
-    [Emu, ~, ind_backwards] = unique(Emu,'rows');
+    [~, ind_forwards, ind_backwards] = unique(Emu(:,1:2),'rows');
+    Emu = Emu(ind_forwards,:);
     E_global    = Emu(:,1:2);
-    newMu = Emu(:,3:size(Emu,2));
-    mu_global = [];
+    newMu       = Emu(:,3:size(Emu,2));
+    mu_global   = [];
     for u=1:4
         mu_global = [mu_global; reshape(newMu(:,((u-1)*m+1):(u*m)), 1, size(E_global,1)*m)];
     end
     
     mu_global = reshape(mu_global, 4*size(E_global,1), m);
-    
 end
 
 %% Decompose the global mu into a set of mu defined on a collection of spanning trees
@@ -831,6 +831,7 @@ function [delta_obj_list] = conditional_gradient_optimization_with_Newton(x, kap
     
     %% Compose current global marginal dual variable (mu) from local marginal dual variables {mu_t}_{t=1}^{T}
     [mu_global,E_global,ind_backwards,inverse_flag] = compose_global_from_local(x);
+    [x,size(E_global)]
     
     %% convex combination of update directions, combination is given by lmd
     % -For each update direction in terms of multilabels, compute the corresponding mu_0, and compute the different mu_0-mu
@@ -910,9 +911,8 @@ function [delta_obj_list] = conditional_gradient_optimization_with_Newton(x, kap
     Hdmu = sdmu-dmu_set;
     Q = Hdmu'*Hdmu;
     
-
+    % Compute lambda and round it
     lmd = g_global * pinv(Q);
-    % round and normalize lambda to satisfy constraint
     lmd = lmd.*(lmd >= 0);
     lmd = lmd / sum(lmd);
     % compute dmu with a convex combination of multiple update directions
@@ -920,8 +920,11 @@ function [delta_obj_list] = conditional_gradient_optimization_with_Newton(x, kap
     % decompose global update into a set of local updates on individual trees, assuming the quantities are correctly computed
     dmu_set = decompose_local_from_global ( dmu_global, E_global, ind_backwards, inverse_flag );
     
+    
     %% Compute the difference in terms of the global objective
+    % linear part of the objective
     delta_obj_first = f_prim' * dmu_global;
+    % quadrativ part
     dmu_global = reshape(dmu_global,4,size(E_global,1));
     smu = reshape(sum(dmu_global),size(E_global,1),1);
     term12 = zeros(1,size(E_global,1));
@@ -937,11 +940,9 @@ function [delta_obj_list] = conditional_gradient_optimization_with_Newton(x, kap
         Kxx_dmu(u,:) = Kxx_dmu(u,:) + term12;
     end
     Kxx_dmu = reshape(Kxx_dmu,4*size(E_global,1),1);
-    
-
-    delta_obj_list = zeros(1,T_size);
-    delta_obj_list(1) = f_prim'*reshape(dmu_global,size(E_global,1)*4,1) - 0.5*Kxx_dmu'*reshape(dmu_global,size(E_global,1)*4,1);
-    delta_obj_list(1) = delta_obj_first;
+    delta_obj_second = 0.5*Kxx_dmu'*reshape(dmu_global,size(E_global,1)*4,1);
+    % combine the first and the second term
+    delta_obj_list(1) = delta_obj_first + delta_obj_second;
     
     
     %% Update the marginal dual variable on each individual random spanning tree
