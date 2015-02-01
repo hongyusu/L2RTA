@@ -904,15 +904,12 @@ function [delta_obj_list] = conditional_gradient_optimization_with_Newton(x, kap
     g_global = f_prim' * dmu_set;
     
     % Compute Q
-    Km=[];
-    for i_mu0 = 1:size(dmu_set,2)
-        d_mu_global = dmu_set(:,i_mu0);
-        d_smu = sum(reshape(d_mu_global.*Ye_global(:,x),4,size(E_global,1)),1);
-        d_smu = reshape(d_smu(ones(4,1),:),length(d_mu_global),1);
-        %kxx_mu_0{t} 
-        Km = [Km,~Ye_global(:,x)*params.C+d_mu_global-d_smu];
-    end
-    Q = dmu_set' * Km;
+    num_directions = size(dmu_set,2);
+    sdmu = sum(reshape(dmu_set,4,size(E_global,1)*num_directions),1);
+    sdmu = reshape(sdmu(ones(4,1),:),4*size(E_global,1),num_directions);
+    Hdmu = sdmu-dmu_set;
+    Q = Hdmu'*Hdmu;
+    
 
     lmd = g_global * pinv(Q);
     % round and normalize lambda to satisfy constraint
@@ -924,10 +921,7 @@ function [delta_obj_list] = conditional_gradient_optimization_with_Newton(x, kap
     dmu_set = decompose_local_from_global ( dmu_global, E_global, ind_backwards, inverse_flag );
     
     %% Compute the difference in terms of the global objective
-    delta_obj_first = f_prim' * d_mu_global;
-    size(d_mu_global)
-    size(E_global)
-    
+    delta_obj_first = f_prim' * dmu_global;
     dmu_global = reshape(dmu_global,4,size(E_global,1));
     smu = reshape(sum(dmu_global),size(E_global,1),1);
     term12 = zeros(1,size(E_global,1));
