@@ -907,6 +907,9 @@ function [delta_obj_list] = conditional_gradient_optimization_with_Newton(x, kap
     if sum(lambda_original <= 0) ==0
         lambda = lambda_original / sum(lambda_original);
     else
+        
+        
+        
         lambda = zeros(size(lambda_original));
     end
     
