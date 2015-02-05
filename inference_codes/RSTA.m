@@ -55,6 +55,7 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn)
     global GmaxG0_list;
     global GoodUpdate_list;
     
+   
     
     
     rand('twister', 0);
@@ -81,13 +82,11 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn)
     ind_edge_val_list           = cell(T_size, 1);
     Kxx_mu_x_list               = cell(T_size, 1);
     duality_gap_on_trees        = ones(1,T_size)*1e10;          % relative duality gap on individual spanning tree
-    norm_const_linear           = 1/(T_size)/size(E_list{1},1); % The linear term is normalized by the total number of edges, e.g., all edges appear in the consensus graph, all edges appears in the collection of trees.
-    norm_const_quadratic_list   = zeros(1,T_size)+1/(T_size);   % normalization constant of the quadratic term of the objective function
+    norm_const_linear           = 1/(T_size)/size(E_list{1},1); % The linear term will be normalized by the total number of edges
+    norm_const_quadratic_list   = zeros(1,T_size)+1/(T_size);   % The quadratic term is normalized by 1
+    norm_const_quadratic_list   = zeros(1,T_size)+1;   % The quadratic term is normalized by 1
     mu_list = cell(T_size);         % a list of solutions in terms of marginalized dual variables on the collection of trees
-    
-    
-    norm_const_linear
-    norm_const_quadratic_list
+   
     
     if T_size <= 1
         kappa_INIT  = 2;
@@ -196,15 +195,14 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn)
         for xi = 1:m
             print_message(sprintf('Start descend on example %d initial k %d',xi,kappa),3)
             kappa_decrease_flag(xi)=0;
-            [delta_obj_list] = conditional_gradient_descent(xi,kappa);    % optimize on single example
-            %[delta_obj_list] = conditional_gradient_optimization_with_Newton(xi,kappa);    % optimize on single example
+            %[delta_obj_list] = conditional_gradient_descent(xi,kappa);    % optimize on single example
+            [delta_obj_list] = conditional_gradient_optimization_with_Newton(xi,kappa);    % optimize on single example
                  
 %                 kappa0=kappa;
 %                 while ( Yspos_list(xi)==0 ) && kappa0 < params.maxkappa 
 %                     kappa0=kappa0*2;
 %                     [delta_obj_list,Yspos_list(xi)] = conditional_gradient_descent(xi,kappa0);    % optimize on single example
 %                 end
-
             kappa_list(xi)=kappa;
             obj_list = obj_list + delta_obj_list;
             obj = obj + sum(delta_obj_list);
@@ -741,7 +739,7 @@ function [delta_obj_list] = conditional_gradient_descent(x, kappa)
     tau = max(tau,0);
 	GmaxG0_list(x) = sum(Gmax>=G0);
     GoodUpdate_list(x) = (tau>0);
-    tau=1;
+    tau=0.01;
     
     %% Update marginal dual variables based on the step size given by the line search on each individual random spanning tree.
     % TODO: as mentioned the update might not optimal for a step size given by tau
@@ -759,10 +757,7 @@ function [delta_obj_list] = conditional_gradient_descent(x, kappa)
         
         % Compute the difference in the objective in individual random spanning tree.
         delta_obj_list(t) = gradient'*mu_d*tau - norm_const_quadratic_list(t)*tau^2/2*mu_d'*Kmu_d;
-        gradient'
-        mu_d'*tau
-        adfsasfs
-        
+        %[gradient'*mu_d*tau, norm_const_quadratic_list(t)*tau^2/2*mu_d'*Kmu_d]
         mu = mu + tau*mu_d;
         Kxx_mu_x_list{t}(:,x) = (1-tau)*Kxx_mu_x_list{t}(:,x) + tau*kxx_mu_0{t};
         % Update Smu and Rmu
@@ -775,7 +770,7 @@ function [delta_obj_list] = conditional_gradient_descent(x, kappa)
         % Update marginal dual variable on individual spanning tree.
         mu_list{t}(:,x) = mu;
     end
-    
+
     %%
     return;
 end
@@ -815,6 +810,7 @@ function [delta_obj_list] = conditional_gradient_optimization_with_Newton(x, kap
     global m;
     
     
+    
     %% Compute K best multilabels from a collection of random spanning trees.
     % Define variables to save results.
     Y_kappa     = zeros(T_size, kappa*l);
@@ -847,6 +843,9 @@ function [delta_obj_list] = conditional_gradient_optimization_with_Newton(x, kap
     
     %% Compose current global marginal dual variable (mu) from local marginal dual variables {mu_t}_{t=1}^{T}
     [mu_global,E_global,ind_backwards,inverse_flag] = compose_global_from_local(x);
+    
+    normalization_linear    = 1/size(E_global,1);
+    normalization_quadratic = 1;
     
     %% convex combination of update directions, combination is given by lmd
     % -For each update direction in terms of multilabels, compute the corresponding mu_0, and compute the different mu_0-mu
@@ -900,8 +899,7 @@ function [delta_obj_list] = conditional_gradient_optimization_with_Newton(x, kap
     
        
     % compute the f'(x)
-    % TODO: need normalization constant, linear term and quadratic term
-    f_prim = loss_global(:,x) - Kmu_x_global;
+    f_prim = normalization_linear * loss_global(:,x) - normalization_quadratic * Kmu_x_global;
     %loss_global(:,x)'
     
     % compute g = <f'(x),M>
@@ -922,7 +920,7 @@ function [delta_obj_list] = conditional_gradient_optimization_with_Newton(x, kap
         lambda = zeros(size(lambda_original));
     end
     
-    lambda = 1;
+    lambda = 0.1;
     
     % compute dmu with a convex combination of multiple update directions
     dmu_global = dmu_set * lambda';
@@ -935,8 +933,7 @@ function [delta_obj_list] = conditional_gradient_optimization_with_Newton(x, kap
     %% Compute the difference in terms of the global objective
     % linear part of the objective
     delta_obj_first = f_prim' * dmu_global;
-    delta_obj_first
-    afsd
+
     % quadrativ part
     dmu_global = reshape(dmu_global,4,size(E_global,1));
     smu = reshape(sum(dmu_global),size(E_global,1),1);
@@ -953,7 +950,7 @@ function [delta_obj_list] = conditional_gradient_optimization_with_Newton(x, kap
         Kxx_dmu(u,:) = Kxx_dmu(u,:) + term12;
     end
     Kxx_dmu = reshape(Kxx_dmu,4*size(E_global,1),1);
-    delta_obj_second = 0.5*Kxx_dmu'*reshape(dmu_global,size(E_global,1)*4,1);
+    delta_obj_second = -1/2 * normalization_quadratic *Kxx_dmu'*reshape(dmu_global,size(E_global,1)*4,1);
     % combine the first and the second term
     delta_obj_list(1) = delta_obj_first + delta_obj_second;
     
@@ -970,11 +967,6 @@ function [delta_obj_list] = conditional_gradient_optimization_with_Newton(x, kap
         mu = reshape(mu, 4*(l-1),1);
         mu_list{t}(:,x) = mu;
         
-    if sum(sum(isnan(mu)))~=0
-        dmu_set{t}'
-        [x,t]
-        
-    end
        
     end
     
