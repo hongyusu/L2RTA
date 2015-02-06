@@ -739,8 +739,6 @@ function [delta_obj_list] = conditional_gradient_descent(x, kappa)
     tau = max(tau,0);
 	GmaxG0_list(x) = sum(Gmax>=G0);
     GoodUpdate_list(x) = (tau>0);
-    tau=0.01;
-    
     %% Update marginal dual variables based on the step size given by the line search on each individual random spanning tree.
     % TODO: as mentioned the update might not optimal for a step size given by tau
     delta_obj_list = zeros(1,T_size);
@@ -914,13 +912,14 @@ function [delta_obj_list] = conditional_gradient_optimization_with_Newton(x, kap
     
     % Compute lambda and round it
     lambda_original = g_global * pinv(Q);
+
     if sum(lambda_original <= 0) ==0
         lambda = lambda_original / sum(lambda_original);
     else    
         lambda = zeros(size(lambda_original));
     end
     
-    lambda = 0.1;
+    lambda = lambda_original;
     
     % compute dmu with a convex combination of multiple update directions
     dmu_global = dmu_set * lambda';
