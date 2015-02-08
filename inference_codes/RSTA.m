@@ -919,7 +919,7 @@ function [delta_obj_list] = conditional_gradient_optimization_with_Newton(x, kap
         lambda = zeros(size(lambda_original));
     end
     
-    lambda = lambda_original;
+    lambda = lambda_original; 
     
     % compute dmu with a convex combination of multiple update directions
     dmu_global = dmu_set * lambda';
