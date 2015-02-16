@@ -21,7 +21,7 @@
 function [rtn, ts_err] = RSTA(paramsIn, dataIn)
 
     %% Definition of global variables
-    global loss_list;           % losses associated with different edge labelings
+    global loss_list;           % losses associated with different edge labels
     global mu_list;             % marginal dual varibles: these are the parameters to be learned
     global E_list;              % edges of the Markov network e_i = [E(i,1),E(i,2)];
     global ind_edge_val_list;	% ind_edge_val{u} = [Ye == u] 
@@ -909,7 +909,9 @@ function [delta_obj_list] = conditional_gradient_optimization_with_Newton(x, kap
     
     % Compute lambda and round it
     lambda_original = g_global * pinv(Q);
-    [sum(lambda_original),lambda_original]
+    if sum(lambda_original >1)
+        lambda_original
+    end
 
 %     % normalize lambda: project it to feasible set
 %     if sum(lambda_original <= 0) ==0
