@@ -15,8 +15,7 @@
 %
 %
 % USAGE:
-%   This function is called by run_RSTA()
-%
+%   This function is called by a wrapper function run_RSTA()
 %
 function [rtn, ts_err] = RSTA(paramsIn, dataIn)
 
