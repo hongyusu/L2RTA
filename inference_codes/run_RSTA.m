@@ -141,6 +141,7 @@ function run_RSTA(filename,graph_type,t,isTest,kth_fold,l_norm,maxkappa,slack_c,
     
     %% Select part of the data for code sanity check if 'isTest==1'.
     ntrain = 200;
+    ntrain = round(size(K,1)*.95);
     ntrain = min(ntrain,size(Y,1));
     if isTest==1
         X=X(1:ntrain,:);
