@@ -194,7 +194,7 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn,nm)
             if nm == 0
             [delta_obj_list] = conditional_gradient_descent(xi,kappa);    % optimize on single example
             else
-            [delta_obj_list] = conditional_gradient_optimization_with_Newton(xi,kappa);    % optimize on single example
+            [delta_obj_list] = conditional_gradient_descent_with_Newton(xi,kappa);    % optimize on single example
             end
                  
 %                 kappa0=kappa;
@@ -780,7 +780,7 @@ end
 %
 %
 %
-function [delta_obj_list] = conditional_gradient_optimization_with_Newton(x, kappa)
+function [delta_obj_list] = conditional_gradient_descent_with_Newton(x, kappa)
 
     %% Definition of the parameters
     global loss_list;
@@ -815,10 +815,10 @@ function [delta_obj_list] = conditional_gradient_optimization_with_Newton(x, kap
     
     %% Compute K best multilabels from a collection of random spanning trees.
     % Define variables to save results.
-    Y_kappa     = zeros(T_size, kappa*l);
-    Y_kappa_val = zeros(T_size, kappa);
-    gradient_list_local = cell(1, T_size);
-    Kmu_x_list_local    = cell(1, T_size); % may not be necessary to have
+    Y_kappa     = zeros(T_size, kappa*l);   % K best multilabel
+    Y_kappa_val = zeros(T_size, kappa);     % Score of K best multilabel
+    gradient_list_local = cell(1, T_size);  % Gradient vector locally on each random spanning tree
+    Kmu_x_list_local    = cell(1, T_size);  % may not be necessary to have
     % Iterate over a collection of random spanning trees and compute the K best multilabels on each spanning tree by Dynamic Programming.
     for t=1:T_size
         % Variables located on the spanning tree T_t of the current example x.
@@ -830,12 +830,11 @@ function [delta_obj_list] = conditional_gradient_optimization_with_Newton(x, kap
         Rmu     = Rmu_list{t};
         Smu     = Smu_list{t};    
         % compute Kmu_x = K_x*mu, which is a part of the gradient, of dimension 4*|E| by m
-        Kmu_x_list_local{t} = compute_Kmu_x(x,Kx_tr(:,x),E,ind_edge_val,Rmu,Smu); % this function can be merged with another function
-        %Kmu_x_list_local{t} = compute_Kmu_matrix(Kx_tr(:,x),mu_list{t},E,ind_edge_val,x);
-        Kmu_x = Kmu_x_list_local{t};
+        Kmu_x = compute_Kmu_x(x,Kx_tr(:,x),E,ind_edge_val,Rmu,Smu); % this function can be merged with another function
+        Kmu_x_list_local{t} = Kmu_x;
         % compute the gradient vector on the current spanning tree  
-        gradient_list_local{t} = norm_const_linear*loss - norm_const_quadratic_list(t)*Kmu_x;
-        gradient = gradient_list_local{t};
+        gradient = norm_const_linear*loss - norm_const_quadratic_list(t)*Kmu_x;
+        gradient_list_local{t} = gradient;
         % Compute the K-best multilabels
         [Ymax,YmaxVal] = compute_topk_omp(gradient,kappa,E,node_degree_list{t});
         % Save results, including predicted multilabel and the corresponding score on the current spanning tree
@@ -846,16 +845,12 @@ function [delta_obj_list] = conditional_gradient_optimization_with_Newton(x, kap
     %% Compose current global marginal dual variable (mu) from local marginal dual variables {mu_t}_{t=1}^{T}
     [mu_global,E_global,ind_backwards,inverse_flag] = compose_global_from_local(x);
     
-    % TOREMOVE
-%     mu_global = cell2mat(mu_list);
-%     E_global=E;
-    
     normalization_linear    = 1/size(E_global,1);
     normalization_quadratic = 1;
     
     %% convex combination of update directions, combination is given by lmd
-    % -For each update direction in terms of multilabels, compute the corresponding mu_0, and compute the different mu_0-mu
-    dmu_set=[];
+    % For each update direction in terms of multilabels, compute the corresponding mu_0, and compute the different mu_0-mu
+    dmu_set = zeros(size(mu_global,1),T_size);
     for t=1:T_size
         Ymax    = Y_kappa(t,1:l);
         Umax_e  = 1+2*(Ymax(:,E_global(:,1))>0) + (Ymax(:,E_global(:,2)) >0);
@@ -863,35 +858,33 @@ function [delta_obj_list] = conditional_gradient_optimization_with_Newton(x, kap
         for u = 1:4
             mu_0(4*(1:size(E_global,1))-4 + u) = params.C*(Umax_e == u);
         end
-        dmu_set=[dmu_set,mu_0-mu_global(:,x)];
+        dmu_set(:,t) = mu_0-mu_global(:,x);
     end
-    % -Compute the node degree vector for the consensus graph.
-    NodeDegree_global = ones(l,1);
-    for v = 1:l
-        NodeDegree_global(v) = sum(E_global(:) == v);
-    end
-    NodeDegree_global = repmat(NodeDegree_global,1,m);
-    % -Compute the loss vector for the global consensus graph.
-    loss_global     = zeros(4, m*size(E_global,1));
-    Te1_global      = Y_tr(:,E_global(:,1))';
-    Te2_global      = Y_tr(:,E_global(:,2))';
+%     % Compute the node degree vector for the consensus graph.
+%     NodeDegree_global = ones(l,1);
+%     for v = 1:l
+%         NodeDegree_global(v) = sum(E_global(:) == v);
+%     end
+%     NodeDegree_global = repmat(NodeDegree_global,1,m);
+    % Compute the loss vector for the global consensus graph.
+    loss_global = zeros(4, m*size(E_global,1));
+    Te1_global  = Y_tr(:,E_global(:,1))';
+    Te2_global  = Y_tr(:,E_global(:,2))';
     u = 0;
     for u_1 = [-1, 1]
         for u_2 = [-1, 1]
             u = u + 1;
-            %loss_global(u,:) = reshape((Te1_global ~= u_1).*NodeDegree_global(E_global(:,1),:)+(Te2_global ~= u_2).*NodeDegree_global(E_global(:,2),:),m*size(E_global,1),1);
             loss_global(u,:) = reshape((Te1_global ~= u_1)+(Te2_global ~= u_2),m*size(E_global,1),1);
         end
     end     
     loss_global = reshape(loss_global,4*size(E_global,1),m);
-    % -Compute the vector of Ye and ind_edge_val of the global consensus graph
+    % Compute the vector of Ye and ind_edge_val of the global consensus graph
     Ye_global = reshape(loss_global==0,4,size(E_global,1)*m);
     ind_edge_val_global = cell(4,1);
     for u=1:4
         ind_edge_val_global{u} = sparse(reshape(Ye_global(u,:)~=0,size(E_global,1),m));
     end
-    Ye_global = reshape(Ye_global,4*size(E_global,1),m);
-    
+%     Ye_global = reshape(Ye_global,4*size(E_global,1),m);
     % Compute Smu and Rmu
     for i_example = 1:m
         mu_global_i = reshape(mu_global(:,i_example),4,size(E_global,1));
@@ -903,14 +896,11 @@ function [delta_obj_list] = conditional_gradient_optimization_with_Newton(x, kap
     Kmu_x_global = compute_Kmu_x(x,Kx_tr(:,x),E_global,ind_edge_val_global,Rmu_global,Smu_global);
     
     
-       
     % compute the f'(x)
     f_prim = normalization_linear * loss_global(:,x) - normalization_quadratic * Kmu_x_global;
-    %loss_global(:,x)'
     
     % compute g = <f'(x),M>
     g_global = f_prim' * dmu_set;
-    
     
     % Compute Q (in brute force)
     num_directions = size(dmu_set, 2);
@@ -932,13 +922,14 @@ function [delta_obj_list] = conditional_gradient_optimization_with_Newton(x, kap
     
     % Compute lambda
     lambda = g_global * pinv(Q);
+    
     % Make sure lambda is feasible
     if sum(lambda >1)
-        lambda
+        sum(lambda)
+        delta_obj_list(1)=0;
+        return
     end
 
-      
-    
     % compute dmu with a convex combination of multiple update directions
     dmu_global = dmu_set * lambda';
     
@@ -993,21 +984,19 @@ end
 
 
 
-%% Compute Gmax
-function [Gmax] = compute_Gmax(gradient,Ymax,E)
+%% Compute the best objective value along the gradient
+function [Gmax] = compute_Gmax(gradient, Ymax, E)
+
     m = size(Ymax,1);
-    
-    gradient = reshape(gradient,4,size(E,1)*m);
-    Umax(1,:) = reshape(and(Ymax(:,E(:,1)) == -1,Ymax(:,E(:,2)) == -1)',1,size(E,1)*m);
-    Umax(2,:) = reshape(and(Ymax(:,E(:,1)) == -1,Ymax(:,E(:,2)) == 1)',1,size(E,1)*m);
-    Umax(3,:) = reshape(and(Ymax(:,E(:,1)) == 1,Ymax(:,E(:,2)) == -1)',1,size(E,1)*m);
-    Umax(4,:) = reshape(and(Ymax(:,E(:,1)) == 1,Ymax(:,E(:,2)) == 1)',1,size(E,1)*m);
-    % sum up the corresponding edge-gradients
-    Gmax = reshape(sum(gradient.*Umax),size(E,1),m);
+    gradient    = reshape(gradient,4,size(E,1)*m);
+    mu_max(1,:) = reshape(and(Ymax(:,E(:,1)) == -1,Ymax(:,E(:,2)) == -1)', 1, size(E,1)*m);
+    mu_max(2,:) = reshape(and(Ymax(:,E(:,1)) == -1,Ymax(:,E(:,2)) == 1)', 1, size(E,1)*m);
+    mu_max(3,:) = reshape(and(Ymax(:,E(:,1)) == 1,Ymax(:,E(:,2)) == -1)', 1, size(E,1)*m);
+    mu_max(4,:) = reshape(and(Ymax(:,E(:,1)) == 1,Ymax(:,E(:,2)) == 1)', 1, size(E,1)*m);
+    % Sum up the edge gradients that correspond to the edge labels
+    Gmax = reshape(sum(gradient.*mu_max),size(E,1),m);
     Gmax = reshape(sum(Gmax,1),m,1);
     
-    
-    return;
 end
 
 
