@@ -226,7 +226,7 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn,nm)
                 nflip = nflip - 1;
             end
             % update current best solution
-            if profile.n_err_microlabel < best_n_err_microlabel || 1
+            if profile.n_err_microlabel < best_n_err_microlabel
                 best_n_err_microlabel = profile.n_err_microlabel;
                 best_iter   = iter;
                 best_kappa  = kappa;
