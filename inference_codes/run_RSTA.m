@@ -32,7 +32,7 @@
 %       with margin slack parameter C equals to 100.
 %
 %
-function run_RSTA(filename,graph_type,t,isTest,kth_fold,l_norm,maxkappa,slack_c)
+function run_RSTA(filename,graph_type,t,isTest,kth_fold,l_norm,maxkappa,slack_c,nm)
 
     %% Process input parameters
     if nargin <1
@@ -248,7 +248,7 @@ function run_RSTA(filename,graph_type,t,isTest,kth_fold,l_norm,maxkappa,slack_c)
         dataIn.Y_tr =   gY_tr;        % label
         dataIn.Y_ts =   gY_ts;
         % running
-        [rtn,~] = RSTA(paramsIn,dataIn);
+        [rtn,~] = RSTA(paramsIn,dataIn,nm);
         % save margin dual mu
         muList{k} = rtn;
         % collecting results

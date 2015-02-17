@@ -17,7 +17,7 @@
 % USAGE:
 %   This function is called by a wrapper function run_RSTA()
 %
-function [rtn, ts_err] = RSTA(paramsIn, dataIn)
+function [rtn, ts_err] = RSTA(paramsIn, dataIn,nm)
 
     %% Definition of global variables
     global loss_list;           % losses associated with different edge labels
@@ -191,8 +191,11 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn)
         for xi = 1:m
             print_message(sprintf('Start descend on example %d initial k %d',xi,kappa),3)
             kappa_decrease_flag(xi)=0;
-            %[delta_obj_list] = conditional_gradient_descent(xi,kappa);    % optimize on single example
+            if nm == 0
+            [delta_obj_list] = conditional_gradient_descent(xi,kappa);    % optimize on single example
+            else
             [delta_obj_list] = conditional_gradient_optimization_with_Newton(xi,kappa);    % optimize on single example
+            end
                  
 %                 kappa0=kappa;
 %                 while ( Yspos_list(xi)==0 ) && kappa0 < params.maxkappa 
@@ -722,7 +725,6 @@ function [delta_obj_list] = conditional_gradient_descent(x, kappa)
         
         nomi(t)     = mu_d' * gradient;
         denomi(t)   = norm_const_quadratic_list(t) * Kmu_d' * mu_d;
-        
     end
     
     %% Decide whether to update the marginal dual variable on a collection of spanning trees by looking at the maximum objective along the gradient.
@@ -735,6 +737,8 @@ function [delta_obj_list] = conditional_gradient_descent(x, kappa)
     tau = max(tau,0);
 	GmaxG0_list(x) = sum(Gmax>=G0);
     GoodUpdate_list(x) = (tau>0);
+
+
     %% Update marginal dual variables based on the step size given by the line search on each individual random spanning tree.
     % TODO: as mentioned the update might not optimal for a step size given by tau
     delta_obj_list = zeros(1,T_size);
@@ -771,7 +775,11 @@ end
 
 
 
-%% Conditional gradient optimization with Newton method to find the best update direction by a convex combination of multiple update directions.
+%% 
+% Conditional gradient optimization with Newton method to find the best update direction by a convex combination of multiple update directions.
+%
+%
+%
 function [delta_obj_list] = conditional_gradient_optimization_with_Newton(x, kappa)
 
     %% Definition of the parameters
@@ -838,6 +846,10 @@ function [delta_obj_list] = conditional_gradient_optimization_with_Newton(x, kap
     %% Compose current global marginal dual variable (mu) from local marginal dual variables {mu_t}_{t=1}^{T}
     [mu_global,E_global,ind_backwards,inverse_flag] = compose_global_from_local(x);
     
+    % TOREMOVE
+%     mu_global = cell2mat(mu_list);
+%     E_global=E;
+    
     normalization_linear    = 1/size(E_global,1);
     normalization_quadratic = 1;
     
@@ -899,27 +911,33 @@ function [delta_obj_list] = conditional_gradient_optimization_with_Newton(x, kap
     % compute g = <f'(x),M>
     g_global = f_prim' * dmu_set;
     
-    % Compute Q
-    num_directions = size(dmu_set,2);
-    sdmu = sum(reshape(dmu_set,4,size(E_global,1)*num_directions),1);
-    sdmu = reshape(sdmu(ones(4,1),:),4*size(E_global,1),num_directions);
-    Hdmu = sdmu-dmu_set;
-    Q = Hdmu'*Hdmu;
     
-    % Compute lambda and round it
-    lambda_original = g_global * pinv(Q);
-    if sum(lambda_original >1)
-        lambda_original
+    % Compute Q (in brute force)
+    num_directions = size(dmu_set, 2);
+    dmu = reshape(dmu_set,4,size(E_global,1)*num_directions);
+    S_dmu = sum(dmu,1);
+    term12 = zeros(1,size(E_global,1)*num_directions);
+    K_dmu = zeros(4,size(E_global,1)*num_directions);
+    for u=1:4
+        IndEdgeVal = full(ind_edge_val_global{u}(:,x));
+        IndEdgeVal = reshape(IndEdgeVal(:,ones(num_directions,1))',1,size(E_global,1)*num_directions);
+        H_u = S_dmu.*IndEdgeVal - dmu(u,:);
+        term12 = term12 + H_u.*IndEdgeVal;
+        K_dmu(u,:) = -H_u;
+    end
+    for u=1:4
+        K_dmu(u,:) = K_dmu(u,:) + term12;
+    end
+    Q = reshape(dmu,4*size(E_global,1)*num_directions,1)' * reshape(K_dmu,4*size(E_global,1)*num_directions,1);
+    
+    % Compute lambda
+    lambda = g_global * pinv(Q);
+    % Make sure lambda is feasible
+    if sum(lambda >1)
+        lambda
     end
 
-%     % normalize lambda: project it to feasible set
-%     if sum(lambda_original <= 0) ==0
-%         lambda = lambda_original / sum(lambda_original);
-%     else    
-%         lambda = zeros(size(lambda_original));
-%     end
-    
-    lambda = lambda_original; 
+      
     
     % compute dmu with a convex combination of multiple update directions
     dmu_global = dmu_set * lambda';
