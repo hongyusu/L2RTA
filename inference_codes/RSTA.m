@@ -924,8 +924,9 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton(x, kappa)
     lambda = g_global * pinv(Q);
     
     % Make sure lambda is feasible
-    if sum(lambda >1)
-        sum(lambda)
+    %if sum(lambda >1) || sum(lambda<0)
+    if sum(lambda)>1 || sum(lambda)<0
+%         lambda
         delta_obj_list(1)=0;
         return
     end
