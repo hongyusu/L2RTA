@@ -120,6 +120,8 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn,nm)
     %% Initialization
     optimizer_init;
     profile_init;
+    
+    initialize_global_consensus_graph();
 
     %% Optimization
     print_message('Conditional gradient descend ...',0);
@@ -283,6 +285,31 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn,nm)
 
     rtn = 0;
     ts_err = 0;
+end
+
+
+%% Compute variables on global consensus graph
+function initialize_global_consensus_graph()
+    global E_list;
+    global E_global;
+    global inverse_flag;
+    global ind_forwards;
+    global ind_backwards;
+    
+    edge_set        = cell2mat(E_list);
+    inverse_flag    = edge_set(:,1)>edge_set(:,2);
+    [~, ind_forwards, ind_backwards] = unique(edge_set,'rows');
+    E_global = edge_set(ind_forwards,:);
+end
+
+function [mu_global] = compose_global_from_local
+    global mu_list;
+    global inverse_flag;
+    global ind_forwards;
+    
+    mu_trees = cell2mat(mu_list)
+    
+    
 end
 
 %% Compute marginal dual variables on global consensus graph mu_global for all marginal dual variables mu over all examples
@@ -841,6 +868,11 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton(x, kappa)
         Y_kappa(t,:)        = Ymax;
         Y_kappa_val(t,:)    = YmaxVal;
     end
+    
+    mu_global = compose_global_from_local;
+    
+    
+    afds
     
     %% Compose current global marginal dual variable (mu) from local marginal dual variables {mu_t}_{t=1}^{T}
     [mu_global,E_global,ind_backwards,inverse_flag] = compose_global_from_local(x);
