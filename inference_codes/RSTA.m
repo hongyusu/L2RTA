@@ -289,7 +289,7 @@ end
 
 
 %% Compute variables on global consensus graph
-function initialize_global_consensus_graph()
+function initialize_global_consensus_graph
     global E_list;
     global E_global;
     global inverse_flag;
@@ -297,18 +297,27 @@ function initialize_global_consensus_graph()
     global ind_backwards;
     
     edge_set        = cell2mat(E_list);
-    inverse_flag    = edge_set(:,1)>edge_set(:,2);
+    inverse_edges   = 1:size(edge_set,1);
+    inverse_edges   = inverse_edges(edge_set(:,1)>edge_set(:,2));
+    tmp             = 1:(size(edge_set,1)*4);
+    inverse_flag    = tmp;
+    inverse_flag((inverse_edges-1)*4+2) = tmp((inverse_edges-1)*4+3);
+    inverse_flag((inverse_edges-1)*4+3) = tmp((inverse_edges-1)*4+2);
     [~, ind_forwards, ind_backwards] = unique(edge_set,'rows');
     E_global = edge_set(ind_forwards,:);
+    
 end
 
-function [mu_global] = compose_global_from_local
+%% Compose global variables based on the local variables
+function [mu_global] = compose_mu_global_from_local
     global mu_list;
     global inverse_flag;
     global ind_forwards;
     
-    mu_trees = cell2mat(mu_list)
-    
+    % Form a matrix, inverse, select
+    mu_global = cell2mat(mu_list);
+    mu_global = mu_global(inverse_flag,:);
+    mu_global = mu_global(ind_forwards,:)     
     
 end
 
@@ -869,7 +878,7 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton(x, kappa)
         Y_kappa_val(t,:)    = YmaxVal;
     end
     
-    mu_global = compose_global_from_local;
+    mu_global = compose_mu_global_from_local;
     
     
     afds
