@@ -289,22 +289,58 @@ end
 
 
 %% Compute variables on global consensus graph
+% mu_ts --> mu_T --> inverse --> ind_forwards --> mu_global --> ind_backwards --> inverse --> mu_T --> mu_ts
 function initialize_global_consensus_graph
     global E_list;
     global E_global;
     global inverse_flag;
     global ind_forwards;
     global ind_backwards;
+    global loss_global;
+    global Y_tr;
+    global Ye_global;
+    global ind_edge_val_global;
+    global m;
     
     edge_set        = cell2mat(E_list);
     inverse_edges   = 1:size(edge_set,1);
     inverse_edges   = inverse_edges(edge_set(:,1)>edge_set(:,2));
+    edge_set(inverse_edges,:) = edge_set(inverse_edges,[2,1]);
     tmp             = 1:(size(edge_set,1)*4);
     inverse_flag    = tmp;
     inverse_flag((inverse_edges-1)*4+2) = tmp((inverse_edges-1)*4+3);
     inverse_flag((inverse_edges-1)*4+3) = tmp((inverse_edges-1)*4+2);
     [~, ind_forwards, ind_backwards] = unique(edge_set,'rows');
     E_global = edge_set(ind_forwards,:);
+    tmp = 1:4;
+    ind_forwards    = (ind_forwards-1)*4;
+    ind_forwards    = reshape(ind_forwards(:,ones(1,4))'+tmp(ones(size(ind_forwards,1),1),:)',size(ind_forwards,1)*4,1);
+    ind_backwards   = (ind_backwards-1)*4;
+    ind_backwards   = reshape(ind_backwards(:,ones(1,4))'+tmp(ones(size(ind_backwards,1),1),:)',size(ind_backwards,1)*4,1);
+    
+
+    % Compute the loss vector for the global consensus graph.
+    loss_global = zeros(4, m*size(E_global,1));
+    Te1_global  = Y_tr(:,E_global(:,1))';
+    Te2_global  = Y_tr(:,E_global(:,2))';
+    u = 0;
+    for u_1 = [-1, 1]
+        for u_2 = [-1, 1]
+            u = u + 1;
+            loss_global(u,:) = reshape((Te1_global ~= u_1)+(Te2_global ~= u_2),m*size(E_global,1),1);
+        end
+    end     
+    loss_global = reshape(loss_global,4*size(E_global,1),m);
+    
+    % Compute the vector of Ye and ind_edge_val of the global consensus graph
+    Ye_global = reshape(loss_global==0,4,size(E_global,1)*m);
+    ind_edge_val_global = cell(4,1);
+    for u=1:4
+        ind_edge_val_global{u} = sparse(reshape(Ye_global(u,:)~=0,size(E_global,1),m));
+    end
+    
+    size(ind_forwards)
+    size(ind_backwards)
     
 end
 
@@ -314,10 +350,23 @@ function [mu_global] = compose_mu_global_from_local
     global inverse_flag;
     global ind_forwards;
     
-    % Form a matrix, inverse, select
+    % Form a matrix --> inverse --> select
     mu_global = cell2mat(mu_list);
     mu_global = mu_global(inverse_flag,:);
-    mu_global = mu_global(ind_forwards,:)     
+    mu_global = mu_global(ind_forwards,:);
+    
+end
+
+%% Compose a set of local variables based on global variable
+function [dmu_set] = compose_mu_local_from_global(dmu_global)
+    global ind_backwards;
+    global inverse_flag;
+    global T_size;
+    
+    % complete --> inverse --> transform
+    dmu_set = dmu_global(ind_backwards,:);
+    dmu_set = dmu_set(inverse_flag,:);
+    dmu_set = reshape(dmu_set,size(dmu_set,1)/T_size,T_size);
     
 end
 
@@ -847,6 +896,13 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton(x, kappa)
     global node_degree_list;
     global m;
     
+    global inverse_flag;
+    global ind_forwards;
+    global ind_backwards;
+    global E_global;
+    global loss_global;
+    global Ye_global;
+    global ind_edge_val_global;
     
     
     %% Compute K best multilabels from a collection of random spanning trees.
@@ -878,13 +934,10 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton(x, kappa)
         Y_kappa_val(t,:)    = YmaxVal;
     end
     
+
+    %% Compose current global marginal dual variable (mu) from local marginal dual variables {mu_t}_{t=1}^{T}
     mu_global = compose_mu_global_from_local;
     
-    
-    afds
-    
-    %% Compose current global marginal dual variable (mu) from local marginal dual variables {mu_t}_{t=1}^{T}
-    [mu_global,E_global,ind_backwards,inverse_flag] = compose_global_from_local(x);
     
     normalization_linear    = 1/size(E_global,1);
     normalization_quadratic = 1;
@@ -901,32 +954,9 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton(x, kappa)
         end
         dmu_set(:,t) = mu_0-mu_global(:,x);
     end
-%     % Compute the node degree vector for the consensus graph.
-%     NodeDegree_global = ones(l,1);
-%     for v = 1:l
-%         NodeDegree_global(v) = sum(E_global(:) == v);
-%     end
-%     NodeDegree_global = repmat(NodeDegree_global,1,m);
-    % Compute the loss vector for the global consensus graph.
-    loss_global = zeros(4, m*size(E_global,1));
-    Te1_global  = Y_tr(:,E_global(:,1))';
-    Te2_global  = Y_tr(:,E_global(:,2))';
-    u = 0;
-    for u_1 = [-1, 1]
-        for u_2 = [-1, 1]
-            u = u + 1;
-            loss_global(u,:) = reshape((Te1_global ~= u_1)+(Te2_global ~= u_2),m*size(E_global,1),1);
-        end
-    end     
-    loss_global = reshape(loss_global,4*size(E_global,1),m);
-    % Compute the vector of Ye and ind_edge_val of the global consensus graph
-    Ye_global = reshape(loss_global==0,4,size(E_global,1)*m);
-    ind_edge_val_global = cell(4,1);
-    for u=1:4
-        ind_edge_val_global{u} = sparse(reshape(Ye_global(u,:)~=0,size(E_global,1),m));
-    end
-%     Ye_global = reshape(Ye_global,4*size(E_global,1),m);
-    % Compute Smu and Rmu
+
+
+    %% TODO:this might be expensive Compute Smu and Rmu
     for i_example = 1:m
         mu_global_i = reshape(mu_global(:,i_example),4,size(E_global,1));
         for u=1:4
@@ -976,7 +1006,9 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton(x, kappa)
     dmu_global = dmu_set * lambda';
     
     % decompose global update into a set of local updates on individual trees, assuming the quantities are correctly computed
-    dmu_set = decompose_local_from_global ( dmu_global, E_global, ind_backwards, inverse_flag );
+    %dmu_set = decompose_local_from_global ( dmu_global, E_global, ind_backwards, inverse_flag );
+    dmu_set = compose_mu_local_from_global(dmu_global);
+    
     
     
     
@@ -1008,7 +1040,7 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton(x, kappa)
     for t=1:T_size
         ind_edge_val = ind_edge_val_list{t};
         mu = mu_list{t}(:,x);
-        mu = mu + dmu_set{t};
+        mu = mu + dmu_set(:,t);
         mu = reshape(mu, 4, size(E,1));
         for u = 1:4
             Smu_list{t}{u}(:,x) = (sum(mu)').*ind_edge_val{u}(:,x);
