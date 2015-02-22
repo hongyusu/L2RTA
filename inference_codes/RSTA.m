@@ -952,6 +952,8 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton(x, kappa)
     %% convex combination of update directions, combination is given by lmd
     % For each update direction in terms of multilabels, compute the corresponding mu_0, and compute the different mu_0-mu
     dmu_set = zeros(size(mu_global,1),T_size);
+%     Y_kappa = reshape(Y_kappa',l,kappa*T_size);
+%     Y_kappa = Y_kappa';
     for t=1:T_size
         Ymax    = Y_kappa(t,1:l);
         Umax_e  = 1+2*(Ymax(:,E_global(:,1))>0) + (Ymax(:,E_global(:,2)) >0);
@@ -961,19 +963,6 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton(x, kappa)
         end
         dmu_set(:,t) = mu_0-mu_global(:,x);
     end
-
-
-        %% TODO:this might be expensive Compute Smu and Rmu
-        
-    
-%     for i_example = 1:m
-%         mu_global_i = reshape(mu_global(:,i_example),4,size(E_global,1));
-%         size(mu_global_i)
-%         for u=1:4
-%             Smu_global{u}(:,i_example) = (sum(mu_global_i)').*ind_edge_val_global{u}(:,i_example);
-%             Rmu_global{u}(:,i_example) = mu_global_i(u,:)';
-%         end
-%     end
 
 
     % compute Kmu_x
