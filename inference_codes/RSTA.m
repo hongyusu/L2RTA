@@ -301,6 +301,8 @@ function initialize_global_consensus_graph
     global Ye_global;
     global ind_edge_val_global;
     global m;
+    global Rmu_global;
+    global Smu_global;
     
     edge_set        = cell2mat(E_list);
     inverse_edges   = 1:size(edge_set,1);
@@ -339,8 +341,11 @@ function initialize_global_consensus_graph
         ind_edge_val_global{u} = sparse(reshape(Ye_global(u,:)~=0,size(E_global,1),m));
     end
     
-    size(ind_forwards)
-    size(ind_backwards)
+    % initialize global Rmu and global Smu
+    for u=1:4
+        Smu_global{u} = zeros(size(E_global,1),m);
+        Rmu_global{u} = zeros(size(E_global,1),m);
+    end
     
 end
 
@@ -903,6 +908,8 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton(x, kappa)
     global loss_global;
     global Ye_global;
     global ind_edge_val_global;
+    global Smu_global;
+    global Rmu_global;
     
     
     %% Compute K best multilabels from a collection of random spanning trees.
@@ -956,14 +963,20 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton(x, kappa)
     end
 
 
-    %% TODO:this might be expensive Compute Smu and Rmu
-    for i_example = 1:m
-        mu_global_i = reshape(mu_global(:,i_example),4,size(E_global,1));
-        for u=1:4
-            Smu_global{u}(:,i_example) = (sum(mu_global_i)').*ind_edge_val_global{u}(:,i_example);
-            Rmu_global{u}(:,i_example) = mu_global_i(u,:)';
-        end
-    end
+        %% TODO:this might be expensive Compute Smu and Rmu
+        
+    
+%     for i_example = 1:m
+%         mu_global_i = reshape(mu_global(:,i_example),4,size(E_global,1));
+%         size(mu_global_i)
+%         for u=1:4
+%             Smu_global{u}(:,i_example) = (sum(mu_global_i)').*ind_edge_val_global{u}(:,i_example);
+%             Rmu_global{u}(:,i_example) = mu_global_i(u,:)';
+%         end
+%     end
+
+
+    % compute Kmu_x
     Kmu_x_global = compute_Kmu_x(x,Kx_tr(:,x),E_global,ind_edge_val_global,Rmu_global,Smu_global);
     
     
@@ -1004,6 +1017,14 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton(x, kappa)
 
     % compute dmu with a convex combination of multiple update directions
     dmu_global = dmu_set * lambda';
+    mu_global_i = reshape(mu_global(:,x) + dmu_global,4,size(E_global,1));
+    
+    for u=1:4
+        Smu_global{u}(:,x) = sum(mu_global_i)'.*ind_edge_val_global{u}(:,x);
+        Rmu_global{u}(:,x) = mu_global_i(u,:)';
+    end
+    
+    
     
     % decompose global update into a set of local updates on individual trees, assuming the quantities are correctly computed
     %dmu_set = decompose_local_from_global ( dmu_global, E_global, ind_backwards, inverse_flag );
