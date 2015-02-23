@@ -212,7 +212,7 @@ function run_RSTA(filename,graph_type,t,isTest,kth_fold,l_norm,maxkappa,slack_c,
     
     %% Perform the experiment on the k'th fold of the 5 fold cross-validation
     for k=kth_fold
-        paramsIn.profileiter    = 30;           % Profile the training every fix number of iterations
+        paramsIn.profileiter    = 1;           % Profile the training every fix number of iterations
         paramsIn.losstype       = losstype;     % losstype
         paramsIn.mlloss         = 0;            % assign loss to microlabels(0) edges(1)
         paramsIn.profiling      = 1;            % profile (test during learning)
