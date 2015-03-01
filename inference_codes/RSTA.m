@@ -80,7 +80,6 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn,nm)
     duality_gap_on_trees        = ones(1,T_size)*1e10;          % relative duality gap on individual spanning tree
     norm_const_linear           = 1/(T_size)/size(E_list{1},1); % The linear term will be normalized by the total number of edges
     norm_const_quadratic_list   = zeros(1,T_size)+1/(T_size);   % The quadratic term is normalized by 1
-    norm_const_quadratic_list   = zeros(1,T_size)+1;            % The quadratic term is normalized by 1
     mu_list = cell(T_size);         % a list of solutions in terms of marginalized dual variables on the collection of trees
    
     
