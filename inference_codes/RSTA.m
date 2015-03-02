@@ -124,7 +124,7 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn, nm)
     profile_init;
     initialize_global_consensus_graph();
     % scale loss function on trees and consensus graphs.
-    loss_scaling_factor_tree    = 1/20;
+    loss_scaling_factor_tree    = 1/params.loss_scaling_factor;
     loss_scaling_factor_graph   = loss_scaling_factor_tree;
     for t=1:T_size
         loss_list{t} = loss_list{t} * loss_scaling_factor_tree;
@@ -204,7 +204,7 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn, nm)
         for xi = 1:m
             print_message(sprintf('Start descend on example %d initial k %d',xi,kappa),3)
             kappa_decrease_flag(xi)=0;
-            if nm == 0
+            if params.newton_method == 0
             [delta_obj_list] = conditional_gradient_descent(xi,kappa);    % optimize on single example
             else
             [delta_obj_list] = conditional_gradient_descent_with_Newton(xi,kappa);    % optimize on single example

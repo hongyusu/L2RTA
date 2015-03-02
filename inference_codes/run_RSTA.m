@@ -32,7 +32,7 @@
 %       with margin slack parameter C equals to 100.
 %
 %
-function run_RSTA(filename,graph_type,t,isTest,kth_fold,l_norm,maxkappa,slack_c,nm)
+function run_RSTA(filename,graph_type,t,isTest,kth_fold,l_norm,maxkappa,slack_c,loss_scaling_factor,newton_method)
 
     %% Process input parameters
     if nargin <1
@@ -232,7 +232,9 @@ function run_RSTA(filename,graph_type,t,isTest,kth_fold,l_norm,maxkappa,slack_c,
             paramsIn.extra_iter = 0;            % extra iteration through examples when optimization is over
         end
         paramsIn.filestem       = sprintf('%s',suffix);	% file name stem used for writing output
-
+        paramsIn.loss_scaling_factor = loss_scaling_factor;
+        paramsIn.newton_method  = newton_method;
+        
         % nfold cross validation
         Itrain  = find(Ind ~= k);
         Itest   = find(Ind == k);
@@ -242,13 +244,13 @@ function run_RSTA(filename,graph_type,t,isTest,kth_fold,l_norm,maxkappa,slack_c,
         gY_tr   = Y(Itrain,:); gY_tr(gY_tr==0)=-1;    % training label
         gY_ts   = Y(Itest,:); gY_ts(gY_ts==0)=-1;
         % set input data
-        dataIn.Elist =  Elist;               % edge
-        dataIn.Kx_tr =  gKx_tr;      % kernel
-        dataIn.Kx_ts =  gKx_ts;
-        dataIn.Y_tr =   gY_tr;        % label
-        dataIn.Y_ts =   gY_ts;
+        dataIn.Elist =  Elist;      % edge
+        dataIn.Kx_tr =  gKx_tr;     % training kernel
+        dataIn.Kx_ts =  gKx_ts;     % test kernel
+        dataIn.Y_tr =   gY_tr;      % training label
+        dataIn.Y_ts =   gY_ts;      % test label
         % running
-        [rtn,~] = RSTA(paramsIn,dataIn,nm);
+        [rtn,~] = RSTA(paramsIn,dataIn);
         % save margin dual mu
         muList{k} = rtn;
         % collecting results
