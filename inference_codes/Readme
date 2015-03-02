@@ -27,4 +27,8 @@
 # A group of workers (computing nodes) are then activated, each will take and process from the queue the first job.
 # If the job is not completed by the worker, the worker will push the job back to the queue, an other worker sill processe the job later on.
 # A penalty system is implemented to make it difficult for worker to get job if the worker is somehow malfunctioning. 
+
+
+# There are thoughts need to be implemented.
+#   1. loss function should be scaled.
 	

@@ -97,9 +97,11 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn,nm)
     Yspos_list = ones(1,m)*(params.maxkappa);
     kappa = kappa_INIT;
     
+    loss_scaling_factor = 100;
     
     for t=1:T_size
         [loss_list{t},Ye_list{t},ind_edge_val_list{t}] = compute_loss_vector(Y_tr,t,params.mlloss);
+        loss_list{t} = loss_list{t} / loss_scaling_factor;
         mu_list{t}          = zeros(4*size(E_list{1},1),m);
         Kxx_mu_x_list{t}    = zeros(4*size(E_list{1},1),m);
     end
@@ -121,6 +123,13 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn,nm)
     profile_init;
     
     initialize_global_consensus_graph();
+    
+    
+    global loss_global
+    loss_global = loss_global / loss_scaling_factor;
+    
+    
+    
 
     %% Optimization
     print_message('Conditional gradient descend ...',0);
@@ -888,7 +897,6 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton(x, kappa)
     global norm_const_quadratic_list;
     global l;
     global Kx_tr;
-    global Y_tr;
     global T_size;
     global params;
     global iter;
@@ -947,18 +955,18 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton(x, kappa)
     
     normalization_linear    = 1/size(E_global,1);
     normalization_quadratic = 1;
-    
-    normalization_linear    = 1/size(E_global,1);
-    normalization_quadratic = 1/size(E_global,1);
-    
+%     
+%     normalization_linear    = 1/size(E_global,1);
+%     normalization_quadratic = 1/size(E_global,1);
+%     
     normalization_linear    = 1;
     normalization_quadratic = 1;
     
     %% convex combination of update directions, combination is given by lmd
     % For each update direction in terms of multilabels, compute the corresponding mu_0, and compute the different mu_0-mu
     dmu_set = zeros(size(mu_global,1),T_size);
-    %Ys_kappa = reshape(Y_kappa',l,kappa*T_size);
-    %Y_kappa = Y_kappa';
+%     Y_kappa = reshape(Y_kappa',l,kappa*T_size);
+%     Y_kappa = Y_kappa';
     for t=1:T_size%*kappa
         Ymax    = Y_kappa(t,1:l);
         Umax_e  = 1+2*(Ymax(:,E_global(:,1))>0) + (Ymax(:,E_global(:,2)) >0);
@@ -986,6 +994,7 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton(x, kappa)
     S_dmu = sum(dmu,1);
     term12 = zeros(1,size(E_global,1)*num_directions);
     K_dmu = zeros(4,size(E_global,1)*num_directions);
+    
     for u=1:4
         IndEdgeVal = full(ind_edge_val_global{u}(:,x));
         IndEdgeVal = reshape(IndEdgeVal(:,ones(num_directions,1)),1,size(E_global,1)*num_directions);
@@ -993,28 +1002,21 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton(x, kappa)
         term12 = term12 + H_u.*IndEdgeVal;
         K_dmu(u,:) = -H_u;
     end
+    
     for u=1:4
         K_dmu(u,:) = K_dmu(u,:) + term12;
     end
     
-    reshape(dmu,4*size(E_global,1),num_directions)
+    %Q = reshape(dmu,4*size(E_global,1)*num_directions,1)' * reshape(K_dmu,4*size(E_global,1)*num_directions,1);
     
-    reshape(K_dmu,4*size(E_global,1),num_directions)
-    Q = reshape(dmu,4*size(E_global,1)*num_directions,1)' * reshape(K_dmu,4*size(E_global,1)*num_directions,1);
-    Q
     Q = reshape(dmu,4*size(E_global,1),num_directions)' * reshape(K_dmu,4*size(E_global,1),num_directions);
-    Q
-    Y_kappa
-    Y_tr(x,:)
-    size(E_global)
-    adsfasd
+    
     % Compute lambda
     lambda = g_global * pinv(Q);
     
-    % Make sure lambda is feasible
-    %if sum(lambda >1) || sum(lambda<0)
+    
+    % Ensure lambda is feasible
     if sum(lambda)>1 || sum(lambda)<0
-%         lambda
         delta_obj_list(1)=0;
         return
     end
