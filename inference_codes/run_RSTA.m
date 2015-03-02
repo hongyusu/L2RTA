@@ -243,31 +243,30 @@ function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, 
         Itrain  = find(Ind ~= k);
         Itest   = find(Ind == k);
         %Itrain = [Itrain;Itest(1:ceil(numel(Itest)/5))];
-        gKx_tr  = K(Itrain, Itrain);     % kernel
-        gKx_ts  = K(Itest,  Itrain)';
-        gY_tr   = Y(Itrain,:); gY_tr(gY_tr==0)=-1;    % training label
-        gY_ts   = Y(Itest,:); gY_ts(gY_ts==0)=-1;
+        gKx_tr  = K(Itrain, Itrain);    % Training kernel
+        gKx_ts  = K(Itest,  Itrain)';   % Test kernel
+        gY_tr   = Y(Itrain,:);  gY_tr(gY_tr==0) = -1;   % Label of the training examples
+        gY_ts   = Y(Itest,:);   gY_ts(gY_ts==0) = -1;   % Label of the test examples
         % set input data
         dataIn.Elist =  Elist;      % edge
         dataIn.Kx_tr =  gKx_tr;     % training kernel
         dataIn.Kx_ts =  gKx_ts;     % test kernel
-        dataIn.Y_tr =   gY_tr;      % training label
-        dataIn.Y_ts =   gY_ts;      % test label
+        dataIn.Y_tr  =   gY_tr;      % training label
+        dataIn.Y_ts  =   gY_ts;      % test label
         % running
-        [rtn,~] = RSTA(paramsIn,dataIn);
+        [rtn,~] = RSTA (paramsIn, dataIn);
         % save margin dual mu
         muList{k} = rtn;
         % collecting results
         load(sprintf('/var/tmp/Ypred_%s.mat', paramsIn.filestem));
-        
-        Ypred(Itest,:) = Ypred_ts;
-        %YpredVal(Itest,:) = Ypred_ts_val;
-        running_times(k,1) = running_time;
+        Ypred(Itest,:) = Ypred_ts;          % The prediction in binary value
+        %YpredVal(Itest,:) = Ypred_ts_val;  % The prediction in real value
+        running_times(k,1) = running_time;  % Running time of the algorithm on the Kth fold
     end
 
     
-    %% Compute performance metrics.
-    [acc,vecacc,pre,rec,f1,auc1,auc2]=get_performance(Y(Itest,:),(Ypred(Itest,:)==1),YpredVal(Itest));
+    %% Compute performance metrics, mainly for sanity check/display purpose.
+    [acc,vecacc,pre,rec,f1,auc1,auc2] = get_performance(Y(Itest,:),(Ypred(Itest,:)==1),YpredVal(Itest));
     % print out the performance on screen
     perf = [acc,vecacc,pre,rec,f1,auc1,auc2,norm_const_quadratic_list]
     
