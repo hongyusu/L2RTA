@@ -136,8 +136,9 @@ function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, 
             K=dlmread(sprintf('../shared_scripts/test_data/%s_kernel',filename));
         end
     else
-        K = X * X'; % dot product
-        K = K ./ sqrt(diag(K)*diag(K)');    % normalization of the kernel matrix to make sure points are in a unit sphere.
+        K = X * X';         % Dot product
+        K = K ./ sqrt(diag(K)*diag(K)');    % Normalization of the kernel matrix to make sure points are in a unit sphere.
+        % TODO: Center kernel
     end
     
     %% Stratified n fold cross validation index.
@@ -148,10 +149,10 @@ function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, 
     ntrain = 100;
     ntrain = min(ntrain,size(Y,1));
     if isTest==1
-        X=X(1:ntrain,:);
-        Y=Y(1:ntrain,:);
-        K=K(1:ntrain,1:ntrain);
-        Ind=Ind(1:ntrain);
+        X   = X(1:ntrain,:);
+        Y   = Y(1:ntrain,:);
+        K   = K(1:ntrain,1:ntrain);
+        Ind = Ind(1:ntrain);
     end
 
 %     %% Perform parameter selection.
@@ -172,29 +173,28 @@ function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, 
     
     % currently use following parameters
     mmcrf_c         = slack_c;      % margin slack parameter
-    mmcrf_g         = -1e10;%0.01;  % relative duality gap
-    mmcrf_i         = 50;          % number of iteration
+    mmcrf_g         = -1e6;         % relative duality gap
+    mmcrf_i         = 50;           % number of iteration
     mmcrf_maxkappa  = maxkappa;     % length of the K-best list
     
     % Print out all parameters
-    fprintf('\n\tC:%d G:%.2f Iteration:%d MaxKappa:%d T:%d \n', mmcrf_c,mmcrf_g,mmcrf_i,mmcrf_maxkappa, t);
+    fprintf('\n\tC:%d G:%.2f Iteration:%d MaxKappa:%d T:%d Loss_scaling:%d \n', mmcrf_c,mmcrf_g,mmcrf_i,mmcrf_maxkappa, t, loss_scaling_factor);
     
     %% Generate random graphs.
-    rand('twister', 0);    
-    
-    Nrep=t; % number of random graph
-    Nnode=size(Y,2);
-    Elist=cell(Nrep,1);
-    for i=1:Nrep
+    rand('twister', 0); % Fix random seed to make sure random spanning trees generated from each run are of the same.
+    Nrep    = t;             % number of random graph
+    Nnode   = size(Y,2);
+    Elist   = cell(Nrep,1);
+    for i = 1:Nrep
         if strcmp(graph_type,'tree')
-            E=randTreeGenerator(Nnode); % generate
+            E = randTreeGenerator(Nnode); % generate
         end
         if strcmp(graph_type,'pair')
-            E=randPairGenerator(Nnode); % generate
+            E = randPairGenerator(Nnode); % generate
         end
-        E=[E,min(E,[],2),max(E,[],2)];E=E(:,3:4); % arrange head and tail
-        E=sortrows(E,[1,2]); % sort by head and tail
-        Elist{i}=RootTree(E); % put into cell array
+        E = [E,min(E,[],2),max(E,[],2)];E=E(:,3:4); % arrange head and tail
+        E = sortrows(E,[1,2]);  % sort by head and tail
+        Elist{i} = RootTree(E); % put into cell array
       
 % Construct a collection of similar spanning trees         
 %         if i~=1
@@ -203,19 +203,18 @@ function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, 
 %             Elist{i}(pos,1) = randsample(unique(Elist{1}(1:(pos-1),:)),1);
 %             Elist{i}=RootTree(Elist{i});
 %         end
-        
-        
     end
     
     
     %% Variable to keep results.
-    Ypred=zeros(size(Y));
-    YpredVal=zeros(size(Y));
-    running_times=zeros(nfold,1);
-    muList=cell(nfold,1);
+    Ypred       = zeros(size(Y));
+    YpredVal    = zeros(size(Y));
+    running_times = zeros(nfold,1);
+    muList      = cell(nfold,1);
 
     
     %% Perform the experiment on the k'th fold of the 5 fold cross-validation
+    % TODO: some of the variables are no longer necessary, to be removed
     for k=kth_fold
         paramsIn.profileiter    = 1;           % Profile the training every fix number of iterations
         paramsIn.losstype       = losstype;     % losstype
