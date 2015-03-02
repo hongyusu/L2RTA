@@ -17,10 +17,13 @@
 %   kth_fold:       the kth fold of five fold Cross-Validation
 %   l_norm:         '1'->l1 norm regularization, '2'->l2 norm regularization. Currently, only L2 regularization implemented
 %   maxkappa:       the length of K best list
+%   slack_c:        slack parameter C
+%   loss_scaling_factor:    loss scaling parameter to scale the element of the loss function
+%   newton_method:          boolean variable indicating whether to use newton methods to combine multiple update direction
 %
 %
 % EXAMPLE USAGE:
-%   Use command:    run_RSTA('ArD10','tree','5','1','1','2','2','100')
+%   Use command:    run_RSTA('ArD10','tree','5','1','1','2','2','100','10','1')
 %   This will run the algorithm:
 %       on ArD10 dataset,
 %       with random spanning tree as the output graph,
@@ -30,6 +33,8 @@
 %       with l2 norm regularization on featuer weight parameters,
 %       with K best multilabel list of depth 2,
 %       with margin slack parameter C equals to 100.
+%       with loss scaling parameter equals to 10, in which loss will be down scaled by a factor of 10
+%       with newton method to combine multiple update directions
 %
 %
 function run_RSTA(filename,graph_type,t,isTest,kth_fold,l_norm,maxkappa,slack_c,loss_scaling_factor,newton_method)
