@@ -18,7 +18,7 @@
 % USAGE:
 %   This function is called by a wrapper run_RSTA()
 %
-function [rtn, ts_err] = RSTA(paramsIn, dataIn, nm)
+function [rtn, ts_err] = RSTA(paramsIn, dataIn)
 
     %% Definition of global variables
     global loss_list;           % losses associated with different edge labels
