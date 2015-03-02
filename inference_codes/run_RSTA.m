@@ -22,6 +22,14 @@
 %   newton_method:          boolean variable indicating whether to use newton methods to combine multiple update direction
 %
 %
+% SUGGESTIONS:
+%   loss_scaling_factor:
+%           test loss_scaling_factor=1 which will use the original loss function
+%           test loss_sclaing_factor=|E| which will downscale the original loss function by the number of edges in the graph/tree
+%   slack_c:
+%           samilar strategy used in SVM C parameter will apply here also
+%
+%
 % EXAMPLE USAGE:
 %   Use command:    run_RSTA('ArD10','tree','5','1','1','2','2','100','10','1')
 %   This will run the algorithm:
