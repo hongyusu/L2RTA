@@ -47,41 +47,33 @@
 %
 function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, slack_c, loss_scaling_factor, newton_method)
 
-    %% Process input parameters
-    if nargin <1
-        disp('Not enough input parameters!')
-        return;
+    % Process input parameters, input at least the name of the dataset, requires all 9 additional parameters, otherwise run on a default parameter setting.
+    if nargin < 1
+        disp('Not enough input parameters! Dataset should be given as minimum.')
+        return
     end
-    if nargin < 2
-        graph_type = 'tree';
-    end
-    if nargin < 3
-        t = '1';
-    end
-    if nargin < 4
-        isTest = '0';
-    end
-    if nargin < 5
-        kth_fold = '1';
-    end
-    if nargin < 6
-        l_norm = '2';
-    end
-    if nargin < 7
-        maxkappa = '2';
-    end
-    if nargin < 8
-        slack_c = '100';
+    
+    if nargin < 10
+        disp('Not enough input parameters! Run in default parameter setting on the data.')
+        graph_type  = 'tree';
+        t           = '1';
+        isTest      = '0';
+        kth_fold    = '1';
+        l_norm      = '2';
+        maxkappa    = '2';
+        slack_c     = '100';
+        loss_scaling_factor = '10';
+        netwon_method       = '1';
     end
     
     % Set the seed of the random number generator
     rand('twister', 0);
     
-    %losstype = 'r'; % 1 loss
-    losstype = 's'; % scaled loss
+    %losstype = 'r';     % 1 loss, loss is evaluated over the whole output vector
+    losstype = 's';     % scaled loss, losses are distributed on the edge of the output graph
     
     % Set the suffix of result files
-    suffix=sprintf('%s_%s_%s_f%s_l%s_k%s_c%s_RSTA%s', filename,graph_type,t,kth_fold,l_norm,maxkappa,slack_c,losstype);
+    suffix = sprintf('%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTA%s', filename,graph_type,t,kth_fold,l_norm,maxkappa,slack_c,loss_scaling_factor,newton_method,losstype);
     system(sprintf('rm /var/tmp/%s.log', suffix));
     system(sprintf('rm /var/tmp/Ypred_%s.mat', suffix));
     
@@ -103,20 +95,20 @@ function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, 
     
     % Read in X and Y matrix of data from location based on the current computing node
     if strcmp(comres(1:4),'melk') || strcmp(comres(1:4),'ukko') || strcmp(comres(1:4),'node')
-        X=dlmread(sprintf('/cs/taatto/group/urenzyme/workspace/data/%s_features',filename));
-        Y=dlmread(sprintf('/cs/taatto/group/urenzyme/workspace/data/%s_targets',filename));
+        X = dlmread(sprintf('/cs/taatto/group/urenzyme/workspace/data/%s_features',filename));
+        Y = dlmread(sprintf('/cs/taatto/group/urenzyme/workspace/data/%s_targets',filename));
     else
-        X=dlmread(sprintf('../shared_scripts/test_data/%s_features',filename));
-        Y=dlmread(sprintf('../shared_scripts/test_data/%s_targets',filename));
+        X = dlmread(sprintf('../shared_scripts/test_data/%s_features',filename));
+        Y = dlmread(sprintf('../shared_scripts/test_data/%s_targets',filename));
     end
     
     %% Process input data X and Y matrix
-    % Select the examples with non-zero features which makes sense for e.g., document classification problem.
-    Xsum=sum(X,2);
-    X=X(Xsum~=0,:);
-    Y=Y(Xsum~=0,:);
-    % Select the labels which is not constant over the selected examples.
-    % The mean performance will drop after the label selection due to the removal of the easy-to-classify labels.
+    % Select the examples with non-zero features. This makes sense for e.g., document classification problem.
+    Xsum = sum(X,2);
+    X = X(Xsum~=0,:);
+    Y = Y(Xsum~=0,:);
+    % Select the labels which is not constant over the selected examples. In other words, remove easy tasks which is all -1 or all +1.
+    % The average performance will drop after the label selection due to the removal of the easy-to-classify labels.
     Yuniq=zeros(1,size(Y,2));
     for i=1:size(Y,2)
         if size(unique(Y(:,i)),1)>1
@@ -125,7 +117,6 @@ function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, 
     end
     Y=Y(:,Yuniq(Yuniq~=0));
     
-    
     %% Feature normalization (tf-idf for text data, scale and centralization for other numerical features).
     if or(strcmp(filename,'medical'),strcmp(filename,'enron')) 
         X=tfidf(X);
@@ -133,9 +124,8 @@ function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, 
         X=(X-repmat(min(X),size(X,1),1))./repmat(max(X)-min(X),size(X,1),1);
     end
     
-    %% Change Y from -1 to 0, now we have standard label of +1 and 0
+    %% Change Y from -1 to 0, now we have standard label of +1 and 0. Note we use +1/-1 in the algorithm
     Y(Y==-1)=0;
-    
     %X=(X-repmat(mean(X),size(X,1),1));
 
     %% Get dot product kernels from normalized features or just read in precomputed kernel matrix.
