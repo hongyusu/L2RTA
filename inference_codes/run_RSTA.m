@@ -45,7 +45,7 @@
 %       with newton method to combine multiple update directions
 %
 %
-function run_RSTA(filename,graph_type,t,isTest,kth_fold,l_norm,maxkappa,slack_c,loss_scaling_factor,newton_method)
+function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, slack_c, loss_scaling_factor, newton_method)
 
     %% Process input parameters
     if nargin <1
