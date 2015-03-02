@@ -168,7 +168,7 @@ function run_RSTA(filename,graph_type,t,isTest,kth_fold,l_norm,maxkappa,slack_c,
     % currently use following parameters
     mmcrf_c         = slack_c;      % margin slack parameter
     mmcrf_g         = -1e10;%0.01;  % relative duality gap
-    mmcrf_i         = 120;          % number of iteration
+    mmcrf_i         = 50;          % number of iteration
     mmcrf_maxkappa  = maxkappa;     % length of the K-best list
     
     % Print out all parameters
