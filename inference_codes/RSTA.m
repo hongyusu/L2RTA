@@ -17,7 +17,7 @@
 % USAGE:
 %   This function is called by a wrapper run_RSTA()
 %
-function [rtn, ts_err] = RSTA(paramsIn, dataIn,nm)
+function [rtn, ts_err] = RSTA(paramsIn, dataIn, nm)
 
     %% Definition of global variables
     global loss_list;           % losses associated with different edge labels
@@ -53,6 +53,7 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn,nm)
     global Yipos_list;
     global GmaxG0_list;
     global GoodUpdate_list;
+    % Variable on global consensus graph
     global loss_global;
     global E_global;
     
@@ -80,14 +81,11 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn,nm)
     Ye_list     = cell(T_size, 1);   
     ind_edge_val_list           = cell(T_size, 1);
     Kxx_mu_x_list               = cell(T_size, 1);
-    duality_gap_on_trees        = ones(1,T_size)*1e10;          % relative duality gap on individual spanning tree
-    norm_const_linear           = 1/(T_size);                   % The linear term will be normalized by the total number of edges
-    norm_const_quadratic_list   = zeros(1,T_size)+1/(T_size);   % The quadratic term is normalized by 1
-    mu_list = cell(T_size);         % a list of solutions in terms of marginalized dual variables on the collection of trees
+    duality_gap_on_trees        = ones(1,T_size)*1e10;  % relative duality gap on individual spanning tree
+    norm_const_linear           = 1/(T_size);           % The normalization linear term and quadratic term will make sure the obj will not increase with the number of spanning trees
+    norm_const_quadratic_list        = zeros(1,T_size) + 1/(T_size);           % The same principal above
+    mu_list     = cell(T_size);         % a list of solutions in terms of marginalized dual variables on the collection of trees
    
-    
-
-    
     if T_size <= 1
         kappa_INIT  = 2;
         kappa_MIN   = 2;
@@ -99,8 +97,8 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn,nm)
     end
     
     
-    Yspos_list = ones(1,m)*(params.maxkappa);
-    kappa = kappa_INIT;
+    Yspos_list  = ones(1,m)*(params.maxkappa);
+    kappa       = kappa_INIT;
     
     
     % For each random spanning tree, compute loss function, edge indicator function, and initial mu and Kxx variables.
@@ -109,11 +107,10 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn,nm)
         mu_list{t}          = zeros(4*size(E_list{1},1),m);
         Kxx_mu_x_list{t}    = zeros(4*size(E_list{1},1),m);
     end
-
+    % initialize iteration indicator
     iter = 0; 
-    
-    
-    
+    % initialize global variables to return results 
+    %TODO: should be incorporate into function optimizer_init
     val_list        = zeros(1,m);
     Yipos_list      = ones(1,m)*(params.maxkappa+1);
     kappa_list      = zeros(1,m);
@@ -125,14 +122,10 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn,nm)
     %% Initialization
     optimizer_init;
     profile_init;
-    
     initialize_global_consensus_graph();
-    
-    
-
     % scale loss function on trees and consensus graphs.
-    loss_scaling_factor_tree = 1/30;
-    loss_scaling_factor_graph = 1/30;
+    loss_scaling_factor_tree    = 1/20;
+    loss_scaling_factor_graph   = 1/20;
     for t=1:T_size
         loss_list{t} = loss_list{t} * loss_scaling_factor_tree;
     end
@@ -216,7 +209,6 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn,nm)
             else
             [delta_obj_list] = conditional_gradient_descent_with_Newton(xi,kappa);    % optimize on single example
             end
-                 
 %                 kappa0=kappa;
 %                 while ( Yspos_list(xi)==0 ) && kappa0 < params.maxkappa 
 %                     kappa0=kappa0*2;
