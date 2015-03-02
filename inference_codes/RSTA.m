@@ -124,7 +124,7 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn, nm)
     profile_init;
     initialize_global_consensus_graph();
     % scale loss function on trees and consensus graphs.
-    loss_scaling_factor_tree    = 1/params.loss_scaling_factor;
+    loss_scaling_factor_tree    = 1 / params.loss_scaling_factor;
     loss_scaling_factor_graph   = loss_scaling_factor_tree;
     for t=1:T_size
         loss_list{t} = loss_list{t} * loss_scaling_factor_tree;
