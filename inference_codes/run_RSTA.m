@@ -284,32 +284,32 @@ end
 %% construct a rooted tree always from node 1
 function [E] = RootTree(E)
     
-    clist=[1];
-    nclist=[];
-    workingE=[E,ones(size(E,1),1)];
-    newE=[];
+    clist       = [1];
+    nclist      = [];
+    workingE    = [E,ones(size(E,1),1)];
+    newE        = [];
     while size(clist)~=0
-        for j=clist
-            for i=1:size(E,1)
-                if workingE(i,3)==0
+        for j = clist
+            for i = 1:size(E,1)
+                if workingE(i,3) == 0
                     continue
                 end
-                if workingE(i,1)==j
-                    nclist=[nclist,workingE(i,2)];
-                    newE=[newE;[j,E(i,2)]];
-                    workingE(i,3)=0;
+                if workingE(i,1) == j
+                    nclist  = [nclist,workingE(i,2)];
+                    newE    = [newE;[j,E(i,2)]];
+                    workingE(i,3) = 0;
                 end
-                if workingE(i,2)==j
-                    nclist=[nclist,workingE(i,1)];
-                    newE=[newE;[j,E(i,1)]];
-                    workingE(i,3)=0;
+                if workingE(i,2) == j
+                    nclist  = [nclist,workingE(i,1)];
+                    newE    = [newE;[j,E(i,1)]];
+                    workingE(i,3) = 0;
                 end
             end            
         end
-        clist=nclist;
-        nclist=[];
+        clist   = nclist;
+        nclist  = [];
     end
-    E=newE;
+    E = newE;
 end
 
 
