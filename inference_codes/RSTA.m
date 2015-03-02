@@ -7,9 +7,10 @@
 % known to be difficult, the algorithm construct a set of predictors each with a random spanning tree as the output graph. With max-margin assumption,
 % if there exists a classifier achieving a margin on a complete graph, there will be a collection of random tree predictors achieving a similar margin.
 % 
-% PARAMETERS:
+% INPUT PARAMETERS:
 %   paramsIn:   input parameters
 %   dataIn:     input data e.g., kernel and label matrices for training and testing
+% OUTPUT PARAMETERS:
 %   rtn:        return value
 %   ts_err:     test error
 %
