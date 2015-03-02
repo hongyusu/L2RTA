@@ -948,12 +948,18 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton(x, kappa)
     normalization_linear    = 1/size(E_global,1);
     normalization_quadratic = 1;
     
+    normalization_linear    = 1/size(E_global,1);
+    normalization_quadratic = 1/size(E_global,1);
+    
+    normalization_linear    = 1;
+    normalization_quadratic = 1;
+    
     %% convex combination of update directions, combination is given by lmd
     % For each update direction in terms of multilabels, compute the corresponding mu_0, and compute the different mu_0-mu
     dmu_set = zeros(size(mu_global,1),T_size);
-    Y_kappa = reshape(Y_kappa',l,kappa*T_size);
-    Y_kappa = Y_kappa';
-    for t=1:T_size*kappa
+    %Ys_kappa = reshape(Y_kappa',l,kappa*T_size);
+    %Y_kappa = Y_kappa';
+    for t=1:T_size%*kappa
         Ymax    = Y_kappa(t,1:l);
         Umax_e  = 1+2*(Ymax(:,E_global(:,1))>0) + (Ymax(:,E_global(:,2)) >0);
         mu_0    = zeros(4*size(E_global,1),1);
@@ -982,7 +988,7 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton(x, kappa)
     K_dmu = zeros(4,size(E_global,1)*num_directions);
     for u=1:4
         IndEdgeVal = full(ind_edge_val_global{u}(:,x));
-        IndEdgeVal = reshape(IndEdgeVal(:,ones(num_directions,1))',1,size(E_global,1)*num_directions);
+        IndEdgeVal = reshape(IndEdgeVal(:,ones(num_directions,1)),1,size(E_global,1)*num_directions);
         H_u = S_dmu.*IndEdgeVal - dmu(u,:);
         term12 = term12 + H_u.*IndEdgeVal;
         K_dmu(u,:) = -H_u;
@@ -990,8 +996,18 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton(x, kappa)
     for u=1:4
         K_dmu(u,:) = K_dmu(u,:) + term12;
     end
-    Q = reshape(dmu,4*size(E_global,1)*num_directions,1)' * reshape(K_dmu,4*size(E_global,1)*num_directions,1);
     
+    reshape(dmu,4*size(E_global,1),num_directions)
+    
+    reshape(K_dmu,4*size(E_global,1),num_directions)
+    Q = reshape(dmu,4*size(E_global,1)*num_directions,1)' * reshape(K_dmu,4*size(E_global,1)*num_directions,1);
+    Q
+    Q = reshape(dmu,4*size(E_global,1),num_directions)' * reshape(K_dmu,4*size(E_global,1),num_directions);
+    Q
+    Y_kappa
+    Y_tr(x,:)
+    size(E_global)
+    adsfasd
     % Compute lambda
     lambda = g_global * pinv(Q);
     
@@ -1044,6 +1060,8 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton(x, kappa)
     delta_obj_second = -1/2 * normalization_quadratic *Kxx_dmu'*reshape(dmu_global,size(E_global,1)*4,1);
     % combine the first and the second term
     delta_obj_list(1) = delta_obj_first + delta_obj_second;
+    %[delta_obj_first,delta_obj_second]
+
     
     %% Update the marginal dual variable on each individual random spanning tree
     for t=1:T_size
