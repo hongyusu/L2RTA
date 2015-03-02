@@ -53,11 +53,14 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn,nm)
     global Yipos_list;
     global GmaxG0_list;
     global GoodUpdate_list;
+    global loss_global;
+    global E_global;
     
+    % Set random seed to make different run comparable.
     rand('twister', 0);
     
     global previous;
-    previous=[];
+    previous = [];
 
     params=paramsIn;
     if params.l_norm == 1
@@ -78,10 +81,12 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn,nm)
     ind_edge_val_list           = cell(T_size, 1);
     Kxx_mu_x_list               = cell(T_size, 1);
     duality_gap_on_trees        = ones(1,T_size)*1e10;          % relative duality gap on individual spanning tree
-    norm_const_linear           = 1/(T_size)/size(E_list{1},1); % The linear term will be normalized by the total number of edges
+    norm_const_linear           = 1/(T_size);                   % The linear term will be normalized by the total number of edges
     norm_const_quadratic_list   = zeros(1,T_size)+1/(T_size);   % The quadratic term is normalized by 1
     mu_list = cell(T_size);         % a list of solutions in terms of marginalized dual variables on the collection of trees
    
+    
+
     
     if T_size <= 1
         kappa_INIT  = 2;
@@ -97,11 +102,10 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn,nm)
     Yspos_list = ones(1,m)*(params.maxkappa);
     kappa = kappa_INIT;
     
-    loss_scaling_factor = 100;
     
+    % For each random spanning tree, compute loss function, edge indicator function, and initial mu and Kxx variables.
     for t=1:T_size
         [loss_list{t},Ye_list{t},ind_edge_val_list{t}] = compute_loss_vector(Y_tr,t,params.mlloss);
-        loss_list{t} = loss_list{t} / loss_scaling_factor;
         mu_list{t}          = zeros(4*size(E_list{1},1),m);
         Kxx_mu_x_list{t}    = zeros(4*size(E_list{1},1),m);
     end
@@ -125,8 +129,14 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn,nm)
     initialize_global_consensus_graph();
     
     
-    global loss_global
-    loss_global = loss_global / loss_scaling_factor;
+
+    % scale loss function on trees and consensus graphs.
+    loss_scaling_factor_tree = 1/30;
+    loss_scaling_factor_graph = 1/30;
+    for t=1:T_size
+        loss_list{t} = loss_list{t} * loss_scaling_factor_tree;
+    end
+    loss_global = loss_global * loss_scaling_factor_graph;
     
     
     
@@ -876,8 +886,6 @@ end
 %% 
 % Conditional gradient optimization with Newton method to find the best update direction by a convex combination of multiple update directions.
 %
-%
-%
 function [delta_obj_list] = conditional_gradient_descent_with_Newton(x, kappa)
 
     %% Definition of the parameters
@@ -1110,22 +1118,22 @@ end
 function profile_update_ts
     global params;
     global profile;
-    global E;
-    global Ye;
+    %global E;
+    %global Ye;
     global Y_tr;
     global Kx_tr;
     global Y_ts;
     global Kx_ts;
-    global mu;
-    global obj;
-    global primal_ub;
+    %global mu;
+    %global obj;
+    %global primal_ub;
     global kappa;
     global norm_const_quadratic_list;
-    m = size(Ye,2);
+    %m = size(Ye,2);
     tm = cputime;
     
-    print_message(sprintf('tm: %d  iter: %d obj: %f mu: max %f min %f dgap: %f',...
-    round(tm-profile.start_time),profile.iter,obj,max(max(mu)),min(min(mu)),primal_ub-obj),5,sprintf('/var/tmp/%s.log',params.filestem));
+    %print_message(sprintf('tm: %d iter: %d obj: %f mu: max %f min %f dgap: %f',...
+    %round(tm-profile.start_time),profile.iter,obj,max(max(mu)),min(min(mu)),primal_ub-obj),5,sprintf('/var/tmp/%s.log',params.filestem));
 
     if params.profiling
         profile.n_err_microlabel_prev = profile.n_err_microlabel;
@@ -1148,8 +1156,7 @@ function profile_update_ts
         
         % Print out message
         print_message(...
-            sprintf('tm: %d 1_er_tr: %d (%3.2f) er_tr: %d (%3.2f) 1_er_ts: %d (%3.2f) er_ts: %d (%3.2f) Y*tr %3.2f%% %.2f Yitr %3.2f%% %.2f Y*ts %3.2f%% %.2f Yits %3.2f%% %.2f',...
-            round(tm-profile.start_time),...
+            sprintf('1_tr: %d %3.2f h_tr: %d %3.2f 1_ts: %d %3.2f h_ts: %d %3.2f Y*tr %3.2f%% %.2f Yitr %3.2f%% %.2f Y*ts %3.2f%% %.2f Yits %3.2f%% %.2f',...
             profile.n_err,...
             profile.p_err*100,...
             profile.n_err_microlabel,...
@@ -1166,11 +1173,11 @@ function profile_update_ts
             sum(Yi_positions_ts<=kappa)/size(Y_ts,1)*100,...
             mean(Yi_positions_ts)),...
             0,sprintf('/var/tmp/%s.log',params.filestem));
-
+        % Compute running time
         running_time = tm - profile.start_time;
         sfile = sprintf('/var/tmp/Ypred_%s.mat',params.filestem);
         save(sfile,'Ypred_tr','Ypred_ts','params','running_time','norm_const_quadratic_list');
-        Ye = reshape(Ye,4*size(E,1),m);
+        %Ye = reshape(Ye,4*size(E,1),m);
     end
 end
 
