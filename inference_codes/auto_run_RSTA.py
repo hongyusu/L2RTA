@@ -19,7 +19,7 @@ import os
 import sys
 import commands
 sys.path.append('/cs/taatto/group/urenzyme/workspace/netscripts/')
-from get_free_nodes import get_free_nodes
+#from get_free_nodes import get_free_nodes
 import multiprocessing
 import time
 import logging
@@ -110,7 +110,8 @@ def run():
   n=0
   # generate jobs
   logging.info('\t\tGenerating job queue.')
-  for slack_c in ['100','1','0.1','10','0.01','50','0.5','20','0.05','5']:
+  #for slack_c in ['100','1','0.1','10','0.01','50','0.5','20','0.05','5']:
+  for slack_c in ['1']:
     for kth_fold in ['1','2','3','4','5']:
       for filename in filenames:
         graph_type = 'tree'
