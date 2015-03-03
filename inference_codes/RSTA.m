@@ -10,15 +10,16 @@
 % INPUT PARAMETERS:
 %   paramsIn:   input parameters
 %   dataIn:     input data e.g., kernel and label matrices for training and testing
+%
 % OUTPUT PARAMETERS:
 %   rtn:        return value
 %   ts_err:     test error
 %
 %
 % USAGE:
-%   This function is called by a wrapper run_RSTA()
+%   This function is called by a MATLAB wrapper function run_RSTA()
 %
-function [rtn, ts_err] = RSTA(paramsIn, dataIn)
+function [rtn, ts_err] = RSTA (paramsIn, dataIn)
 
     %% Definition of global variables
     global loss_list;           % losses associated with different edge labels
@@ -46,7 +47,6 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn)
     global norm_const_quadratic_list;
     global Kxx_mu_x_list;
     global kappa;               % K best
-    global Yspos_list;  
     global iter;                % the indicator for the number of iteration
     global duality_gap_on_trees;
     global val_list;
@@ -56,14 +56,10 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn)
     global GoodUpdate_list;
     % Variable on global consensus graph
     global loss_global;
-    %global E_global;
-    
+  
     % Set random seed to make different run comparable.
     rand('twister', 0);
     
-    global previous;
-    previous = [];
-
     params=paramsIn;
     if params.l_norm == 1
         l1norm = 1;
@@ -82,10 +78,10 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn)
     Ye_list     = cell(T_size, 1);   
     ind_edge_val_list           = cell(T_size, 1);
     Kxx_mu_x_list               = cell(T_size, 1);
-    duality_gap_on_trees        = ones(1,T_size)*1e10;  % relative duality gap on individual spanning tree
-    norm_const_linear           = 1/(T_size);           % The normalization linear term and quadratic term will make sure the obj will not increase with the number of spanning trees
-    norm_const_quadratic_list        = zeros(1,T_size) + 1/(T_size);           % The same principal above
-    mu_list     = cell(T_size);         % a list of solutions in terms of marginalized dual variables on the collection of trees
+    duality_gap_on_trees        = ones(1,T_size)*1e10;          % relative duality gap on individual spanning tree
+    norm_const_linear           = 1/(T_size);                   % The normalization linear term and quadratic term will make sure the obj will not increase with the number of spanning trees
+    norm_const_quadratic_list   = zeros(1,T_size) + 1/(T_size); % The same principal above
+    mu_list     = cell(T_size);     % a list of solutions in terms of marginalized dual variables on the collection of trees
    
     if T_size <= 1
         kappa_INIT  = 2;
@@ -96,11 +92,7 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn)
         kappa_MIN   = min(params.maxkappa,2^l); 
         kappa_MAX   = min(params.maxkappa,2^l);
     end
-    
-    
-    Yspos_list  = ones(1,m)*(params.maxkappa);
     kappa       = kappa_INIT;
-    
     
     % For each random spanning tree, compute loss function, edge indicator function, and initial mu and Kxx variables.
     for t=1:T_size
@@ -168,68 +160,37 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn)
     
     
     %% Iterate over training examples until convergence 
-    while(opt_round < params.maxiter && ...
-            primal_ub - obj >= params.epsilon*obj)
-%     while (primal_ub - obj >= params.epsilon*obj && ... % satisfy duality gap
-%             progress_made == 1 && ...                   % make progress
-%             nflip > 0 && ...                            % number of flips
-%             opt_round < params.maxiter ...              % within iteration limitation
-%             )
+    while (opt_round < params.maxiter && primal_ub - obj >= params.epsilon*obj)
+        
         opt_round = opt_round + 1;
         
-        % update lambda / quadratic term
-        
-        if iter>0 && l1norm==1
-            for t=1:T_size
-                Kmu_tmp = compute_Kmu(Kx_tr,mu_list{t},E_list{t},ind_edge_val_list{t});
-                Kmu_tmp = reshape(Kmu_tmp,1,size(Kmu_tmp,1)*size(Kmu_tmp,2));
-                mu_tmp = reshape(mu_list{t},1,size(mu_list{t},1)*size(mu_list{t},2));
-                norm_const_quadratic_list(t) = sqrt(Kmu_tmp*mu_tmp'*norm_const_quadratic_list(t)/2);
-            end
-            norm_const_quadratic_list = norm_const_quadratic_list /  sum(norm_const_quadratic_list);    
-        end
-        
-        %% iterate over examples 
+        % iterate over examples 
         iter = iter +1;   
-        Yspos_list = ones(1,m);
-        %Yipos_list = ones(1,m);
         val_list = zeros(1,m);
 
         if iter <= 30
             Yipos_list = ones(1,m)*(params.maxkappa+1);
         end
         for xi = randsample(1:m,m,true,Yipos_list/sum(Yipos_list)) % sample training examples according to the rank of the true label in last iteration
-%         for xi = selected_samples
-%         for xi = randsample(1:m,m)
-%         for xi = 1:m
+%         for xi = randsample(1:m,m)    % sample training examples uniformly at random, stochastic optimization
+%         for xi = 1:m                  % iterater by a fix order over a set of training examples
             print_message(sprintf('Start descend on example %d initial k %d',xi,kappa),3)
             kappa_decrease_flag(xi)=0;
             if params.newton_method == 0
-            [delta_obj_list] = conditional_gradient_descent(xi,kappa);    % optimize on single example
+                [delta_obj_list] = conditional_gradient_descent(xi, kappa);                  
             else
-            [delta_obj_list] = conditional_gradient_descent_with_Newton(xi,kappa);    % optimize on single example
+                [delta_obj_list] = conditional_gradient_descent_with_Newton(xi, kappa);
             end
-%                 kappa0=kappa;
-%                 while ( Yspos_list(xi)==0 ) && kappa0 < params.maxkappa 
-%                     kappa0=kappa0*2;
-%                     [delta_obj_list,Yspos_list(xi)] = conditional_gradient_descent(xi,kappa0);    % optimize on single example
-%                 end
-            kappa_list(xi)=kappa;
-            obj_list = obj_list + delta_obj_list;
-            obj = obj + sum(delta_obj_list);
-            % update kappa
-            if Yspos_list(xi)==0
-                kappa = min(kappa*2,kappa_MAX);
-            else
-                kappa = max(ceil(kappa/2),kappa_MIN);
-            end
+
+            kappa_list(xi) = kappa;
+            obj_list    = obj_list + delta_obj_list;
+            obj         = obj + sum(delta_obj_list);
         end
         
-        
+        % Profile after iterating over all training examples once
         if mod(iter, params.profileiter)==0
             progress_made = (obj >= prev_obj);  
             prev_obj = obj;
-            
             % Compute duality gap and update profile for all training examples.
             compute_duality_gap;            
             profile_update_tr;          
@@ -240,8 +201,8 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn)
             % update current best solution
             if profile.n_err_microlabel < best_n_err_microlabel
                 best_n_err_microlabel = profile.n_err_microlabel;
-                best_iter   = iter;
-                best_kappa  = kappa;
+                best_iter           = iter;
+                best_kappa          = kappa;
                 best_mu_list        = mu_list;
                 best_Kxx_mu_x_list  = Kxx_mu_x_list;
                 best_Rmu_list       = Rmu_list;
@@ -250,49 +211,42 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn)
             end
         end
         
-        
     end
     
-    
-
-    %% last optimization iteration
+    %% After training, go through all examples one more time, this is optional and is very expensive in computation
     if paramsIn.extra_iter
-        iter = best_iter+1;
-        kappa = best_kappa;
-        mu_list = best_mu_list;
-        Kxx_mu_x_list = best_Kxx_mu_x_list;
-        Rmu_list = best_Rmu_list;
-        Smu_list = best_Smu_list;
+        iter            = best_iter+1;
+        kappa           = best_kappa;
+        mu_list         = best_mu_list;
+        Kxx_mu_x_list   = best_Kxx_mu_x_list;
+        Rmu_list        = best_Rmu_list;
+        Smu_list        = best_Smu_list;
         norm_const_quadratic_list = best_norm_const_quadratic_list;
         for xi=1:m
-
-                [~,~] = conditional_gradient_descent(xi,kappa);    % optimize on single example
-
+            [~,~] = conditional_gradient_descent(xi,kappa);    % optimize on single example
             profile_update_tr;
             if profile.n_err_microlabel < best_n_err_microlabel
-                best_n_err_microlabel=profile.n_err_microlabel;
-                best_iter = iter;
-                best_kappa = kappa;
-                best_mu_list=mu_list;
-                best_Kxx_mu_x_list=Kxx_mu_x_list;
-                best_Rmu_list=Rmu_list;
-                best_Smu_list=Smu_list;
+                best_n_err_microlabel = profile.n_err_microlabel;
+                best_iter           = iter;
+                best_kappa          = kappa;
+                best_mu_list        = mu_list;
+                best_Kxx_mu_x_list  = Kxx_mu_x_list;
+                best_Rmu_list       = Rmu_list;
+                best_Smu_list       = Smu_list;
             end
         end
     end
     
-    %% final prediction
-    iter = best_iter+1;
-    kappa = best_kappa;
-    mu_list = best_mu_list;
+    %% After training phase, we just need to make predictions.
+    iter        = best_iter+1;
+    kappa       = best_kappa;
+    mu_list     = best_mu_list;
     Kxx_mu_x_list = best_Kxx_mu_x_list;
-    Rmu_list = best_Rmu_list;
-    Smu_list = best_Smu_list;
+    Rmu_list    = best_Rmu_list;
+    Smu_list    = best_Smu_list;
     norm_const_quadratic_list = best_norm_const_quadratic_list;
     profile_update_ts;
     
-    
-
     rtn = 0;
     ts_err = 0;
 end
@@ -385,114 +339,114 @@ function [dmu_set] = compose_mu_local_from_global(dmu_global)
     
 end
 
-%% Compute marginal dual variables on global consensus graph mu_global for all marginal dual variables mu over all examples
-% Input:    x is the x'th training example
-% Output:   mu_global
-%           E_global
-%           ind_backwards:  reverse mapping from global to the collection of local
-%           inverse_flag:   positions that corresponds to the change of edge directions
-function [mu_global,E_global,ind_backwards,inverse_flag] = compose_global_from_local(x)
-    
-
-    global E_list;
-    global mu_list;
-    global T_size;
-    global l;
-    global m;
-    
-    % Pool all edges and corresponding marginal dual variables together.
-    % TODO: initialize Emu
-    Emu = [];
-    for t=1:T_size
-        E   = E_list{t};
-        % make a new mu
-        mu = reshape(mu_list{t}, 4, (l-1)*m);
-        % TODO: initialize newMu
-        newMu = [];
-        for u=1:4
-            newMu = [ newMu, reshape(mu(u,:), l-1, m) ];
-        end
-        Emu = [Emu;[E,newMu]];
-    end
-    % Clear the repeating rows.
-    inverse_flag = Emu(:,1)>Emu(:,2);
-    Emu(inverse_flag,:) = Emu(inverse_flag,[2,1, 3:(m+2), (2*m+3):(2*m+m+2), (m+3):(m+m+2), (3*m+3):(3*m+m+2)]);
-    [~, ind_forwards, ind_backwards] = unique(Emu(:,1:2),'rows');
-    Emu = Emu(ind_forwards,:);
-    E_global    = Emu(:,1:2);
-    newMu       = Emu(:,3:size(Emu,2));
-    mu_global   = [];
-    for u=1:4
-        mu_global = [mu_global; reshape(newMu(:,((u-1)*m+1):(u*m)), 1, size(E_global,1)*m)];
-    end
-    
-    mu_global = reshape(mu_global, 4*size(E_global,1), m);
-    
-    if sum(sum(isnan(mu_global)))>0
-        [x,sum(sum(isnan(mu_global)))]
-        asdfasd
-    end
-end
-
-%% Decompose the global mu into a set of mu defined on a collection of spanning trees
-% Input:    mu_global
-%           E_global
-%           ind_backwards
-%           inverse_flag
-% Output:   mu0_list
-function [mu0_list] = decompose_local_from_global(mu_global, E_global, ind_backwards, inverse_flag)
-    
-    global T_size;
-    Emu = [E_global, reshape(mu_global,4,size(E_global,1))'];
-    Emu = Emu(ind_backwards,:);
-    Emu(inverse_flag,:) = Emu(inverse_flag,[2,1,3,5,4,6]);
-    mu0_list = cell(T_size,1);
-    for t=1:T_size
-        mu0_list{t} = Emu(((t-1)*(size(Emu,1)/T_size)+1):(t*(size(Emu,1)/T_size)),3:6);
-        mu0_list{t} = reshape(mu0_list{t}',size(mu0_list{t},1)*size(mu0_list{t},2),1);
-    end
-    
-end
-
-
-
-%% New function to compute <K^{delta}(i,:),mu>, which is the part of the gradient, the dimenson of Kmu is m*4*|E|
-% Input:
-%       Kx: part of the kernel matrix for current examples
-%       mu: complete marginal dual variable
-%       E:  complete set of edges
-%       ind_edge_val: edge value indicator
-%       x:  indicator for current set of examples
-% 27/01/2015
-function Kmu = compute_Kmu_matrix ( Kx, mu, E, ind_edge_val, x )
+% %% Compute marginal dual variables on global consensus graph mu_global for all marginal dual variables mu over all examples
+% % Input:    x is the x'th training example
+% % Output:   mu_global
+% %           E_global
+% %           ind_backwards:  reverse mapping from global to the collection of local
+% %           inverse_flag:   positions that corresponds to the change of edge directions
+% function [mu_global,E_global,ind_backwards,inverse_flag] = compose_global_from_local(x)
+%     
+% 
+%     global E_list;
+%     global mu_list;
+%     global T_size;
+%     global l;
+%     global m;
+%     
+%     % Pool all edges and corresponding marginal dual variables together.
+%     % TODO: initialize Emu
+%     Emu = [];
+%     for t=1:T_size
+%         E   = E_list{t};
+%         % make a new mu
+%         mu = reshape(mu_list{t}, 4, (l-1)*m);
+%         % TODO: initialize newMu
+%         newMu = [];
+%         for u=1:4
+%             newMu = [ newMu, reshape(mu(u,:), l-1, m) ];
+%         end
+%         Emu = [Emu;[E,newMu]];
+%     end
+%     % Clear the repeating rows.
+%     inverse_flag = Emu(:,1)>Emu(:,2);
+%     Emu(inverse_flag,:) = Emu(inverse_flag,[2,1, 3:(m+2), (2*m+3):(2*m+m+2), (m+3):(m+m+2), (3*m+3):(3*m+m+2)]);
+%     [~, ind_forwards, ind_backwards] = unique(Emu(:,1:2),'rows');
+%     Emu = Emu(ind_forwards,:);
+%     E_global    = Emu(:,1:2);
+%     newMu       = Emu(:,3:size(Emu,2));
+%     mu_global   = [];
+%     for u=1:4
+%         mu_global = [mu_global; reshape(newMu(:,((u-1)*m+1):(u*m)), 1, size(E_global,1)*m)];
+%     end
+%     
+%     mu_global = reshape(mu_global, 4*size(E_global,1), m);
+%     
+%     if sum(sum(isnan(mu_global)))>0
+%         [x,sum(sum(isnan(mu_global)))]
+%         asdfasd
+%     end
+% end
+% 
+% %% Decompose the global mu into a set of mu defined on a collection of spanning trees
+% % Input:    mu_global
+% %           E_global
+% %           ind_backwards
+% %           inverse_flag
+% % Output:   mu0_list
+% function [mu0_list] = decompose_local_from_global(mu_global, E_global, ind_backwards, inverse_flag)
+%     
+%     global T_size;
+%     Emu = [E_global, reshape(mu_global,4,size(E_global,1))'];
+%     Emu = Emu(ind_backwards,:);
+%     Emu(inverse_flag,:) = Emu(inverse_flag,[2,1,3,5,4,6]);
+%     mu0_list = cell(T_size,1);
+%     for t=1:T_size
+%         mu0_list{t} = Emu(((t-1)*(size(Emu,1)/T_size)+1):(t*(size(Emu,1)/T_size)),3:6);
+%         mu0_list{t} = reshape(mu0_list{t}',size(mu0_list{t},1)*size(mu0_list{t},2),1);
+%     end
+%     
+% end
 
 
-    numExample = size(x,2);   % number of example in this computation
-    m = size(Kx,1);         % total number of examples
-    numE = size(E,1);       % number of edges
 
-    
-    mu = reshape(mu, 4, numE * m);         % 4 by |E|*m
-    sum_mu = reshape(sum(mu), numE, m);    % |E| by m
-    
-    term12 = zeros(1, numE * numExample);	% 1 by (|E|*m)
-    Kmu = zeros(4, numE * numExample);      % 4 by (|E|*m)
-    
-    for u = 1:4
-        edgeLabelIndicator = full(ind_edge_val{u});     % |E| by m 
-        real_mu_u = reshape(mu(u,:),numE,m);   % |E| by m
-        H_u = sum_mu.*edgeLabelIndicator - real_mu_u;   % |E| by m
-        Q_u = H_u * Kx; % |E| by m   
-        term12 = term12 + reshape(Q_u.*edgeLabelIndicator(:,x), 1, numE * numExample);   % 1 by |E|*m
-        Kmu(u,:) = reshape(-Q_u, 1, numE*numExample);
-    end
-    
-    for u = 1:4
-        Kmu(u,:) = Kmu(u,:) + term12;
-    end
-    
-    Kmu = reshape(Kmu, 4*numE, numExample);
-end
+% %% New function to compute <K^{delta}(i,:),mu>, which is the part of the gradient, the dimenson of Kmu is m*4*|E|
+% % Input:
+% %       Kx: part of the kernel matrix for current examples
+% %       mu: complete marginal dual variable
+% %       E:  complete set of edges
+% %       ind_edge_val: edge value indicator
+% %       x:  indicator for current set of examples
+% % 27/01/2015
+% function Kmu = compute_Kmu_matrix ( Kx, mu, E, ind_edge_val, x )
+% 
+% 
+%     numExample = size(x,2);   % number of example in this computation
+%     m = size(Kx,1);         % total number of examples
+%     numE = size(E,1);       % number of edges
+% 
+%     
+%     mu = reshape(mu, 4, numE * m);         % 4 by |E|*m
+%     sum_mu = reshape(sum(mu), numE, m);    % |E| by m
+%     
+%     term12 = zeros(1, numE * numExample);	% 1 by (|E|*m)
+%     Kmu = zeros(4, numE * numExample);      % 4 by (|E|*m)
+%     
+%     for u = 1:4
+%         edgeLabelIndicator = full(ind_edge_val{u});     % |E| by m 
+%         real_mu_u = reshape(mu(u,:),numE,m);   % |E| by m
+%         H_u = sum_mu.*edgeLabelIndicator - real_mu_u;   % |E| by m
+%         Q_u = H_u * Kx; % |E| by m   
+%         term12 = term12 + reshape(Q_u.*edgeLabelIndicator(:,x), 1, numE * numExample);   % 1 by |E|*m
+%         Kmu(u,:) = reshape(-Q_u, 1, numE*numExample);
+%     end
+%     
+%     for u = 1:4
+%         Kmu(u,:) = Kmu(u,:) + term12;
+%     end
+%     
+%     Kmu = reshape(Kmu, 4*numE, numExample);
+% end
 
 
 %% Complete part of gradient for everything
@@ -902,7 +856,6 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton(x, kappa)
     global iter;
     global val_list;
     global Yipos_list;
-    global Yspos_list;
     global GmaxG0_list;
     global GoodUpdate_list;
     global node_degree_list;
