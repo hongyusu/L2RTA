@@ -174,7 +174,7 @@ function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, 
     % currently use following parameters
     mmcrf_c         = slack_c;      % margin slack parameter
     mmcrf_g         = -1e6;         % relative duality gap
-    mmcrf_i         = 50;           % number of iteration
+    mmcrf_i         = 120;           % number of iteration
     mmcrf_maxkappa  = maxkappa;     % length of the K-best list
     
     % Print out all parameters
@@ -216,7 +216,7 @@ function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, 
     %% Perform the experiment on the k'th fold of the 5 fold cross-validation
     % TODO: some of the variables are no longer necessary, to be removed
     for k=kth_fold
-        paramsIn.profileiter    = 1;           % Profile the training every fix number of iterations
+        paramsIn.profileiter    = 40;           % Profile the training every fix number of iterations
         paramsIn.losstype       = losstype;     % losstype
         paramsIn.mlloss         = 0;            % assign loss to microlabels(0) edges(1)
         paramsIn.profiling      = 1;            % profile (test during learning)
