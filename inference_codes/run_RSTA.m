@@ -137,6 +137,8 @@ function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, 
         end
     else
         K = X * X';         % Dot product
+%         K = CenterKernelMatrix(K);    % Center the kernel matrix.
+%         K = K-min(min(K));            % After centering, make sure no negative value in the matrix.
         K = K ./ sqrt(diag(K)*diag(K)');    % Normalization of the kernel matrix to make sure points are in a unit sphere.
         % TODO: Center kernel
     end
@@ -318,5 +320,13 @@ function [E] = RootTree(E)
     E = newE;
 end
 
+
+% Center kernel matrix
+function [Kc] = CenterKernelMatrix(K)
+
+    N1 = ones(size(K))/size(K,1);
+    Kc = K-N1*K-K*N1-N1*K*N1;
+    
+end
 
 

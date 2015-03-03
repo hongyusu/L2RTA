@@ -125,7 +125,7 @@ def run():
               for loss_scaling_factor in range(0,11,2):
                 if loss_scaling_factor ==0:
                   loss_scaling_factor = 1
-                for newton_method in ['1']:
+                for newton_method in ['0']:
                   if checkfile(filename,graph_type,para_t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method):
                     continue
                   else:

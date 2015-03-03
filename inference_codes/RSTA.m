@@ -133,7 +133,6 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn)
     loss_global = loss_global * loss_scaling_factor_graph;
     
     
-    
 
     %% Optimization
     print_message('Conditional gradient descend ...',0);
@@ -948,14 +947,13 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton(x, kappa)
         Y_kappa(t,:)        = Ymax;
         Y_kappa_val(t,:)    = YmaxVal;
     end
-    
 
     %% Compose current global marginal dual variable (mu) from local marginal dual variables {mu_t}_{t=1}^{T}
     mu_global = compose_mu_global_from_local;
     
     
-    normalization_linear    = 1/size(E_global,1);
-    normalization_quadratic = 1;
+%     normalization_linear    = 1/size(E_global,1);
+%     normalization_quadratic = 1;
 %     
 %     normalization_linear    = 1/size(E_global,1);
 %     normalization_quadratic = 1/size(E_global,1);
@@ -1014,6 +1012,7 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton(x, kappa)
     
     % Compute lambda
     lambda = g_global * pinv(Q);
+    
     
     
     % Ensure lambda is feasible
