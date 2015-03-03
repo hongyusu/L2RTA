@@ -22,7 +22,7 @@
 %   newton_method:          boolean variable indicating whether to use newton methods to combine multiple update direction
 %
 %
-% SUGGESTIONS:
+% SUGGESTIONS FOR PARAMETERS:
 %   loss_scaling_factor:
 %           test loss_scaling_factor=1 which will use the original loss function
 %           test loss_sclaing_factor=|E| which will downscale the original loss function by the number of edges in the graph/tree

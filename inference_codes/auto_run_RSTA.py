@@ -1,7 +1,7 @@
 
 
 
-# Wrapper function to run developed Random Spanning Tree Approximation algorithm parallelly on interactive cluster,for the purpose of multiple parameter and datasets.
+# Wrapper function to run developed Random Spanning Tree Approximation algorithm parallelly on interactive cluster, for the purpose of multiple parameters and datasets.
 # The script uses Python thread and queue package.
 # Implement worker class and queuing system.
 # The framework looks at each parameter combination as a job and pools all jobs in a queue.
@@ -29,7 +29,6 @@ logging.basicConfig(format='%(asctime)s %(filename)s %(funcName)s %(levelname)s:
 
 job_queue = Queue.Queue()
 
-
 # Worker class
 # job is a tuple of parameters
 class Worker(Thread):
@@ -37,7 +36,7 @@ class Worker(Thread):
     Thread.__init__(self)
     self.job_queue  = job_queue
     self.node = node
-    self.penalty = 0
+    self.penalty = 0 # penalty parameter which prevents computing node with low computational resources getting jobs from job queue
     pass # def
   def run(self):
     all_done = 0
@@ -57,45 +56,45 @@ class Worker(Thread):
   pass # class
 
 
-def checkfile(filename,graph_type,t,kth_fold,l_norm,kappa,slack_c):
+def checkfile(filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method):
   file_exist = 0
-  file_exist += os.path.isfile("../outputs/%s_%s_%s_f%s_l%s_k%s_c%s_RSTAs.log" % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c))
-  file_exist += os.path.isfile("../outputs/phase6/%s_%s_%s_f%s_l%s_k%s_c%s_RSTAs.log" % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c)) # 100
-  file_exist += os.path.isfile("../outputs/phase7/%s_%s_%s_f%s_l%s_k%s_c%s_RSTAs.log" % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c)) # 1
-  file_exist += os.path.isfile("../outputs/phase8/%s_%s_%s_f%s_l%s_k%s_c%s_RSTAs.log" % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c)) # 0.1
-  file_exist += os.path.isfile("../outputs/phase9/%s_%s_%s_f%s_l%s_k%s_c%s_RSTAs.log" % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c)) # 10
-  file_exist += os.path.isfile("../outputs/phase10/%s_%s_%s_f%s_l%s_k%s_c%s_RSTAs.log" % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c)) # 0.01
-  file_exist += os.path.isfile("../outputs/phase11/%s_%s_%s_f%s_l%s_k%s_c%s_RSTAs.log" % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c)) # 50
-  file_exist += os.path.isfile("../outputs/phase12/%s_%s_%s_f%s_l%s_k%s_c%s_RSTAs.log" % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c)) # 0.5
-  file_exist += os.path.isfile("../outputs/phase13/%s_%s_%s_f%s_l%s_k%s_c%s_RSTAs.log" % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c)) # 20
-  file_exist += os.path.isfile("../outputs/phase14/%s_%s_%s_f%s_l%s_k%s_c%s_RSTAs.log" % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c)) # 0.05
-  file_exist += os.path.isfile("../outputs/phase15/%s_%s_%s_f%s_l%s_k%s_c%s_RSTAs.log" % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c)) # 5
+  file_exist += os.path.isfile("../outputs/%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs.log" % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))        # temporatory folder
+  file_exist += os.path.isfile("../outputs/phase1/%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs.log" % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method)) # 100
+  file_exist += os.path.isfile("../outputs/phase2/%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs.log" % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method)) # 1
+  file_exist += os.path.isfile("../outputs/phase3/%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs.log" % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method)) # 0.1
+  file_exist += os.path.isfile("../outputs/phase4/%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs.log" % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method)) # 10
+  file_exist += os.path.isfile("../outputs/phase5/%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs.log" % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method)) # 0.01
+  file_exist += os.path.isfile("../outputs/phase6/%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs.log" % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method)) # 50
+  file_exist += os.path.isfile("../outputs/phase7/%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs.log" % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method)) # 0.5
+  file_exist += os.path.isfile("../outputs/phase8/%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs.log" % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method)) # 20
+  file_exist += os.path.isfile("../outputs/phase9/%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs.log" % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method)) # 0.05
+  file_exist += os.path.isfile("../outputs/phase10/%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs.log" % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method)) # 5
   if file_exist > 0:
     return 1
   else:
     return 0
-  pass
+  pass # def
 
 
 def singleRSTA(node, job):
-  (n,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c) = job
+  (n,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method) = job
   try:
-    if checkfile(filename,graph_type,t,kth_fold,l_norm,kappa,slack_c):
-      logging.info('\t--< (node)%s,(f)%s,(type)%s,(t)%s,(f)%s,(l)%s,(k)%s,(c)%s' %( node,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c))
+    if checkfile(filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method):
+      logging.info('\t--< (node)%s,(f)%s,(type)%s,(t)%s,(f)%s,(l)%s,(k)%s,(c)%s,(s)%s,(n)%s' %( node,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
       fail_penalty = 0
     else:
-      logging.info('\t--> (node)%s,(f)%s,(type)%s,(t)%s,(f)%s,(l)%s,(k)%s,(c)%s' %( node,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c))
-      os.system(""" ssh -o StrictHostKeyChecking=no %s 'cd /cs/taatto/group/urenzyme/workspace/colt2014/experiments/random_spanning_tree_approximation/inference_codes/; rm -rf /var/tmp/.matlab; export OMP_NUM_THREADS=32; nohup matlab -nodisplay -r "run_RSTA '%s' '%s' '%s' '0' '%s' '%s' '%s' '%s'" > /var/tmp/tmp_%s_%s_%s_f%s_l%s_k%s_c%s_RSTAs' """ % (node,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c) )
-      logging.info('\t--| (node)%s,(f)%s,(type)%s,(t)%s,(f)%s,(l)%s,(k)%s,(c)%s' %( node,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c))
+      logging.info('\t--> (node)%s,(f)%s,(type)%s,(t)%s,(f)%s,(l)%s,(k)%s,(c)%s,(s)%s,(n)%s' %( node,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
+      os.system(""" ssh -o StrictHostKeyChecking=no %s 'cd /cs/taatto/group/urenzyme/workspace/colt2014/experiments/random_spanning_tree_approximation/inference_codes/; rm -rf /var/tmp/.matlab; export OMP_NUM_THREADS=32; nohup matlab -nodisplay -r "run_RSTA '%s' '%s' '%s' '0' '%s' '%s' '%s' '%s' '%s' '%s'" > /var/tmp/tmp_%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs' """ % (node,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method) )
+      logging.info('\t--| (node)%s,(f)%s,(type)%s,(t)%s,(f)%s,(l)%s,(k)%s,(c)%s,(s)%s,(n)%s' %( node,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
       fail_penalty = -1
   except Exception as excpt_msg:
     print excpt_msg
     job_queue.put((job))
-    logging.info('\t--= (node)%s,(f)%s,(type)%s,(t)%s,(f)%s,(l)%s,(k)%s,(c)%s' %( node,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c))
+    logging.info('\t--= (node)%s,(f)%s,(type)%s,(t)%s,(f)%s,(l)%s,(k)%s,(c)%s,(s)%s,(n)%s' %( node,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
     fail_penalty = 1
-  if not os.path.isfile("../outputs/%s_%s_%s_f%s_l%s_k%s_c%s_RSTAs.log" % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c)):
+  if not os.path.isfile("../outputs/%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs.log" % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method)):
     job_queue.put((job))
-    logging.info('\t--x (node)%s,(f)%s,(type)%s,(t)%s,(f)%s,(l)%s,(k)%s,(c)%s' %( node,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c))
+    logging.info('\t--x (node)%s,(f)%s,(type)%s,(t)%s,(f)%s,(l)%s,(k)%s,(c)%s,(s)%s,(n)%s' %( node,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
     fail_penalty = 1
   time.sleep(10)
   return fail_penalty
@@ -107,7 +106,7 @@ def run():
   n=0
   is_main_run_factor=5
   filenames=['cancer','ArD20','ArD30','toy10','toy50','emotions','yeast','medical','scene','enron','cal500','fp']
-  #filenames=['scene']
+  filenames=['scene']
   n=0
   # generate jobs
   logging.info('\t\tGenerating job queue.')
@@ -121,11 +120,17 @@ def run():
               if t==0:
                 t=1
               para_t="%d" % (t)
-              if checkfile(filename,graph_type,para_t,kth_fold,l_norm,kappa,slack_c):
-                continue
-              else:
-                n=n+1
-                job_queue.put((n,filename,graph_type,para_t,kth_fold,l_norm,kappa,slack_c))
+              for loss_scaling_factor in range(0,11,2):
+                if loss_scaling_factor ==0:
+                  loss_scaling_factor = 1
+                for newton_method in ['1']:
+                  if checkfile(filename,graph_type,para_t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method):
+                    continue
+                  else:
+                    n=n+1
+                    job_queue.put((n,filename,graph_type,para_t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
+                  pass # for newton_method
+                pass # for loss_scaling_factor
               pass # for slack_c
             pass # for |T|
           pass # for l
