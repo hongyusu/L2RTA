@@ -198,7 +198,7 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn)
         if iter <= 30
             Yipos_list = ones(1,m)*(params.maxkappa+1);
         end
-        for xi = randsample(1:m,m,true,Yipos_list/sum(Yipos_list))
+        for xi = randsample(1:m,m,true,Yipos_list/sum(Yipos_list)) % sample training examples according to the rank of the true label in last iteration
 %         for xi = selected_samples
 %         for xi = randsample(1:m,m)
 %         for xi = 1:m
