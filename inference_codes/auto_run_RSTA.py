@@ -19,7 +19,7 @@ import os
 import sys
 import commands
 sys.path.append('/cs/taatto/group/urenzyme/workspace/netscripts/')
-#from get_free_nodes import get_free_nodes
+from get_free_nodes import get_free_nodes
 import multiprocessing
 import time
 import logging
