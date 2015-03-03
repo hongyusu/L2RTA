@@ -148,9 +148,9 @@ function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, 
     Ind     = getCVIndex(Y,nfold);
     
     %% Select part of the data for code sanity check if 'isTest==1'.
-    ntrain = 100;
-    ntrain = min(ntrain,size(Y,1));
-    iteration = 120;
+    ntrain      = 100;
+    ntrain      = min(ntrain,size(Y,1));
+    iteration   = 120;
     profile_iteration = 40;
     if isTest == 1
         X   = X(1:ntrain,:);
@@ -162,6 +162,8 @@ function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, 
         
     end
 
+    %run_SVM(nfold, size(Y,2), Ind, X, Y, kth_fold, 100)
+    
 %     %% Perform parameter selection.
 %     % TODO: to be better implemented
 %     % ues results from parameter selection, otherwise use fixed parameters

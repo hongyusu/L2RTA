@@ -175,7 +175,6 @@ function [rtn, ts_err] = RSTA (paramsIn, dataIn)
 %         for xi = randsample(1:m,m)    % sample training examples uniformly at random, stochastic optimization
 %         for xi = 1:m                  % iterater by a fix order over a set of training examples
             print_message(sprintf('Start descend on example %d initial k %d',xi,kappa),3)
-            kappa_decrease_flag(xi)=0;
             if params.newton_method == 0
                 [delta_obj_list] = conditional_gradient_descent(xi, kappa);                  
             else
@@ -675,7 +674,7 @@ function [delta_obj_list] = conditional_gradient_descent(x, kappa)
     gradient_list_local = cell(1, T_size);
     Kmu_x_list_local    = cell(1, T_size);
     % Iterate over a collection of random spanning trees and compute the K best multilabels on each spanning tree by Dynamic Programming.
-    for t=1:T_size
+    for t = 1:T_size
         % Variables located on the spanning tree T_t and example x.
         loss    = loss_list{t}(:,x);
         Ye      = Ye_list{t}(:,x);
@@ -710,7 +709,7 @@ function [delta_obj_list] = conditional_gradient_descent(x, kappa)
     end
     % change label from -1/+1 to 0/+1
     Y_kappa = (Y_kappa+1)/2;
-    Yi = (Y_tr(x,:)+1)/2;
+    Yi      = (Y_tr(x,:)+1)/2;
     
     % find the worst violating multilabel from the K best list
     %   Ymax:         best multilabel
@@ -789,8 +788,8 @@ function [delta_obj_list] = conditional_gradient_descent(x, kappa)
         tau=0;
     end
     tau = max(tau,0);
-	GmaxG0_list(x) = sum(Gmax>=G0);
-    GoodUpdate_list(x) = (tau>0);
+	GmaxG0_list(x)      = sum(Gmax>=G0);
+    GoodUpdate_list(x)  = (tau>0);
 
 
     %% Update marginal dual variables based on the step size given by the line search on each individual random spanning tree.
