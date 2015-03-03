@@ -142,7 +142,7 @@ def run():
     pass # for k fole
   # get computing nodes
   cluster = get_free_nodes()[0] # if you have access to some interactive computer cluster, get the list of hostnames of the cluster
-  #cluster = ['melkinkari'] # if you don't have access to any computer cluster, just use your machine as the only computing node
+  cluster = ['melkinkari'] # if you don't have access to any computer cluster, just use your machine as the only computing node
   # running jobs
   job_size = job_queue.qsize()
   logging.info( "\t\tProcessing %d jobs" % (job_size))
