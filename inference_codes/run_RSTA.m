@@ -146,7 +146,7 @@ function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, 
     Ind = getCVIndex(Y,nfold);
     
     %% Select part of the data for code sanity check if 'isTest==1'.
-    ntrain = 100;
+    ntrain = 10000;
     ntrain = min(ntrain,size(Y,1));
     if isTest==1
         X   = X(1:ntrain,:);
@@ -281,7 +281,8 @@ function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, 
 end
 
 
-%% construct a rooted tree always from node 1
+%% 
+% Construct a rooted tree, always start from node 1
 function [E] = RootTree(E)
     
     clist       = [1];

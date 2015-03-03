@@ -56,7 +56,7 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn)
     global GoodUpdate_list;
     % Variable on global consensus graph
     global loss_global;
-    global E_global;
+    %global E_global;
     
     % Set random seed to make different run comparable.
     rand('twister', 0);
@@ -199,10 +199,10 @@ function [rtn, ts_err] = RSTA(paramsIn, dataIn)
         if iter <= 30
             Yipos_list = ones(1,m)*(params.maxkappa+1);
         end
-%        for xi = randsample(1:m,m,true,Yipos_list/sum(Yipos_list))
-%        for xi = selected_samples
-%         for xi = randsample(1:m,m)
-        for xi = 1:m
+%         for xi = randsample(1:m,m,true,Yipos_list/sum(Yipos_list))
+%         for xi = selected_samples
+         for xi = randsample(1:m,m)
+%         for xi = 1:m
             print_message(sprintf('Start descend on example %d initial k %d',xi,kappa),3)
             kappa_decrease_flag(xi)=0;
             if params.newton_method == 0
