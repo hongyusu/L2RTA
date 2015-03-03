@@ -91,7 +91,7 @@ function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, 
     addpath('../shared_scripts/');  
     
     % Get current hostname to run on computer cluster
-    [~,comres]=system('hostname');
+    [~,comres] = system('hostname');
     
     % Read in X and Y matrix of data from location based on the current computing node
     if strcmp(comres(1:4),'melk') || strcmp(comres(1:4),'ukko') || strcmp(comres(1:4),'node')
@@ -115,13 +115,13 @@ function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, 
             Yuniq(i)=i;
         end
     end
-    Y=Y(:,Yuniq(Yuniq~=0));
+    Y = Y(:,Yuniq(Yuniq~=0));
     
     %% Feature normalization (tf-idf for text data, scale and centralization for other numerical features).
     if or(strcmp(filename,'medical'),strcmp(filename,'enron')) 
-        X=tfidf(X);
+        X = tfidf(X);
     elseif ~(strcmp(filename(1:2),'to'))
-        X=(X-repmat(min(X),size(X,1),1))./repmat(max(X)-min(X),size(X,1),1);
+        X = (X-repmat(min(X),size(X,1),1))./repmat(max(X)-min(X),size(X,1),1);
     end
     
     %% Change Y from -1 to 0, now we have standard label of +1 and 0. Note we use +1/-1 in the algorithm
@@ -131,9 +131,9 @@ function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, 
     %% Get dot product kernels from normalized features or just read in precomputed kernel matrix.
     if or(strcmp(filename,'fpuni'),strcmp(filename,'cancer'))
         if strcmp(comres(1:4),'dave') | strcmp(comres(1:4),'ukko') | strcmp(comres(1:4),'node')
-            K=dlmread(sprintf('/cs/taatto/group/urenzyme/workspace/data/%s_kernel',filename));
+            K = dlmread(sprintf('/cs/taatto/group/urenzyme/workspace/data/%s_kernel',filename));
         else
-            K=dlmread(sprintf('../shared_scripts/test_data/%s_kernel',filename));
+            K = dlmread(sprintf('../shared_scripts/test_data/%s_kernel',filename));
         end
     else
         K = X * X';         % Dot product
@@ -142,13 +142,13 @@ function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, 
     end
     
     %% Stratified n fold cross validation index.
-    nfold = 5;
-    Ind = getCVIndex(Y,nfold);
+    nfold   = 5;
+    Ind     = getCVIndex(Y,nfold);
     
     %% Select part of the data for code sanity check if 'isTest==1'.
     ntrain = 10000;
     ntrain = min(ntrain,size(Y,1));
-    if isTest==1
+    if isTest == 1
         X   = X(1:ntrain,:);
         Y   = Y(1:ntrain,:);
         K   = K(1:ntrain,1:ntrain);
