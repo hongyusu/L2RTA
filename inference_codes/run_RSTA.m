@@ -162,7 +162,8 @@ function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, 
         
     end
 
-    %run_SVM(nfold, size(Y,2), Ind, X, Y, kth_fold, 100)
+
+    %run_SVM(kth_fold, size(Y,2), Ind, X, Y, kth_fold, 1, slack_c)
     
 %     %% Perform parameter selection.
 %     % TODO: to be better implemented
