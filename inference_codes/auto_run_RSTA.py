@@ -112,9 +112,9 @@ def run():
   # generate jobs
   logging.info('\t\tGenerating job queue.')
   #for slack_c in ['100','1','0.1','10','0.01','50','0.5','20','0.05','5']:
-  for slack_c in ['1']:
-    for kth_fold in ['1','2','3','4','5']:
-      for filename in filenames:
+  for filename in filenames:
+    for slack_c in ['1']:
+      for kth_fold in ['1','2','3','4','5']:
         graph_type = 'tree'
         for kappa in ['2','8','16','20']:
           for l_norm in ['2']:
