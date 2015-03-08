@@ -23,6 +23,7 @@
 %
 %
 % SUGGESTIONS FOR PARAMETERS:
+%   cross validataion on loss_scaling_factor, slack_c, t
 %   loss_scaling_factor:
 %           test loss_scaling_factor=1 which will use the original loss function
 %           test loss_sclaing_factor=|E| which will downscale the original loss function by the number of edges in the graph/tree
@@ -188,7 +189,7 @@ function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, 
     mmcrf_maxkappa  = maxkappa;     % length of the K-best list
     
     % Print out all parameters
-    fprintf('\n\tC:%d G:%.2f Iteration:%d MaxKappa:%d T:%d Loss_scaling:%d \n', mmcrf_c,mmcrf_g,mmcrf_i,mmcrf_maxkappa, t, loss_scaling_factor);
+    fprintf('\n\tC:%d G:%.2f Iteration:%d MaxKappa:%d T:%d Loss_scaling:%d m=%d l=%d\n', mmcrf_c,mmcrf_g,mmcrf_i,mmcrf_maxkappa,t,loss_scaling_factor,size(Y,1),size(Y,2));
     
     %% Generate random graphs.
     rand('twister', 0); % Fix random seed to make sure random spanning trees generated from each run are of the same.
