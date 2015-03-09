@@ -52,11 +52,12 @@ double * forward_alg_omp ( double * gradient, int K, double * E, int l, double *
         /*  update node score */
         double * in_blk;
         in_blk = (double *) malloc (sizeof(double) * K*max_node_degree);
-/*         mxArray * in_blk_array;
-/*         in_blk_array = mxCreateDoubleMatrix(K,max_node_degree,mxREAL);
-/*         double * in_blk = mxGetPr(in_blk_array);
-        /*printm(P_node,20,2*(max_node_degree+1));
-        for(int sign_pos=0;sign_pos<2;sign_pos++)
+/*         mxArray * in_blk_array; */
+/*         in_blk_array = mxCreateDoubleMatrix(K,max_node_degree,mxREAL); */
+/*         double * in_blk = mxGetPr(in_blk_array); */
+        /*printm(P_node,20,2*(max_node_degree+1)); */
+		int sign_pos;
+        for(sign_pos=0;sign_pos<2;sign_pos++)
         {
             /*  assign value to inblock (-1) */
 			int ii,jj;
@@ -92,12 +93,13 @@ double * forward_alg_omp ( double * gradient, int K, double * E, int l, double *
         /*  combine edge potential */
         double * M;
         M = (double *) malloc (sizeof(double) * 2*K*2);
-/*         mxArray * M_array;
-/*         M_array = mxCreateDoubleMatrix(2*K,2,mxREAL);
-/*         double * M = mxGetPr(M_array);
-        for(int ii=0;ii<2*K;ii++)
+/*         mxArray * M_array; */
+/*         M_array = mxCreateDoubleMatrix(2*K,2,mxREAL); */
+/*         double * M = mxGetPr(M_array); */
+		int ii,jj;
+        for(ii=0;ii<2*K;ii++)
         {
-            for(int jj=0;jj<2;jj++)
+            for(jj=0;jj<2;jj++)
             {
                 if(P_node[(c-1)*K+ii%K+ii/K*K*l])
                 {M[ii+jj*(K*2)] = P_node[(c-1)*K+ii%K+ii/K*K*l] + gradient[i*4+(ii/K)+jj*2];}
@@ -174,11 +176,11 @@ double * forward_alg_omp ( double * gradient, int K, double * E, int l, double *
             }
             start_col++;
         }
-        /*printm(P_node,20,2*(max_node_degree+1));
-        /*printf("--in block\n");printm(in_blk,K,max_node_degree); 
-        /*  compute topk for inblock -1 
+        /*printm(P_node,20,2*(max_node_degree+1)); */
+        /*printf("--in block\n");printm(in_blk,K,max_node_degree);  */
+        /*  compute topk for inblock -1  */
         double * tmp_res = LinearMaxSum(in_blk, K, max_node_degree,node_degree[c-1]+1);
-        /*printf("--out block\n");printm(tmp_res,K,5); 
+        /*printf("--out block\n");printm(tmp_res,K,5);  */
         /*  assign value to P_node T_node */
         for(ii=0;ii<K;ii++)
         {
@@ -197,7 +199,7 @@ double * forward_alg_omp ( double * gradient, int K, double * E, int l, double *
     }
     free(in_blk);
     
-    /* SEND BACK RESULTS
+    /* SEND BACK RESULTS */
     double * results;
     results = (double *) malloc (sizeof(double) * 2 * K*l*2*(max_node_degree+1)*2);
     for(int ii=0;ii<K*l;ii++)
@@ -214,8 +216,8 @@ double * forward_alg_omp ( double * gradient, int K, double * E, int l, double *
             results[ii+K*l+jj*2*K*l] = T_node[ii+jj*K*l];
         }
     }
-    /*printm(P_node,16,4);
-    /*printm(T_node,16,4);
+    /*printm(P_node,16,4); */
+    /*printm(T_node,16,4); */
     free(T_node);
     free(P_node);
     return(results);
@@ -234,7 +236,7 @@ double * LinearMaxSum(double * M, int M_nrow, int M_ncol, int current_node_degre
         return res;
     }
     
-    /*if(current_node_degree>3){printf("M\n");printm(M,M_nrow,M_ncol); }
+    /*if(current_node_degree>3){printf("M\n");printm(M,M_nrow,M_ncol); }  */
     
     /*  INITIALIZE TMP_M WITH FIRST COLUMN OF M */
     t_v2is * tmp_M;
@@ -252,7 +254,7 @@ double * LinearMaxSum(double * M, int M_nrow, int M_ncol, int current_node_degre
         }
     }
     
-    /*if(current_node_degree>3){for(int jj=0;jj<M_nrow;jj++){printf("INIT tmp_M %.4f %d %d %d\n",tmp_M[jj].v,tmp_M[jj].i[0],tmp_M[jj].i[1],tmp_M[jj].i[2]);} }
+    /*if(current_node_degree>3){for(int jj=0;jj<M_nrow;jj++){printf("INIT tmp_M %.4f %d %d %d\n",tmp_M[jj].v,tmp_M[jj].i[0],tmp_M[jj].i[1],tmp_M[jj].i[2]);} } */
     
     /*  PROCESSING FROM 2nd COLUMN */
     for(ii=1;ii<(current_node_degree-1);ii++)
