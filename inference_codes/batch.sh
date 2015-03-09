@@ -1,4 +1,5 @@
 #!/bin/bash
+#SBATCH --cpus-per-task=12
 #SBATCH --time=4:00:00 --mem-per-cpu=2000
 #SBATCH --array=1-616
 module load matlab
