@@ -123,7 +123,6 @@ double * forward_alg_omp ( double * gradient, int K, double * E, int l, double *
         }
         t_v2i * tmp_M;
         tmp_M = (struct v2i *) malloc((sizeof(t_v2i))*2*K);
-		int sign_pos,ii;
         for(sign_pos=0;sign_pos<2;sign_pos++)
         {
             for(ii=0;ii<2*K;ii++)
@@ -164,7 +163,7 @@ double * forward_alg_omp ( double * gradient, int K, double * E, int l, double *
 /*     in_blk_array = mxCreateDoubleMatrix(K,max_node_degree,mxREAL); */
 /*     double * in_blk = mxGetPr(in_blk_array); */
 	int sign_pos,ii,jj;
-    for(int sign_pos=0;sign_pos<2;sign_pos++)
+    for(sign_pos=0;sign_pos<2;sign_pos++)
     {
         /*  assign value to inblock (-1) */
         for(ii=0;ii<K;ii++)
@@ -202,16 +201,16 @@ double * forward_alg_omp ( double * gradient, int K, double * E, int l, double *
     /* SEND BACK RESULTS */
     double * results;
     results = (double *) malloc (sizeof(double) * 2 * K*l*2*(max_node_degree+1)*2);
-    for(int ii=0;ii<K*l;ii++)
+    for(ii=0;ii<K*l;ii++)
     {
-        for(int jj=0;jj<2*(max_node_degree+1);jj++)
+        for(jj=0;jj<2*(max_node_degree+1);jj++)
         {
             results[ii+jj*2*K*l] = P_node[ii+jj*K*l];
         }
     }
-    for(int ii=0;ii<K*l;ii++)
+    for(ii=0;ii<K*l;ii++)
     {
-        for(int jj=0;jj<2*(max_node_degree+1);jj++)
+        for(jj=0;jj<2*(max_node_degree+1);jj++)
         {
             results[ii+K*l+jj*2*K*l] = T_node[ii+jj*K*l];
         }
