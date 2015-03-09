@@ -20,8 +20,6 @@ from threading import Thread
 import os
 import sys
 import commands
-sys.path.append('/cs/taatto/group/urenzyme/workspace/netscripts/')
-from get_free_nodes import get_free_nodes
 import multiprocessing
 import time
 import logging
@@ -29,33 +27,6 @@ import random
 logging.basicConfig(format='%(asctime)s %(filename)s %(funcName)s %(levelname)s:%(message)s', level=logging.INFO)
 
 
-job_queue = Queue.Queue()
-
-# Worker class
-# job is a tuple of parameters
-class Worker(Thread):
-  def __init__(self, job_queue, node):
-    Thread.__init__(self)
-    self.job_queue  = job_queue
-    self.node = node
-    self.penalty = 0 # penalty parameter which prevents computing node with low computational resources getting jobs from job queue
-    pass # def
-  def run(self):
-    all_done = 0
-    while not all_done:
-      try:
-        time.sleep(random.randint(5000,6000) / 1000.0)  # sleep random time
-        time.sleep(self.penalty*120)
-        job = self.job_queue.get(0)
-        add_penalty = singleRSTA(self.node, job)
-        self.penalty += add_penalty
-        if self.penalty < 0:
-          self.penalty = 0
-      except Queue.Empty:
-        all_done = 1
-      pass # while
-    pass # def
-  pass # class
 
 
 def checkfile(filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method):
@@ -78,39 +49,33 @@ def checkfile(filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_f
   pass # def
 
 
-def singleRSTA(node, job):
+def singleRSTA(job):
   (n,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method) = job
   try:
     if checkfile(filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method):
-      logging.info('\t--< (node)%s,(f)%s,(type)%s,(t)%s,(f)%s,(l)%s,(k)%s,(c)%s,(s)%s,(n)%s' %( node,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
-      fail_penalty = 0
+      logging.info('\t--< (f)%s,(type)%s,(t)%s,(f)%s,(l)%s,(k)%s,(c)%s,(s)%s,(n)%s' %( filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
     else:
-      logging.info('\t--> (node)%s,(f)%s,(type)%s,(t)%s,(f)%s,(l)%s,(k)%s,(c)%s,(s)%s,(n)%s' %( node,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
-      os.system(""" ssh -o StrictHostKeyChecking=no %s 'cd /cs/taatto/group/urenzyme/workspace/colt2014/experiments/L2RTA/inference_codes/; rm -rf /var/tmp/.matlab; export OMP_NUM_THREADS=32; nohup matlab -nodisplay -nosplash -r "run_RSTA '%s' '%s' '%s' '0' '%s' '%s' '%s' '%s' '%s' '%s'" > /var/tmp/tmp_%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs' """ % (node,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method) )
-      logging.info('\t--| (node)%s,(f)%s,(type)%s,(t)%s,(f)%s,(l)%s,(k)%s,(c)%s,(s)%s,(n)%s' %( node,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
-      fail_penalty = -1
+      logging.info('\t--> (f)%s,(type)%s,(t)%s,(f)%s,(l)%s,(k)%s,(c)%s,(s)%s,(n)%s' %( filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
+      print(""" rm -rf /var/tmp/.matlab; export OMP_NUM_THREADS=32; nohup matlab -nodisplay -nosplash -r "run_RSTA '%s' '%s' '%s' '0' '%s' '%s' '%s' '%s' '%s' '%s'" > /var/tmp/tmp_%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs' """ % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method) )
+      logging.info('\t--| (f)%s,(type)%s,(t)%s,(f)%s,(l)%s,(k)%s,(c)%s,(s)%s,(n)%s' %( filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
   except Exception as excpt_msg:
     print excpt_msg
-    job_queue.put((job))
-    logging.info('\t--= (node)%s,(f)%s,(type)%s,(t)%s,(f)%s,(l)%s,(k)%s,(c)%s,(s)%s,(n)%s' %( node,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
+    logging.info('\t--= (f)%s,(type)%s,(t)%s,(f)%s,(l)%s,(k)%s,(c)%s,(s)%s,(n)%s' %( filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
     fail_penalty = 1
   if not os.path.isfile("../outputs/%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs.log" % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method)):
-    job_queue.put((job))
-    logging.info('\t--x (node)%s,(f)%s,(type)%s,(t)%s,(f)%s,(l)%s,(k)%s,(c)%s,(s)%s,(n)%s' %( node,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
-    fail_penalty = 1
-  time.sleep(10)
-  return fail_penalty
+    logging.info('\t--x (f)%s,(type)%s,(t)%s,(f)%s,(l)%s,(k)%s,(c)%s,(s)%s,(n)%s' %( filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
+    #singleRSTA(job)
   pass # def
 
 
-def run():
+def run(job_id):
   jobs=[]
   is_main_run_factor=5
   filenames=['ArD20','ArD30','toy10','toy50','emotions','medical','enron','cal500','fp','cancer','yeast','scene']
   #filenames=['scene','yeast','cancer']
   n=0
   # generate jobs
-  logging.info('\t\tGenerating job queue.')
+  #logging.info('\t\tGenerating job queue.')
   for filename in filenames:
     for slack_c in ['100','1','0.1','10','0.01','50','0.5','20','0.05','5']:
     #for slack_c in ['1']:
@@ -130,7 +95,7 @@ def run():
                     continue
                   else:
                     n=n+1
-                    job_queue.put((n,filename,graph_type,para_t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
+                    jobs.append((n,filename,graph_type,para_t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
                   pass # for newton_method
                 pass # for loss_scaling_factor
               pass # for slack_c
@@ -139,33 +104,17 @@ def run():
         pass # for kappa
       pass # for datasets
     pass # for k fole
-  # get computing nodes
-  cluster = get_free_nodes()[0] # if you have access to some interactive computer cluster, get the list of hostnames of the cluster
-  #cluster = ['melkinkari'] # if you don't have access to any computer cluster, just use your machine as the only computing node
   # running jobs
-  job_size = job_queue.qsize()
-  logging.info( "\t\tProcessing %d jobs" % (job_size))
-  threads = []
-  for i in range(len(cluster)):
-    if job_queue.empty():
-      break
-    t = Worker(job_queue, cluster[i])
-    time.sleep(is_main_run_factor)
-    try:
-      t.start()
-      threads.append(t)
-    except ThreadError:
-      logging.warning("\t\tError: thread error caught!")
-    pass
-  for t in threads:
-    t.join()
-    pass
+  if job_id > len(jobs):
+    return
+  #logging.info( "\t\tProcessing %d jobs" % (len(jobs)))
+  singleRSTA(jobs[job_id-1])
   pass # def
 
 
 # It's actually not necessary to have '__name__' space, but whatever ...
 if __name__ == "__main__":
-  run()
+  run(eval(sys.argv[1]))
   pass
 
 

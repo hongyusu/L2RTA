@@ -1,9 +1,10 @@
 #!/bin/bash
-#SBATCH --cpus-per-task=1
-#SBATCH --time=0:00:01 --mem-per-cpu=2
-#SBATCH --array=1-100
+#SBATCH --cpus-per-task=8
+#SBATCH --time=3-00:00:00 --mem-per-cpu=4000
+#SBATCH --array=1-1000000
+#SBATCH -p play
+export OMP_PROC_BIND=true
 module load matlab
-echo $SLURM_ARRAY_TASK_ID > tmp
-#python triton_auto_run_RSTA.py $SLURM_ARRAY_TASK_ID
-#matlab -nojvm -r "run_met_id($SLURM_ARRAY_TASK_ID)"
+python triton_auto_run_RSTA.py $SLURM_ARRAY_TASK_ID
+
 
