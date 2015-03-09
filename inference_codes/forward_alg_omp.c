@@ -70,11 +70,11 @@ double * forward_alg_omp ( double * gradient, int K, double * E, int l, double *
                 }
                 start_col++;
             }
-            /*printf("in block\n");printm(in_blk,K,max_node_degree); 
+            /*printf("in block\n");printm(in_blk,K,max_node_degree);  */
             /*  compute topk for inblock -1 */
-            /*printm(in_blk,K,max_node_degree);
+            /*printm(in_blk,K,max_node_degree); */
             double * tmp_res = LinearMaxSum(in_blk,K,max_node_degree,node_degree[c-1]);
-            /*printf("out block\n");printm(tmp_res,K,max_node_degree+1); 
+            /*printf("out block\n");printm(tmp_res,K,max_node_degree+1);  */
             /*  assign value to P_node T_node */
             for(ii=0;ii<K;ii++)
             {
