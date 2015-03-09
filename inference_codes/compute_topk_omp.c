@@ -66,10 +66,10 @@
 #include "omp.h"
 #include "math.h"
 
-/* matlab gateway function */
+// matlab gateway function
 void mexFunction ( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
 {
-    /* FOR THE CONVINIENT OF DEALING WITH INPUT AND OUTPUT */
+    // FOR THE CONVINIENT OF DEALING WITH INPUT AND OUTPUT
     #define IN_gradient         prhs[0]
     #define IN_K                prhs[1]
     #define IN_E                prhs[2]
@@ -77,75 +77,74 @@ void mexFunction ( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
     #define OUT_Ymax            plhs[0]
     #define OUT_YmaxVal         plhs[1]
     
-    /* INPUT */
-    /* gradient */
+    // INPUT
+    // gradient
     double * gradient_i;
     gradient_i = mxGetPr(IN_gradient);
-    /* K  */
+    // K
     int K;
     K = mxGetScalar(IN_K);
-    /* E  */
+    // E
     double * E;
     E = mxGetPr(IN_E);
-    /* node_degree */
+    // node_degree
     double * node_degree;
     node_degree = mxGetPr(IN_node_degree);
-    /* mm */
+    // mm
     int E_nrow = mxGetM(IN_E);
     int gradient_len = mxGetM(IN_gradient);
     int mm;
     mm = gradient_len/4/E_nrow;
-    /* nlabel  */
+    // nlabel
     int nlabel;
     nlabel = mxGetN(IN_node_degree);
-    /* MIN_GRADIENT_VAL & local copy of gradient  */
+    // MIN_GRADIENT_VAL & local copy of gradient
     
     double min_gradient_val;
     double * gradient;
     gradient = (double *) malloc (sizeof(double) * gradient_len);
     min_gradient_val = 1000000000000;
     
-	int ii;
-    for(ii=0;ii<gradient_len;ii++)
+    for(int ii=0;ii<gradient_len;ii++)
     {
         gradient[ii] = gradient_i[ii];
         if(gradient_i[ii]<min_gradient_val)
         {min_gradient_val = gradient_i[ii];}
     }
     min_gradient_val -= 0.00001;
-    for(ii=0;ii<gradient_len;ii++)
+    for(int ii=0;ii<gradient_len;ii++)
     {
         gradient[ii] = gradient[ii]- min_gradient_val;
     }
     
     
-    /* Ymax */
+    // Ymax
     double * Ymax;
     OUT_Ymax = mxCreateDoubleMatrix(mm,K*nlabel,mxREAL);
     Ymax = mxGetPr(OUT_Ymax);
-    /* YmaxVal */
+    // YmaxVal
     double * YmaxVal;
     OUT_YmaxVal = mxCreateDoubleMatrix(mm,K,mxREAL);
     YmaxVal = mxGetPr(OUT_YmaxVal);
-    /* MAX_NODE_DEGREE */
+    // MAX_NODE_DEGREE
     int max_node_degree;
     max_node_degree = 0;
-    for(ii=0;ii<nlabel;ii++)
+    for(int ii=0;ii<nlabel;ii++)
     {
         if(max_node_degree<node_degree[ii])
         {max_node_degree = node_degree[ii];}
     }
     
-    /* OMP LOOP THROUGH EXAMPLES */
+    // OMP LOOP THROUGH EXAMPLES
     int nn = 50;
     int nworker = (mm-2)/nn;
-    /*printf("data: %d worker: %d\n", mm,nworker); */
+    //printf("data: %d worker: %d\n", mm,nworker);
     if(nworker <1){nworker=1;};
     int * start_pos = (int *) malloc (sizeof(int) * (nworker));
     int * stop_pos = (int *) malloc (sizeof(int) * (nworker));
     start_pos[0]=0;
     stop_pos[0]=nn;
-    for(ii=1;ii<nworker;ii++)
+    for(int ii=1;ii<nworker;ii++)
     {
         start_pos[ii]=ii*nn;
         stop_pos[ii]=(ii+1)*nn;
@@ -160,53 +159,51 @@ void mexFunction ( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
     #pragma omp parallel for private(share_i)
     for(share_i=0;share_i<nworker;share_i++)
     {
-        /*printf("id %d max %d num %d cpu %d\n", omp_get_thread_num(),omp_get_max_threads(),omp_get_num_threads(),omp_get_num_procs()); */
-		int training_i;
-        for(training_i=start_pos[share_i];training_i<stop_pos[share_i];training_i++)
+        //printf("id %d max %d num %d cpu %d\n", omp_get_thread_num(),omp_get_max_threads(),omp_get_num_threads(),omp_get_num_procs());
+        for(int training_i=start_pos[share_i];training_i<stop_pos[share_i];training_i++)
         {
-            /* GET TRAINING GRADIENT */
+            // GET TRAINING GRADIENT
             double * training_gradient;
             training_gradient = (double *) malloc (sizeof(double) * 4 * E_nrow);
-			int ii,jj;
-            for(ii=0;ii<E_nrow*4;ii++)
+            for(int ii=0;ii<E_nrow*4;ii++)
             {training_gradient[ii] = gradient[ii+training_i*4*E_nrow];}
 
-            /* FORWARD ALGORITHM TO GET P_NODE AND T_NODE */
+            // FORWARD ALGORITHM TO GET P_NODE AND T_NODE
             double * results;
             results = forward_alg_omp(training_gradient, K, E, nlabel, node_degree, max_node_degree);
             double * P_node;
             double * T_node;
             P_node = (double *) malloc (sizeof(double) * K*nlabel*2*(max_node_degree+1));
             T_node = (double *) malloc (sizeof(double) * K*nlabel*2*(max_node_degree+1));
-            for(ii=0;ii<K*nlabel;ii++)
+            for(int ii=0;ii<K*nlabel;ii++)
             {
-                for(jj=0;jj<2*(max_node_degree+1);jj++)
+                for(int jj=0;jj<2*(max_node_degree+1);jj++)
                 {
                     P_node[ii+jj*K*nlabel] = results[ii+jj*K*nlabel*2];
                 }
             }
-            for(ii=0;ii<K*nlabel;ii++)
+            for(int ii=0;ii<K*nlabel;ii++)
             {
-                for(jj=0;jj<2*(max_node_degree+1);jj++)
+                for(int jj=0;jj<2*(max_node_degree+1);jj++)
                 {
                     T_node[ii+jj*K*nlabel] = results[ii+K*nlabel+jj*K*nlabel*2];
                 }
             }
             if(results){free(results);}
 
-            /* BACKWARD ALGORITHM TO GET MULTILABEL */
+            // BACKWARD ALGORITHM TO GET MULTILABEL
             results = backward_alg_omp(P_node, T_node, K, E, nlabel, node_degree, max_node_degree);
-            for(ii=0;ii<K*nlabel;ii++)
+            for(int ii=0;ii<K*nlabel;ii++)
             {
                 Ymax[training_i+ii*mm] = results[ii];
             }
-            for(ii=0;ii<K;ii++)
+            for(int ii=0;ii<K;ii++)
             {
                 YmaxVal[training_i+ii*mm] = results[ii+K*nlabel];
             }
             if(results){free(results);}
             
-            /* DESTROY POINTER SPACE */
+            // DESTROY POINTER SPACE
             if(T_node){free(T_node);}
             if(P_node){free(P_node);}
             if(training_gradient){free(training_gradient);}
@@ -216,8 +213,8 @@ void mexFunction ( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
     free(stop_pos);
     int tmpK=K;
     if(K>pow(2,nlabel)){tmpK=pow(2,nlabel);}
-    /*printf("%d\n",tmpK); */
-    for(ii=0;ii<tmpK*mm;ii++)
+    //printf("%d\n",tmpK);
+    for(int ii=0;ii<tmpK*mm;ii++)
     {
         YmaxVal[ii] = YmaxVal[ii]+min_gradient_val*(nlabel-1)-(nlabel);
     }   
