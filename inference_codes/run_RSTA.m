@@ -5,8 +5,8 @@
 %
 %
 % COMPILE WITH:
-%   mex compute_topk_omp.c forward_alg_omp.c backward_alg_omp.c  CFLAGS="\$CFLAGS -fopenmp" LDFLAGS="\$LDFLAGS -fopenmp" CC="/usr/local/bin/gcc -std=c99"
-%   mex find_worst_violator_new.c
+%   mex compute_topk_omp.c forward_alg_omp.c backward_alg_omp.c  CFLAGS="\$CFLAGS -fopenmp -std=c99" LDFLAGS="\$LDFLAGS -fopenmp" CC="/usr/bin/gcc"
+%	mex find_worst_violator_new.c CFLAGS="\$CFLAGS -fopenmp -std=c99" LDFLAGS="\$LDFLAGS -fopenmp" CC="/usr/bin/gcc"
 %
 %
 % PARAMETERS:
