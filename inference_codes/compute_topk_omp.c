@@ -217,7 +217,6 @@ void mexFunction ( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
     int tmpK=K;
     if(K>pow(2,nlabel)){tmpK=pow(2,nlabel);}
     /*printf("%d\n",tmpK); */
-	int ii;
     for(ii=0;ii<tmpK*mm;ii++)
     {
         YmaxVal[ii] = YmaxVal[ii]+min_gradient_val*(nlabel-1)-(nlabel);
