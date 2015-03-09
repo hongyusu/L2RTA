@@ -105,14 +105,15 @@ void mexFunction ( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
     gradient = (double *) malloc (sizeof(double) * gradient_len);
     min_gradient_val = 1000000000000;
     
-    for(int ii=0;ii<gradient_len;ii++)
+	int ii;
+    for(ii=0;ii<gradient_len;ii++)
     {
         gradient[ii] = gradient_i[ii];
         if(gradient_i[ii]<min_gradient_val)
         {min_gradient_val = gradient_i[ii];}
     }
     min_gradient_val -= 0.00001;
-    for(int ii=0;ii<gradient_len;ii++)
+    for(ii=0;ii<gradient_len;ii++)
     {
         gradient[ii] = gradient[ii]- min_gradient_val;
     }
@@ -129,7 +130,7 @@ void mexFunction ( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
     /* MAX_NODE_DEGREE */
     int max_node_degree;
     max_node_degree = 0;
-    for(int ii=0;ii<nlabel;ii++)
+    for(ii=0;ii<nlabel;ii++)
     {
         if(max_node_degree<node_degree[ii])
         {max_node_degree = node_degree[ii];}
@@ -144,7 +145,7 @@ void mexFunction ( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
     int * stop_pos = (int *) malloc (sizeof(int) * (nworker));
     start_pos[0]=0;
     stop_pos[0]=nn;
-    for(int ii=1;ii<nworker;ii++)
+    for(ii=1;ii<nworker;ii++)
     {
         start_pos[ii]=ii*nn;
         stop_pos[ii]=(ii+1)*nn;
