@@ -378,12 +378,12 @@ double * LinearMaxSum(double * M, int M_nrow, int M_ncol, int current_node_degre
             free(heap_array_pt);
         }
         /* SAVE RESULTS */
-		int jj;
+		int jj,kk;
         for(jj=0;jj<M_nrow;jj++)
         {
             tmp_M[jj].v = tmp_M_long[jj].v;
             /* COULD USE DEEP COPY */
-            for(int kk=0;kk<ii+1;kk++)
+            for(kk=0;kk<ii+1;kk++)
             {tmp_M[jj].i[kk] = tmp_M_long[jj].i[kk];}
             /* printf("%d tmp_M %.4f %d %d %d\n",ii,tmp_M[jj].v,tmp_M[jj].i[0],tmp_M[jj].i[1],tmp_M[jj].i[2]); */
         }
@@ -397,7 +397,6 @@ double * LinearMaxSum(double * M, int M_nrow, int M_ncol, int current_node_degre
     
     /*for(int jj=0;jj<M_nrow;jj++){printf("res:tmp_M %.4f %d %d %d\n",tmp_M[jj].v,tmp_M[jj].i[0],tmp_M[jj].i[1],tmp_M[jj].i[2]);}  */
     /*  COLLECT RESULTS */
-	int ii;
     for(ii=0;ii<M_nrow;ii++)
     {
         if(tmp_M[ii].v>0)
