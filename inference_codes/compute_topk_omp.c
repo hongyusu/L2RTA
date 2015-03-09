@@ -161,12 +161,14 @@ void mexFunction ( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
     for(share_i=0;share_i<nworker;share_i++)
     {
         /*printf("id %d max %d num %d cpu %d\n", omp_get_thread_num(),omp_get_max_threads(),omp_get_num_threads(),omp_get_num_procs()); */
-        for(int training_i=start_pos[share_i];training_i<stop_pos[share_i];training_i++)
+		int training_i;
+        for(training_i=start_pos[share_i];training_i<stop_pos[share_i];training_i++)
         {
             /* GET TRAINING GRADIENT */
             double * training_gradient;
             training_gradient = (double *) malloc (sizeof(double) * 4 * E_nrow);
-            for(int ii=0;ii<E_nrow*4;ii++)
+			int ii,jj;
+            for(ii=0;ii<E_nrow*4;ii++)
             {training_gradient[ii] = gradient[ii+training_i*4*E_nrow];}
 
             /* FORWARD ALGORITHM TO GET P_NODE AND T_NODE */
@@ -176,16 +178,16 @@ void mexFunction ( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
             double * T_node;
             P_node = (double *) malloc (sizeof(double) * K*nlabel*2*(max_node_degree+1));
             T_node = (double *) malloc (sizeof(double) * K*nlabel*2*(max_node_degree+1));
-            for(int ii=0;ii<K*nlabel;ii++)
+            for(ii=0;ii<K*nlabel;ii++)
             {
-                for(int jj=0;jj<2*(max_node_degree+1);jj++)
+                for(jj=0;jj<2*(max_node_degree+1);jj++)
                 {
                     P_node[ii+jj*K*nlabel] = results[ii+jj*K*nlabel*2];
                 }
             }
-            for(int ii=0;ii<K*nlabel;ii++)
+            for(ii=0;ii<K*nlabel;ii++)
             {
-                for(int jj=0;jj<2*(max_node_degree+1);jj++)
+                for(jj=0;jj<2*(max_node_degree+1);jj++)
                 {
                     T_node[ii+jj*K*nlabel] = results[ii+K*nlabel+jj*K*nlabel*2];
                 }
@@ -194,11 +196,11 @@ void mexFunction ( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
 
             /* BACKWARD ALGORITHM TO GET MULTILABEL */
             results = backward_alg_omp(P_node, T_node, K, E, nlabel, node_degree, max_node_degree);
-            for(int ii=0;ii<K*nlabel;ii++)
+            for(ii=0;ii<K*nlabel;ii++)
             {
                 Ymax[training_i+ii*mm] = results[ii];
             }
-            for(int ii=0;ii<K;ii++)
+            for(ii=0;ii<K;ii++)
             {
                 YmaxVal[training_i+ii*mm] = results[ii+K*nlabel];
             }
@@ -215,7 +217,8 @@ void mexFunction ( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
     int tmpK=K;
     if(K>pow(2,nlabel)){tmpK=pow(2,nlabel);}
     /*printf("%d\n",tmpK); */
-    for(int ii=0;ii<tmpK*mm;ii++)
+	int ii;
+    for(ii=0;ii<tmpK*mm;ii++)
     {
         YmaxVal[ii] = YmaxVal[ii]+min_gradient_val*(nlabel-1)-(nlabel);
     }   
