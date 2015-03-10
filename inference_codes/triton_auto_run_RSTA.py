@@ -49,14 +49,14 @@ def checkfile(filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_f
   pass # def
 
 
-def singleRSTA(job):
+def singleRSTA(job, tmpdir):
   (n,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method) = job
   try:
     if checkfile(filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method):
       logging.info('\t--< (f)%s,(type)%s,(t)%s,(f)%s,(l)%s,(k)%s,(c)%s,(s)%s,(n)%s' %( filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
     else:
       logging.info('\t--> (f)%s,(type)%s,(t)%s,(f)%s,(l)%s,(k)%s,(c)%s,(s)%s,(n)%s' %( filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
-      print(""" rm -rf /var/tmp/.matlab; export OMP_NUM_THREADS=32; nohup matlab -nodisplay -nosplash -r "run_RSTA '%s' '%s' '%s' '0' '%s' '%s' '%s' '%s' '%s' '%s'" > /var/tmp/tmp_%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs' """ % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method) )
+      print(""" rm -rf /var/tmp/.matlab; export OMP_NUM_THREADS=32; nohup matlab -nodisplay -nosplash -r "run_RSTA '%s' '%s' '%s' '0' '%s' '%s' '%s' '%s' '%s' '%s' '%s'" > /var/tmp/tmp_%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs' """ % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method,tmpdir,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method) )
       logging.info('\t--| (f)%s,(type)%s,(t)%s,(f)%s,(l)%s,(k)%s,(c)%s,(s)%s,(n)%s' %( filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
   except Exception as excpt_msg:
     print excpt_msg
@@ -68,10 +68,10 @@ def singleRSTA(job):
   pass # def
 
 
-def run(job_id):
+def run(job_id, tmpdir):
   jobs=[]
   is_main_run_factor=5
-  filenames=['ArD20','ArD30','toy10','toy50','emotions','medical','enron','cal500','fp','cancer','yeast','scene']
+  filenames=['toy10','ArD20','ArD30','toy50','emotions','medical','enron','cal500','fp','cancer','yeast','scene']
   #filenames=['scene','yeast','cancer']
   n=0
   # generate jobs
@@ -108,13 +108,13 @@ def run(job_id):
   if job_id > len(jobs):
     return
   #logging.info( "\t\tProcessing %d jobs" % (len(jobs)))
-  singleRSTA(jobs[job_id-1])
+  singleRSTA(jobs[job_id-1], tmpdir)
   pass # def
 
 
 # It's actually not necessary to have '__name__' space, but whatever ...
 if __name__ == "__main__":
-  run(eval(sys.argv[1]))
+  run(eval(sys.argv[1]), sys.argv[2])
   pass
 
 

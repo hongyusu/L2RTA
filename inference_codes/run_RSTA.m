@@ -46,7 +46,7 @@
 %       with newton method to combine multiple update directions
 %
 %
-function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, slack_c, loss_scaling_factor, newton_method)
+function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, slack_c, loss_scaling_factor, newton_method, tmpfolder)
 
     % Process input parameters, input at least the name of the dataset, requires all 9 additional parameters, otherwise run on a default parameter setting.
     if nargin < 1
@@ -65,6 +65,10 @@ function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, 
         slack_c     = '100';
         loss_scaling_factor = '10';
         netwon_method       = '1';
+    end
+    
+    if nargin < 11
+        tmpfolder = '/var/tmp/';
     end
     
     % Set the seed of the random number generator
@@ -94,13 +98,16 @@ function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, 
     % Get current hostname to run on computer cluster
     [~,comres] = system('hostname');
     
-    % Read in X and Y matrix of data from location based on the current computing node
+    % Read in X and Y matrix of data from locations based on the current computing node (local compute, Ukko cluster, Triton cluster)
     if strcmp(comres(1:4),'melk') || strcmp(comres(1:4),'ukko') || strcmp(comres(1:4),'node')
         X = dlmread(sprintf('/cs/taatto/group/urenzyme/workspace/data/%s_features',filename));
         Y = dlmread(sprintf('/cs/taatto/group/urenzyme/workspace/data/%s_targets',filename));
-    else
+    elseif strcmp(comres(1:4),'Hong')
         X = dlmread(sprintf('../shared_scripts/test_data/%s_features',filename));
         Y = dlmread(sprintf('../shared_scripts/test_data/%s_targets',filename));
+    else
+        X = dlmread(sprintf('/triton/ics/scratch/kepaco/workspace/data/%s_features',filename));
+        Y = dlmread(sprintf('/triton/ics/scratch/kepaco/workspace/data/%s_targets',filename));
     end
     
     %% Process input data X and Y matrix
