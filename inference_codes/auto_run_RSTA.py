@@ -133,11 +133,11 @@ def run():
                     job_queue.put((n,filename,graph_type,para_t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
                   pass # for newton_method
                 pass # for loss_scaling_factor
-              pass # for slack_c
-            pass # for |T|
-          pass # for l
-        pass # for kappa
-      pass # for datasets
+              pass # for t
+            pass # for l
+          pass # for kappa
+        pass # for type
+      pass # for k
     pass # for k fole
   # get computing nodes
   cluster = get_free_nodes()[0] # if you have access to some interactive computer cluster, get the list of hostnames of the cluster
