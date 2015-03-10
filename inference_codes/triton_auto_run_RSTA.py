@@ -56,7 +56,7 @@ def singleRSTA(job, tmpdir):
       logging.info('\t--< (f)%s,(type)%s,(t)%s,(f)%s,(l)%s,(k)%s,(c)%s,(s)%s,(n)%s' %( filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
     else:
       logging.info('\t--> (f)%s,(type)%s,(t)%s,(f)%s,(l)%s,(k)%s,(c)%s,(s)%s,(n)%s' %( filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
-      print(""" export OMP_NUM_THREADS=32; nohup matlab -nodisplay -nosplash -r "run_RSTA '%s' '%s' '%s' '0' '%s' '%s' '%s' '%s' '%s' '%s' '%s'" > %s/tmp_%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs' """ % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method,tmpdir,tmpdir,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method) )
+      os.system(""" export OMP_NUM_THREADS=32; nohup matlab -nodisplay -nosplash -r "run_RSTA '%s' '%s' '%s' '0' '%s' '%s' '%s' '%s' '%s' '%s' '%s'" > %s/tmp_%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs' """ % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method,tmpdir,tmpdir,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method) )
       logging.info('\t--| (f)%s,(type)%s,(t)%s,(f)%s,(l)%s,(k)%s,(c)%s,(s)%s,(n)%s' %( filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
   except Exception as excpt_msg:
     print excpt_msg
@@ -79,14 +79,14 @@ def run(job_id, tmpdir):
   for filename in filenames:
     for slack_c in ['100','1','0.1','10','0.01','50','0.5','20','0.05','5']:
     #for slack_c in ['1']:
-      for kth_fold in ['1','2','3','4','5']:
+      for t in range(0,41,10):
+        if t==0:
+          t=1
+        para_t="%d" % (t)
         graph_type = 'tree'
         for kappa in ['2','8','16','20']:
           for l_norm in ['2']:
-            for t in range(0,41,10):
-              if t==0:
-                t=1
-              para_t="%d" % (t)
+            for kth_fold in ['1','2','3','4','5']:
               for loss_scaling_factor in range(0,11,2):
                 if loss_scaling_factor ==0:
                   loss_scaling_factor = 1
