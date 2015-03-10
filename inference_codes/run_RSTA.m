@@ -46,7 +46,7 @@
 %       with newton method to combine multiple update directions
 %
 %
-function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, slack_c, loss_scaling_factor, newton_method, tmpfolder)
+function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, slack_c, loss_scaling_factor, newton_method, tmpdir)
 
     % Process input parameters, input at least the name of the dataset, requires all 9 additional parameters, otherwise run on a default parameter setting.
     if nargin < 1
@@ -68,7 +68,7 @@ function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, 
     end
     
     if nargin < 11
-        tmpfolder = '/var/tmp/';
+        tmpdir = '/var/tmp/';
     end
     
     % Set the seed of the random number generator
@@ -79,8 +79,8 @@ function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, 
     
     % Set the suffix of result files
     suffix = sprintf('%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTA%s', filename,graph_type,t,kth_fold,l_norm,maxkappa,slack_c,loss_scaling_factor,newton_method,losstype);
-    system(sprintf('rm /var/tmp/%s.log', suffix));
-    system(sprintf('rm /var/tmp/Ypred_%s.mat', suffix));
+    system(sprintf('rm %s/%s.log', tmpdir, suffix));
+    system(sprintf('rm %s/Ypred_%s.mat', tmpdir, suffix));
     
     % Convert parameters from string to numerical
     t           = eval(t);
@@ -256,6 +256,7 @@ function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, 
         paramsIn.filestem       = sprintf('%s',suffix);	% file name stem used for writing output
         paramsIn.loss_scaling_factor = loss_scaling_factor;
         paramsIn.newton_method  = newton_method;
+        paramsIn.tmpdir        = tmpdir;
         
         % nfold cross validation
         Itrain  = find(Ind ~= k);
@@ -276,7 +277,7 @@ function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, 
         % save margin dual mu
         muList{k} = rtn;
         % collecting results
-        load(sprintf('/var/tmp/Ypred_%s.mat', paramsIn.filestem));
+        load(sprintf('%s/Ypred_%s.mat', tmpdir, paramsIn.filestem));
         Ypred(Itest,:) = Ypred_ts;          % The prediction in binary value
         %YpredVal(Itest,:) = Ypred_ts_val;  % The prediction in real value
         running_times(k,1) = running_time;  % Running time of the algorithm on the Kth fold
@@ -293,7 +294,7 @@ function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, 
     if ~isTest
         %% need to save: Ypred, YpredVal, running_time, mu for current baselearner t,filename
         save(sprintf('../outputs/%s.mat', paramsIn.filestem), 'perf','Ypred', 'YpredVal', 'running_times', 'muList','norm_const_quadratic_list');
-        system(sprintf('mv /var/tmp/%s.log ../outputs/', suffix));    
+        system(sprintf('mv %s/%s.log ../outputs/', tmpdir, suffix));    
         exit
     end
 end

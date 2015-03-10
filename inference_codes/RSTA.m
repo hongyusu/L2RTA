@@ -1077,7 +1077,7 @@ function profile_update_ts
     tm = cputime;
     
     %print_message(sprintf('tm: %d iter: %d obj: %f mu: max %f min %f dgap: %f',...
-    %round(tm-profile.start_time),profile.iter,obj,max(max(mu)),min(min(mu)),primal_ub-obj),5,sprintf('/var/tmp/%s.log',params.filestem));
+    %round(tm-profile.start_time),profile.iter,obj,max(max(mu)),min(min(mu)),primal_ub-obj),5,sprintf('%s/%s.log',params.tmpdir, params.filestem));
 
     if params.profiling
         profile.n_err_microlabel_prev = profile.n_err_microlabel;
@@ -1116,10 +1116,10 @@ function profile_update_ts
             mean(Ys_positions_ts),...
             sum(Yi_positions_ts<=kappa)/size(Y_ts,1)*100,...
             mean(Yi_positions_ts)),...
-            0,sprintf('/var/tmp/%s.log',params.filestem));
+            0,sprintf('%s/%s.log',params.tmpdir, params.filestem));
         % Compute running time
         running_time = tm - profile.start_time;
-        sfile = sprintf('/var/tmp/Ypred_%s.mat',params.filestem);
+        sfile = sprintf('%s/Ypred_%s.mat',params.tmpdir, params.filestem);
         save(sfile,'Ypred_tr','Ypred_ts','params','running_time','norm_const_quadratic_list');
         %Ye = reshape(Ye,4*size(E,1),m);
     end
@@ -1176,7 +1176,7 @@ function profile_update_tr
             std(val_list)*100,...
             mean(GmaxG0_list)/T_size*100,...
             sum(GoodUpdate_list)/size(Y_tr,1)*100),...
-            0,sprintf('/var/tmp/%s.log',params.filestem));
+            0,sprintf('%s/%s.log',params.tmpdir,params.filestem));
     end
     
 end
