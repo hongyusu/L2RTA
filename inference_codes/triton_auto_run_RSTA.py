@@ -82,7 +82,7 @@ def run(job_id, tmpdir):
       for t in range(0,41,10):
         if t==0:
           t=1
-        #t=10
+        t=10
         para_t="%d" % (t)
         graph_type = 'tree'
         for kappa in ['2','8','16','20']:
@@ -108,6 +108,7 @@ def run(job_id, tmpdir):
   # running jobs
   if not job_id > len(jobs):
     singleRSTA(jobs[job_id-1], tmpdir)
+    time.sleep(1)
   pass # def
 
 
