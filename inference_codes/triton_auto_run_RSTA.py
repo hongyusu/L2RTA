@@ -82,6 +82,7 @@ def run(job_id, tmpdir):
       for t in range(0,41,10):
         if t==0:
           t=1
+        t=10
         para_t="%d" % (t)
         graph_type = 'tree'
         for kappa in ['2','8','16','20']:
