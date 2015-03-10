@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --cpus-per-task=1
+#SBATCH --cpus-per-task=8
 #SBATCH --time=0-00:00:05 --mem-per-cpu=4000
 #SBATCH --array=1-5
 #SBATCH -o terminal.out
