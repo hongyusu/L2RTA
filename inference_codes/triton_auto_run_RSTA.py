@@ -56,7 +56,7 @@ def singleRSTA(job, tmpdir):
       logging.info('\t--< (f)%s,(type)%s,(t)%s,(f)%s,(l)%s,(k)%s,(c)%s,(s)%s,(n)%s' %( filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
     else:
       logging.info('\t--> (f)%s,(type)%s,(t)%s,(f)%s,(l)%s,(k)%s,(c)%s,(s)%s,(n)%s' %( filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
-      os.system(""" export OMP_NUM_THREADS=32; matlab -nodisplay -nosplash -r "run_RSTA '%s' '%s' '%s' '0' '%s' '%s' '%s' '%s' '%s' '%s' '%s'" > %s/tmp_%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs """ % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method,tmpdir,tmpdir,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method) )
+      os.system(""" export OMP_NUM_THREADS=32; matlab -nodisplay -nosplash -nojvm -r "run_RSTA '%s' '%s' '%s' '0' '%s' '%s' '%s' '%s' '%s' '%s' '%s'" > %s/tmp_%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs """ % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method,tmpdir,tmpdir,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method) )
       logging.info('\t--| (f)%s,(type)%s,(t)%s,(f)%s,(l)%s,(k)%s,(c)%s,(s)%s,(n)%s' %( filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
   except Exception as excpt_msg:
     print excpt_msg
