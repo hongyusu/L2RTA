@@ -4,6 +4,7 @@
 #SBATCH --array=1-5
 #SBATCH -o terminal.out
 #SBATCH -p play
+#SBATCH --exclusive
 
 export OMP_PROC_BIND=true
 module load matlab
