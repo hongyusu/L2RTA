@@ -71,7 +71,7 @@ def singleRSTA(job, tmpdir):
 def run(job_id, tmpdir):
   jobs=[]
   is_main_run_factor=5
-  filenames=['toy10','toy50','emotions','medical','enron','cal500','fp','cancer','yeast','scene']
+  filenames=['toy10','toy50','emotions','medical','enron','yeast','scene','cal500','fp','cancer']
   n=0
   # generate jobs
   for filename in filenames:
