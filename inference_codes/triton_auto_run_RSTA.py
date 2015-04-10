@@ -92,12 +92,12 @@ def run(job_id, tmpdir):
         pass # for kappa
       pass # for datasets
     pass # for k fole
-  for job in jobs:
-    print job
-  # # running jobs
-  # if not job_id > len(jobs):
-  #   singleRSTA(jobs[job_id-1], tmpdir)
-  #   time.sleep(1)
+  # for job in jobs:
+  #   print job
+  # running jobs
+  if not job_id > len(jobs):
+    singleRSTA(jobs[job_id-1], tmpdir)
+    time.sleep(1)
   pass # def
 
 
