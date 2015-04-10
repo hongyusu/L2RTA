@@ -32,7 +32,7 @@ logging.basicConfig(format='%(asctime)s %(filename)s %(funcName)s %(levelname)s:
 def checkfile(filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method):
   file_exist = 0
   file_exist += os.path.isfile("../output/%s/c%s/%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs.log" % (filename,slack_c,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
-  print ("../output/%s/c%s/%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs.log" % (filename,slack_c,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
+  print ("../outputs/%s/c%s/%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs.log" % (filename,slack_c,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
   if file_exist > 0:
     return 1
   else:
