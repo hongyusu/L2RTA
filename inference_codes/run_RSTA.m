@@ -64,7 +64,7 @@ function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, 
         maxkappa    = '2';
         slack_c     = '100';
         loss_scaling_factor = '10';
-        netwon_method       = '1';
+        newton_method       = '1';
     end
     
     if nargin < 11
