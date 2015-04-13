@@ -6,7 +6,7 @@
 # Wrapper function to run developed Random Spanning Tree Approximation algorithm parallelly on interactive cluster, for the purpose of multiple parameters and datasets.
 # The script uses Python thread and queue package.
 # Implement worker class and queuing system.
-# The framework looks at each parameter combination as a job and pools all jobs in a queue.
+# The framework looks at each parameter combination as a job and pools all job_queue in a queue.
 # It generates a group of workers (computing nodes). 
 # Each worker will always take and process the first job from the queue.
 # In case that job is not completed by the worker, it will be push back to the queue, and will be processed later on.
@@ -38,7 +38,7 @@ class Worker(Thread):
     Thread.__init__(self)
     self.job_queue  = job_queue
     self.node = node
-    self.penalty = 0 # penalty parameter which prevents computing node with low computational resources getting jobs from job queue
+    self.penalty = 0 # penalty parameter which prevents computing node with low computational resources getting job_queue from job queue
     pass # def
   def run(self):
     all_done = 0
@@ -95,12 +95,12 @@ def singleRSTA(node, job):
 
 
 def run():
-  jobs=[]
+  job_queue=[]
   is_main_run_factor=5
   #filenames=['toy10','toy50','emotions','medical','enron','yeast','scene','cal500','fp','cancer']
   filenames=['cancer']
   n=0
-  # generate jobs
+  # generate job_queue
   logging.info('\t\tGenerating job queue.')
   for filename in filenames:
     #for slack_c in ['1','100','0.1','10','0.01','50','0.5','20','0.05','5']:
@@ -122,7 +122,7 @@ def run():
                     continue
                   else:
                     n=n+1
-                    jobs.append((n,filename,graph_type,para_t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
+                    job_queue.append((n,filename,graph_type,para_t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
                   pass # for newton_method
                 pass # for loss_scaling_factor
               pass # for slack_c
@@ -134,9 +134,9 @@ def run():
   # get computing nodes
   cluster = get_free_nodes()[0] # if you have access to some interactive computer cluster, get the list of hostnames of the cluster
   #cluster = ['melkinkari'] # if you don't have access to any computer cluster, just use your machine as the only computing node
-  # running jobs
+  # running job_queue
   job_size = job_queue.qsize()
-  logging.info( "\t\tProcessing %d jobs" % (job_size))
+  logging.info( "\t\tProcessing %d job_queue" % (job_size))
   threads = []
   for i in range(len(cluster)):
     if job_queue.empty():
