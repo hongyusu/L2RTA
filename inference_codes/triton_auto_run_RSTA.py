@@ -72,13 +72,14 @@ def run(job_id, tmpdir):
           t=1
         para_t="%d" % (t)
         graph_type = 'tree'
-        for kappa in ['2','8','16','20']:
+        #for kappa in ['2','8','16','20']:
+        for kappa in ['2']:
           for l_norm in ['2']:
             for kth_fold in ['1','2','3','4','5']:
               for loss_scaling_factor in range(0,11,2):
                 if loss_scaling_factor ==0:
                   loss_scaling_factor = 1
-                for newton_method in ['1','0']:
+                for newton_method in ['1']:
                   if checkfile(filename,graph_type,para_t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method):
                     continue
                   else:
