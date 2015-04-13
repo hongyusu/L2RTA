@@ -95,7 +95,6 @@ def singleRSTA(node, job):
 
 
 def run():
-  job_queue=[]
   is_main_run_factor=5
   #filenames=['toy10','toy50','emotions','medical','enron','yeast','scene','cal500','fp','cancer']
   filenames=['cancer']
