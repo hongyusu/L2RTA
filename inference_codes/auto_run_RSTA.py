@@ -60,17 +60,7 @@ class Worker(Thread):
 
 def checkfile(filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method):
   file_exist = 0
-  file_exist += os.path.isfile("../outputs/%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs.log" % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))        # temporatory folder
-  file_exist += os.path.isfile("../outputs/phase1/%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs.log" % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method)) # 100
-  file_exist += os.path.isfile("../outputs/phase2/%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs.log" % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method)) # 1
-  file_exist += os.path.isfile("../outputs/phase3/%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs.log" % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method)) # 0.1
-  file_exist += os.path.isfile("../outputs/phase4/%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs.log" % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method)) # 10
-  file_exist += os.path.isfile("../outputs/phase5/%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs.log" % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method)) # 0.01
-  file_exist += os.path.isfile("../outputs/phase6/%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs.log" % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method)) # 50
-  file_exist += os.path.isfile("../outputs/phase7/%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs.log" % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method)) # 0.5
-  file_exist += os.path.isfile("../outputs/phase8/%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs.log" % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method)) # 20
-  file_exist += os.path.isfile("../outputs/phase9/%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs.log" % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method)) # 0.05
-  file_exist += os.path.isfile("../outputs/phase10/%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs.log" % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method)) # 5
+  file_exist += os.path.isfile("../outputs/%s/c%s/%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs.log" % (filename,slack_c,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
   if file_exist > 0:
     return 1
   else:
@@ -106,38 +96,39 @@ def singleRSTA(node, job):
 def run():
   jobs=[]
   is_main_run_factor=5
-  filenames=['cancer','ArD20','ArD30','toy10','toy50','emotions','yeast','medical','scene','enron','cal500','fp']
-  filenames=['scene','yeast','cancer']
+  #filenames=['toy10','toy50','emotions','medical','enron','yeast','scene','cal500','fp','cancer']
+  filenames=['cancer']
   n=0
   # generate jobs
   logging.info('\t\tGenerating job queue.')
-  #for slack_c in ['100','1','0.1','10','0.01','50','0.5','20','0.05','5']:
   for filename in filenames:
-    for slack_c in ['1']:
-      for kth_fold in ['1','2','3','4','5']:
+    #for slack_c in ['1','100','0.1','10','0.01','50','0.5','20','0.05','5']:
+    for slack_c in ['1','100','0.1','10','0.01']:
+      for t in range(0,41,10):
+        if t==0:
+          t=1
+        para_t="%d" % (t)
         graph_type = 'tree'
         for kappa in ['2','8','16','20']:
+        #for kappa in ['2']:
           for l_norm in ['2']:
-            for t in range(0,41,10):
-              if t==0:
-                t=1
-              para_t="%d" % (t)
+            for kth_fold in ['1','2','3','4','5']:
               for loss_scaling_factor in range(0,11,2):
                 if loss_scaling_factor ==0:
                   loss_scaling_factor = 1
-                for newton_method in ['0']:
+                for newton_method in ['1']:
                   if checkfile(filename,graph_type,para_t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method):
                     continue
                   else:
                     n=n+1
-                    job_queue.put((n,filename,graph_type,para_t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
+                    jobs.append((n,filename,graph_type,para_t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
                   pass # for newton_method
                 pass # for loss_scaling_factor
-              pass # for t
-            pass # for l
-          pass # for kappa
-        pass # for type
-      pass # for k
+              pass # for slack_c
+            pass # for |T|
+          pass # for l
+        pass # for kappa
+      pass # for datasets
     pass # for k fole
   # get computing nodes
   cluster = get_free_nodes()[0] # if you have access to some interactive computer cluster, get the list of hostnames of the cluster
