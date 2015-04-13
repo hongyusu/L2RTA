@@ -121,7 +121,7 @@ def run():
                     continue
                   else:
                     n=n+1
-                    job_queue.append((n,filename,graph_type,para_t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
+                    job_queue.put((n,filename,graph_type,para_t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
                   pass # for newton_method
                 pass # for loss_scaling_factor
               pass # for slack_c
