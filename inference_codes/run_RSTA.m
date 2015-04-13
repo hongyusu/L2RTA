@@ -140,8 +140,10 @@ function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, 
     if or(strcmp(filename,'fpuni'),strcmp(filename,'cancer'))
         if strcmp(comres(1:4),'dave') | strcmp(comres(1:4),'ukko') | strcmp(comres(1:4),'node')
             K = dlmread(sprintf('/cs/taatto/group/urenzyme/workspace/data/%s_kernel',filename));
-        else
+        elseif strcmp(comres(1:4),'Hong')
             K = dlmread(sprintf('../shared_scripts/test_data/%s_kernel',filename));
+        else
+            K = dlmread(sprintf('/triton/ics/scratch/kepaco/workspace/data/%s_kernel',filename));
         end
     else
         K = X * X';         % Dot product
