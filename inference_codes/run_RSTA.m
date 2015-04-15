@@ -158,7 +158,7 @@ function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, 
     Ind     = getCVIndex(Y,nfold);
     
     %% Select part of the data for code sanity check if 'isTest==1'.
-    ntrain      = 100;
+    ntrain      = 10;
     ntrain      = min(ntrain,size(Y,1));
     iteration   = 120;
     profile_iteration = 40;

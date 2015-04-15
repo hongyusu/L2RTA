@@ -665,6 +665,7 @@ function [delta_obj_list] = conditional_gradient_descent(x, kappa)
     global GmaxG0_list;
     global GoodUpdate_list;
     global node_degree_list;
+    global iter;
     
     
     %% Compute K best multilabels from a collection of random spanning trees.
@@ -697,6 +698,11 @@ function [delta_obj_list] = conditional_gradient_descent(x, kappa)
         Y_kappa_val(t,:)    = YmaxVal;
     end
     
+    
+    if iter ==-1
+        reshape(mu,4,13)
+        adsfadsf
+    end
     
     %% Compute the worst violating multilabel from the K best list.
     IN_E = zeros((l-1)*2,(l-1));
@@ -904,6 +910,12 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton(x, kappa)
     mu_global = compose_mu_global_from_local;
     
     
+    if iter ==2
+        reshape(mu,4,13)
+        adsfadsf
+    end
+    
+    
 %     normalization_linear    = 1/size(E_global,1);
 %     normalization_quadratic = 1;
 %     
@@ -916,9 +928,9 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton(x, kappa)
     %% convex combination of update directions, combination is given by lmd
     % For each update direction in terms of multilabels, compute the corresponding mu_0, and compute the different mu_0-mu
     dmu_set = zeros(size(mu_global,1),T_size);
-     Y_kappa = reshape(Y_kappa',l,kappa*T_size);
-     Y_kappa = Y_kappa';
-    for t=1:T_size*kappa
+%     Y_kappa = reshape(Y_kappa',l,kappa*T_size);
+%     Y_kappa = Y_kappa';
+    for t=1:T_size%*kappa
         Ymax    = Y_kappa(t,1:l);
         Umax_e  = 1+2*(Ymax(:,E_global(:,1))>0) + (Ymax(:,E_global(:,2)) >0);
         mu_0    = zeros(4*size(E_global,1),1);
