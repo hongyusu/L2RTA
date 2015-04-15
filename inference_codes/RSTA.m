@@ -94,6 +94,8 @@ function [rtn, ts_err] = RSTA (paramsIn, dataIn)
     end
     kappa       = kappa_INIT;
     
+    kappa = 1;
+    
     % For each random spanning tree, compute loss function, edge indicator function, and initial mu and Kxx variables.
     for t=1:T_size
         [loss_list{t},Ye_list{t},ind_edge_val_list{t}] = compute_loss_vector(Y_tr,t,params.mlloss);
@@ -624,18 +626,15 @@ end
 
 
 %%
-% Perform conditional gradient descend on individual training example,
-% to update corresponding marginal dual variables of that training example on a collection of random spanning trees
+% Matlab function to perform conditional gradient descend on individual training example,
+% to update corresponding marginal dual variables of that training example on a collection of random spanning trees.
 %
-% working in progress on 16/05/2014
-% working in progress on 03/12/2014
-% working in progress on 29/01/2015
-%
-% PARAMETERS: 
+% INPUT: 
 %   x:      index of the current example under optimization
 %   kappa:  number of best multilabel computed from each individual random spanning tree
-%   delta_obj_list:     difference in terms of objective value on each random spanning tree
 %
+% OUTPUT:
+%   delta_obj_list:     difference in terms of objective value on each random spanning tree
 %
 function [delta_obj_list] = conditional_gradient_descent(x, kappa)
 
@@ -666,6 +665,7 @@ function [delta_obj_list] = conditional_gradient_descent(x, kappa)
     global GoodUpdate_list;
     global node_degree_list;
     global iter;
+    
     
     
     %% Compute K best multilabels from a collection of random spanning trees.
@@ -699,7 +699,7 @@ function [delta_obj_list] = conditional_gradient_descent(x, kappa)
     end
     
     
-    if iter ==-1
+    if iter ==2
         reshape(mu,4,13)
         adsfadsf
     end
@@ -922,14 +922,22 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton(x, kappa)
 %     normalization_linear    = 1/size(E_global,1);
 %     normalization_quadratic = 1/size(E_global,1);
 %     
+
     normalization_linear    = 1;
     normalization_quadratic = 1;
+
     
-    %% convex combination of update directions, combination is given by lmd
+
+
+
+    %% The following code will compute a conical combination of update directions, combination is given by lmd.
     % For each update direction in terms of multilabels, compute the corresponding mu_0, and compute the different mu_0-mu
-    dmu_set = zeros(size(mu_global,1),T_size);
+    size(mu_global)
+    
+    dmu_set = zeros(size(mu_global,1), T_size);  % number of considered update directions 
 %     Y_kappa = reshape(Y_kappa',l,kappa*T_size);
 %     Y_kappa = Y_kappa';
+%     for t=1:T_size*kappa
     for t=1:T_size%*kappa
         Ymax    = Y_kappa(t,1:l);
         Umax_e  = 1+2*(Ymax(:,E_global(:,1))>0) + (Ymax(:,E_global(:,2)) >0);
