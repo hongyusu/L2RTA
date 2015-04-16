@@ -272,7 +272,7 @@ function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, 
         % save variables
         save(sprintf('%s/%s.mat', rundir, paramsIn.filestem), 'perf','Ypred', 'YpredVal', 'running_times', 'muList','norm_const_quadratic_list');
         % save log file
-        system(sprintf('mv %s/%s.log ../outputs/', tmpdir, suffix));    
+        system(sprintf('mv %s/%s.log %s/', tmpdir, suffix, rundir));    
         exit
     end
 end
