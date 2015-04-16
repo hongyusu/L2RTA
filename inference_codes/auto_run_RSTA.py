@@ -117,7 +117,7 @@ def run():
         #for kappa in ['2']:
           for l_norm in ['2']:
             for kth_fold in ['1','2','3','4','5']:
-              for loss_scaling_factor in range('0.5','0.1','1','5','10'):
+              for loss_scaling_factor in ['0.5','0.1','1','5','10']:
                 for newton_method in ['1','0']:
                   if checkfile(filename,graph_type,para_t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method):
                     continue
