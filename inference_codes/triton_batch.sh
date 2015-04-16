@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --cpus-per-task=1
 #SBATCH --mem-per-cpu=10000
-#SBATCH --time=0-04:00:00
+#SBATCH --time=0-02:00:00
 #SBATCH --array=1-5000
 #SBATCH -o terminal.out
 #SBATCH -p short 
