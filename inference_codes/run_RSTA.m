@@ -69,7 +69,7 @@ function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, 
     
     if nargin < 11
         tmpdir          = '/var/tmp/';
-        rundir          = '../outputs/';
+        rundir          = '../outputs/compare_run/';
     end
     
     % Set the seed of the random number generator
@@ -78,7 +78,7 @@ function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, 
     %losstype = 'r';     % 1 loss, loss is evaluated over the whole output vector
     losstype = 's';     % scaled loss, losses are distributed on the edge of the output graph
     
-    % Set the suffix of result files
+    % Set the suffix of the result file, clean old result files
     suffix = sprintf('%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTA%s', filename,graph_type,t,kth_fold,l_norm,maxkappa,slack_c,loss_scaling_factor,newton_method,losstype);
     system(sprintf('rm %s/%s.log', tmpdir, suffix));
     system(sprintf('rm %s/Ypred_%s.mat', tmpdir, suffix));
@@ -135,9 +135,8 @@ function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, 
     
     %% Change Y from -1 to 0, now we have standard label of +1 and 0. Note we use +1/-1 in the algorithm
     Y(Y==-1)=0;
-    %X=(X-repmat(mean(X),size(X,1),1));
 
-    %% Get dot product kernels from normalized features or just read in precomputed kernel matrix.
+    %% Compute inner product kernels from normalized features or just read in precomputed kernel matrix.
     if or(strcmp(filename,'fpuni'),strcmp(filename,'cancer'))
         if strcmp(comres(1:4),'dave') | strcmp(comres(1:4),'ukko') | strcmp(comres(1:4),'node')
             K = dlmread(sprintf('/cs/taatto/group/urenzyme/workspace/data/%s_kernel',filename));
@@ -147,11 +146,8 @@ function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, 
             K = dlmread(sprintf('/triton/ics/scratch/kepaco/workspace/data/%s_kernel',filename));
         end
     else
-        K = X * X';         % Dot product
-%         K = CenterKernelMatrix(K);    % Center the kernel matrix.
-%         K = K-min(min(K));            % After centering, make sure no negative value in the matrix.
-        K = K ./ sqrt(diag(K)*diag(K)');    % Normalization of the kernel matrix to make sure points are in a unit sphere.
-        % TODO: Center kernel
+        K = X * X';                         % Kernel by inner product
+        K = K ./ sqrt(diag(K)*diag(K)');    % Kernel matrix normalization to make sure points are in a unit sphere.
     end
     
     %% Stratified n fold cross validation index.
@@ -159,15 +155,16 @@ function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, 
     Ind     = getCVIndex(Y,nfold);
     
     %% Select part of the data for code sanity check if 'isTest==1'.
-    ntrain      = 80;
-    ntrain      = min(ntrain,size(Y,1));
-    iteration   = 120;
-    profile_iteration = 40;
+
+    iteration   = 100;
+    profile_iteration = 5;
     if isTest == 1
-        X   = X(1:ntrain,:);
-        Y   = Y(1:ntrain,:);
-        K   = K(1:ntrain,1:ntrain);
-        Ind = Ind(1:ntrain);
+        ntrain  = 80;
+        ntrain  = min(ntrain,size(Y,1));
+        X       = X(1:ntrain,:);
+        Y       = Y(1:ntrain,:);
+        K       = K(1:ntrain,1:ntrain);
+        Ind     = Ind(1:ntrain);
         iteration = 50;
         profile_iteration = 1;
         
@@ -175,21 +172,6 @@ function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, 
 
 
     %run_SVM(kth_fold, size(Y,2), Ind, X, Y,slack_c)
-%     %% Perform parameter selection.
-%     % TODO: to be better implemented
-%     % ues results from parameter selection, otherwise use fixed parameters
-%     para_n=11;
-%     parameters=zeros(para_n,10);
-%     for i=1:para_n
-%         try
-%             load(sprintf('../parameters/%s_%s_1_f%d_l2_i%d_RSTAp.mat',filename,graph_type,kth_fold,i));
-%             parameters(i,:) = perf;
-%         catch err
-%             parameters(i,:) = [i,10,zeros(1,8)];
-%         end
-%     end
-%     parameters=sortrows(parameters,[3,2]);
-%     mmcrf_c = parameters(para_n,2);
     
     % currently use following parameters
     mmcrf_c         = slack_c;      % margin slack parameter
@@ -215,14 +197,6 @@ function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, 
         E = [E,min(E,[],2),max(E,[],2)];E=E(:,3:4); % arrange head and tail
         E = sortrows(E,[1,2]);  % sort by head and tail
         Elist{i} = RootTree(E); % put into cell array
-      
-% Construct a collection of similar spanning trees         
-%         if i~=1
-%             Elist{i}=Elist{1};
-%             pos = randsample(2:(size(Elist{1},1)),1);
-%             Elist{i}(pos,1) = randsample(unique(Elist{1}(1:(pos-1),:)),1);
-%             Elist{i}=RootTree(Elist{i});
-%         end
     end
     
     

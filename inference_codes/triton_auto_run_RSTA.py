@@ -31,8 +31,8 @@ logging.basicConfig(format='%(asctime)s %(filename)s %(funcName)s %(levelname)s:
 
 def checkfile(filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method):
   file_exist = 0
-  file_exist += os.path.isfile("../outputs/%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs.log" % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
-  file_exist += os.path.isfile("../outputs/%s/c%s/%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs.log" % (filename,slack_c,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
+  file_exist += os.path.isfile("../outputs/compare_run/%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs.log" % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
+  file_exist += os.path.isfile("../outputs/compare_run/%s/c%s/%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs.log" % (filename,slack_c,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
   if file_exist > 0:
     return 1
   else:
@@ -53,34 +53,32 @@ def singleRSTA(job, tmpdir):
     print excpt_msg
     logging.info('\t--= (f)%s,(type)%s,(t)%s,(f)%s,(l)%s,(k)%s,(c)%s,(s)%s,(n)%s' %( filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
     fail_penalty = 1
-  if not os.path.isfile("../outputs/%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs.log" % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method)):
+  if not os.path.isfile("../outputs/compare_run/%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs.log" % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method)):
     logging.info('\t--x (f)%s,(type)%s,(t)%s,(f)%s,(l)%s,(k)%s,(c)%s,(s)%s,(n)%s' %( filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
-    #singleRSTA(job)
-  pass # def
+  pass # singleRSTA
 
 
 def run(job_id, tmpdir):
   jobs=[]
   is_main_run_factor=5
   filenames=['toy10','toy50','emotions','medical','enron','yeast','scene','cal500','fp','cancer']
+  filenames=['toy10','toy50','emotions','yeast','scene']
   n=0
   # generate jobs
   for filename in filenames:
     #for slack_c in ['1','100','0.1','10','0.01','50','0.5','20','0.05','5']:
     for slack_c in ['1','100','0.1','10','0.01']:
-      for t in range(0,41,10):
+      for t in range(0,21,5):
         if t==0:
           t=1
         para_t="%d" % (t)
         graph_type = 'tree'
         #for kappa in ['2','8','16','20']:
-        for kappa in ['2']:
+        for kappa in ['1','2','4','8','16']:
           for l_norm in ['2']:
             for kth_fold in ['1','2','3','4','5']:
-              for loss_scaling_factor in range(0,11,2):
-                if loss_scaling_factor ==0:
-                  loss_scaling_factor = 1
-                for newton_method in ['1']:
+              for loss_scaling_factor in ['0.5','0.1','1','5','10']:
+                for newton_method in ['1','0']:
                   if checkfile(filename,graph_type,para_t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method):
                     continue
                   else:
