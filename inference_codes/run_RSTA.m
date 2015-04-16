@@ -32,7 +32,7 @@
 %
 %
 % EXAMPLE USAGE:
-%   Use command:    run_RSTA('ArD10','tree','5','1','1','2','2','100','10','1')
+%   Use command:    run_RSTA('ArD10','tree','5','1','1','2','2','100','10','1',TMPDIR,RUNDIR)
 %   This will run the algorithm:
 %       on ArD10 dataset,
 %       with random spanning tree as the output graph,
@@ -46,7 +46,7 @@
 %       with newton method to combine multiple update directions
 %
 %
-function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, slack_c, loss_scaling_factor, newton_method, tmpdir)
+function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, slack_c, loss_scaling_factor, newton_method, tmpdir, rundir)
 
     % Process input parameters, input at least the name of the dataset, requires all 9 additional parameters, otherwise run on a default parameter setting.
     if nargin < 1
@@ -68,7 +68,8 @@ function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, 
     end
     
     if nargin < 11
-        tmpdir = '/var/tmp/';
+        tmpdir          = '/var/tmp/';
+        rundir          = '../outputs/';
     end
     
     % Set the seed of the random number generator
@@ -158,7 +159,7 @@ function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, 
     Ind     = getCVIndex(Y,nfold);
     
     %% Select part of the data for code sanity check if 'isTest==1'.
-    ntrain      = 10;
+    ntrain      = 80;
     ntrain      = min(ntrain,size(Y,1));
     iteration   = 120;
     profile_iteration = 40;
@@ -173,8 +174,7 @@ function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, 
     end
 
 
-    %run_SVM(kth_fold, size(Y,2), Ind, X, Y, kth_fold, 1, slack_c)
-    
+    %run_SVM(kth_fold, size(Y,2), Ind, X, Y,slack_c)
 %     %% Perform parameter selection.
 %     % TODO: to be better implemented
 %     % ues results from parameter selection, otherwise use fixed parameters
@@ -288,14 +288,16 @@ function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, 
     
     %% Compute performance metrics, mainly for sanity check/display purpose.
     [acc,vecacc,pre,rec,f1,auc1,auc2] = get_performance(Y(Itest,:),(Ypred(Itest,:)==1),YpredVal(Itest));
-    % print out the performance on screen
-    perf = [acc,vecacc,pre,rec,f1,auc1,auc2,norm_const_quadratic_list]
+    perf = [acc,vecacc,pre,rec,f1,auc1,auc2,norm_const_quadratic_list];
+    % display the performance on screen
+    perf
     
     
-    %% If current session is not a test run (a true run), save the results files, save the log files, and terminate the MATLAB session.
+    %% If current session is not a test run, save all result files, log files, and exit current MATLAB session.
     if ~isTest
-        %% need to save: Ypred, YpredVal, running_time, mu for current baselearner t,filename
-        save(sprintf('../outputs/%s.mat', paramsIn.filestem), 'perf','Ypred', 'YpredVal', 'running_times', 'muList','norm_const_quadratic_list');
+        % save variables
+        save(sprintf('%s/%s.mat', rundir, paramsIn.filestem), 'perf','Ypred', 'YpredVal', 'running_times', 'muList','norm_const_quadratic_list');
+        % save log file
         system(sprintf('mv %s/%s.log ../outputs/', tmpdir, suffix));    
         exit
     end
