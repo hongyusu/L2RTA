@@ -519,10 +519,9 @@ function Kmu_x = compute_Kmu_x(x,Kx,E,ind_edge_val,Rmu,Smu)
 end
 
 
-%% Compute relative duality gap.
-%       03/12/2014
-%       30/01/2014
-%
+%% This function is to compute relative duality gap based on the whole training data.
+% 
+%%
 function compute_duality_gap
 
     %% global parameters
@@ -627,13 +626,13 @@ function compute_duality_gap
         dgap(t) = params.C*sum(Gmax)-Gcur;
     end
 
-    %% Compute primal upper bound, which is obj+duality gap
+    %% Compute primal upper bound, which is objective+duality_gap
     dgap = max(0,dgap);
-    %duality_gap_on_trees = min(dgap,duality_gap_on_trees);
     duality_gap_on_trees = dgap;
     primal_ub = obj + sum(dgap);
     
 end
+
 
 
 
@@ -679,9 +678,7 @@ function [delta_obj_list] = conditional_gradient_descent(x, kappa)
     global Yipos_list;
     global GmaxG0_list;
     global GoodUpdate_list;
-    global node_degree_list;
-    global iter;
-    
+    global node_degree_list;    
     
     
     %% Compute K best multilabels from a collection of random spanning trees.

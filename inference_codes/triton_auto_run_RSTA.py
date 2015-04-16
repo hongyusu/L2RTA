@@ -3,13 +3,7 @@
 
 
 
-# Wrapper function to run developed Random Spanning Tree Approximation algorithm parallelly on interactive cluster, for the purpose of multiple parameters and datasets.
-# The script uses Python thread and queue package.
-# Implement worker class and queuing system.
-# The framework looks at each parameter combination as a job and pools all jobs in a queue.
-# It generates a group of workers (computing nodes). 
-# Each worker will always take and process the first job from the queue.
-# In case that job is not completed by the worker, it will be push back to the queue, and will be processed later on.
+# The wrapper script will enable running with different parameters parallelly .
 
 
 import math
@@ -27,27 +21,29 @@ import random
 logging.basicConfig(format='%(asctime)s %(filename)s %(funcName)s %(levelname)s:%(message)s', level=logging.INFO)
 
 
+global_rundir = ''
 
-
+# function to check if the result file already exist in the destination folder
 def checkfile(filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method):
   file_exist = 0
-  file_exist += os.path.isfile("../outputs/compare_run/%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs.log" % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
-  file_exist += os.path.isfile("../outputs/compare_run/%s/c%s/%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs.log" % (filename,slack_c,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
+  file_exist += os.path.isfile("%s/%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs.log" % (global_rundir,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
+  file_exist += os.path.isfile("%s/%s/c%s/%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs.log" % (global_rundir,filename,slack_c,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
   if file_exist > 0:
     return 1
   else:
     return 0
-  pass # def
+  pass # checkfile
 
 
-def singleRSTA(job, tmpdir):
+# function to run RSTA algorithm on one set of parameters
+def singleRSTA(job, tmpdir, rundir):
   (n,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method) = job
   try:
     if checkfile(filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method):
       logging.info('\t--< (f)%s,(type)%s,(t)%s,(f)%s,(l)%s,(k)%s,(c)%s,(s)%s,(n)%s' %( filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
     else:
       logging.info('\t--> (f)%s,(type)%s,(t)%s,(f)%s,(l)%s,(k)%s,(c)%s,(s)%s,(n)%s' %( filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
-      os.system(""" export OMP_NUM_THREADS=32; matlab -nodisplay -nosplash -nojvm -r "run_RSTA '%s' '%s' '%s' '0' '%s' '%s' '%s' '%s' '%s' '%s' '%s'" > %s/tmp_%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs """ % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method,tmpdir,tmpdir,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method) )
+      os.system(""" export OMP_NUM_THREADS=32; matlab -nodisplay -nosplash -nojvm -r "run_RSTA '%s' '%s' '%s' '0' '%s' '%s' '%s' '%s' '%s' '%s' '%s' '%s'" > %s/tmp_%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs """ % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method,tmpdir,rundir,tmpdir,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method) )
       logging.info('\t--| (f)%s,(type)%s,(t)%s,(f)%s,(l)%s,(k)%s,(c)%s,(s)%s,(n)%s' %( filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
   except Exception as excpt_msg:
     print excpt_msg
@@ -58,7 +54,7 @@ def singleRSTA(job, tmpdir):
   pass # singleRSTA
 
 
-def run(job_id, tmpdir):
+def run(job_id, tmpdir, rundir):
   jobs=[]
   is_main_run_factor=5
   filenames=['toy10','toy50','emotions','medical','enron','yeast','scene','cal500','fp','cancer']
@@ -93,17 +89,18 @@ def run(job_id, tmpdir):
       pass # for datasets
     pass # for k fole
   # for job in jobs:
-  #   print job
-  # running jobs
+  # start jobs
   if not job_id > len(jobs):
-    singleRSTA(jobs[job_id-1], tmpdir)
+    singleRSTA(jobs[job_id-1], tmpdir, rundir)
     time.sleep(1)
   pass # def
 
 
 # It's actually not necessary to have '__name__' space, but whatever ...
 if __name__ == "__main__":
-  run(eval(sys.argv[1]), sys.argv[2])
+  # the main function will take in parameters: job_id, tmpdir
+  global_rundir = sys.argv[3]
+  run(eval(sys.argv[1]), sys.argv[2], sys.argv[3])
   pass
 
 
