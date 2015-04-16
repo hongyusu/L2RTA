@@ -58,15 +58,18 @@ class Worker(Thread):
   pass # class
 
 
+global_rundir = ''
+
+# function to check if the result file already exist in the destination folder
 def checkfile(filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method):
   file_exist = 0
-  file_exist += os.path.isfile("../outputs/%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs.log" % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
-  file_exist += os.path.isfile("../outputs/%s/c%s/%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs.log" % (filename,slack_c,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
+  file_exist += os.path.isfile("%s/%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs.log" % (global_rundir,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
+  file_exist += os.path.isfile("%s/%s/c%s/%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs.log" % (global_rundir,filename,slack_c,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
   if file_exist > 0:
     return 1
   else:
     return 0
-  pass # def
+  pass # checkfile
 
 
 def singleRSTA(node, job):
@@ -77,7 +80,7 @@ def singleRSTA(node, job):
       fail_penalty = 0
     else:
       logging.info('\t--> (node)%s,(f)%s,(type)%s,(t)%s,(f)%s,(l)%s,(k)%s,(c)%s,(s)%s,(n)%s' %( node,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
-      os.system(""" ssh -o StrictHostKeyChecking=no %s 'cd /cs/taatto/group/urenzyme/workspace/colt2014/experiments/L2RTA/inference_codes/; rm -rf /var/tmp/.matlab; export OMP_NUM_THREADS=32; nohup matlab -nodisplay -nosplash -r "run_RSTA '%s' '%s' '%s' '0' '%s' '%s' '%s' '%s' '%s' '%s'" > /var/tmp/tmp_%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs' """ % (node,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method) )
+      os.system(""" ssh -o StrictHostKeyChecking=no %s 'cd /cs/taatto/group/urenzyme/workspace/colt2014/experiments/L2RTA/inference_codes/; rm -rf /var/tmp/.matlab; export OMP_NUM_THREADS=32; nohup matlab -nodisplay -nosplash -r "run_RSTA '%s' '%s' '%s' '0' '%s' '%s' '%s' '%s' '%s' '%s' '/var/tmp' '%s'" > /var/tmp/tmp_%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs' """ % (node,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method,global_rundir,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method) )
       logging.info('\t--| (node)%s,(f)%s,(type)%s,(t)%s,(f)%s,(l)%s,(k)%s,(c)%s,(s)%s,(n)%s' %( node,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
       fail_penalty = -1
   except Exception as excpt_msg:
@@ -97,26 +100,25 @@ def singleRSTA(node, job):
 def run():
   is_main_run_factor=5
   #filenames=['toy10','toy50','emotions','medical','enron','yeast','scene','cal500','fp','cancer']
-  filenames=['cancer']
+  #filenames=['cancer']
+  filenames=['toy10','toy50','emotions','yeast','scene']
   n=0
   # generate job_queue
   logging.info('\t\tGenerating job queue.')
   for filename in filenames:
     #for slack_c in ['1','100','0.1','10','0.01','50','0.5','20','0.05','5']:
     for slack_c in ['1','100','0.1','10','0.01']:
-      for t in range(0,41,10):
+      for t in range(0,21,5):
         if t==0:
           t=1
         para_t="%d" % (t)
         graph_type = 'tree'
-        for kappa in ['2','8','16','20']:
+        for kappa in ['1','2','4','8','16']:
         #for kappa in ['2']:
           for l_norm in ['2']:
             for kth_fold in ['1','2','3','4','5']:
-              for loss_scaling_factor in range(0,11,2):
-                if loss_scaling_factor ==0:
-                  loss_scaling_factor = 1
-                for newton_method in ['0']:
+              for loss_scaling_factor in range('0.5','0.1','1','5','10'):
+                for newton_method in ['1','0']:
                   if checkfile(filename,graph_type,para_t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method):
                     continue
                   else:
@@ -156,6 +158,7 @@ def run():
 
 # It's actually not necessary to have '__name__' space, but whatever ...
 if __name__ == "__main__":
+  global_rundir = sys.argv[1]
   run()
   pass
 

@@ -1,11 +1,6 @@
 
 
 
-%%
-
-%%
-
-
 %% 
 %
 % Random spanning tree approximations assumes a model built with a complete graph as output graph. As learning/inference on a complete graph is
