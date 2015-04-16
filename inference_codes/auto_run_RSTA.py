@@ -66,7 +66,6 @@ def checkfile(filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_f
   file_exist += os.path.isfile("%s/%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs.log" % (global_rundir,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
   file_exist += os.path.isfile("%s/%s/c%s/%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs.log" % (global_rundir,filename,slack_c,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
   if file_exist > 0:
-    print ("%s/%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs.log" % (global_rundir,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
     return 1
   else:
     return 0
@@ -89,7 +88,7 @@ def singleRSTA(node, job):
     job_queue.put((job))
     logging.info('\t--= (node)%s,(f)%s,(type)%s,(t)%s,(f)%s,(l)%s,(k)%s,(c)%s,(s)%s,(n)%s' %( node,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
     fail_penalty = 1
-  if not os.path.isfile("../outputs/%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs.log" % (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method)):
+  if not os.path.isfile("%s/%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs.log" % (global_rundir,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method)):
     job_queue.put((job))
     logging.info('\t--x (node)%s,(f)%s,(type)%s,(t)%s,(f)%s,(l)%s,(k)%s,(c)%s,(s)%s,(n)%s' %( node,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
     fail_penalty = 1
@@ -134,7 +133,6 @@ def run():
       pass # for datasets
     pass # for k fole
   # get computing nodes
-  return
   cluster = get_free_nodes()[0] # if you have access to some interactive computer cluster, get the list of hostnames of the cluster
   #cluster = ['melkinkari'] # if you don't have access to any computer cluster, just use your machine as the only computing node
   # running job_queue
