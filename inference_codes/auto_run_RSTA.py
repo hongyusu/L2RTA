@@ -29,7 +29,7 @@ import random
 logging.basicConfig(format='%(asctime)s %(filename)s %(funcName)s %(levelname)s:%(message)s', level=logging.INFO)
 
 
-job_queue = Queue.Queue()
+job_queue = Queue.PriorityQueue()
 
 # Worker class
 # job is a tuple of parameters
@@ -44,8 +44,8 @@ class Worker(Thread):
     all_done = 0
     while not all_done:
       try:
-        time.sleep(random.randint(5000,6000) / 1000.0)  # sleep random time
-        time.sleep(self.penalty*120)
+        time.sleep(random.randint(5000,6000) / 1000.0)  # get some rest :-)
+        time.sleep(self.penalty*120) # bad worker will rest more
         job = self.job_queue.get(0)
         add_penalty = singleRSTA(self.node, job)
         self.penalty += add_penalty
@@ -73,7 +73,8 @@ def checkfile(filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_f
 
 
 def singleRSTA(node, job):
-  (n,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method) = job
+  (priority, job_detail) = job
+  (filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method) = job_detail
   try:
     if checkfile(filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method):
       logging.info('\t--< (node)%s,(f)%s,(type)%s,(t)%s,(f)%s,(l)%s,(k)%s,(c)%s,(s)%s,(n)%s' %( node,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
@@ -85,7 +86,7 @@ def singleRSTA(node, job):
       fail_penalty = -1
   except Exception as excpt_msg:
     print excpt_msg
-    job_queue.put((job))
+    job_queue.put((priority, job_detail))
     logging.info('\t--= (node)%s,(f)%s,(type)%s,(t)%s,(f)%s,(l)%s,(k)%s,(c)%s,(s)%s,(n)%s' %( node,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
     fail_penalty = 1
   if not os.path.isfile("%s/%s_%s_%s_f%s_l%s_k%s_c%s_s%s_n%s_RSTAs.log" % (global_rundir,filename,graph_type,t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method)):
@@ -123,7 +124,7 @@ def run():
                     continue
                   else:
                     n=n+1
-                    job_queue.put((n,filename,graph_type,para_t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method))
+                    job_queue.put( (n, (filename,graph_type,para_t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method)) )
                   pass # for newton_method
                 pass # for loss_scaling_factor
               pass # for slack_c
