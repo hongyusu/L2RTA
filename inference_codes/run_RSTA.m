@@ -171,7 +171,8 @@ function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, 
     end
 
 
-    %run_SVM(kth_fold, size(Y,2), Ind, X, Y,slack_c)
+%     run_SVM(kth_fold, size(Y,2), Ind, X, Y,slack_c)
+%     adfasd
     
     % currently use following parameters
     mmcrf_c         = slack_c;      % margin slack parameter

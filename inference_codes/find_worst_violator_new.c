@@ -96,6 +96,7 @@ void mexFunction ( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
     Y_nrow      = mxGetM(IN_Y);
     nlabel      = Y_kappa_ncol/Y_kappa_val_ncol;
     
+    
     // OUTPUT STUFFS
     OUT_Ymax        = mxCreateDoubleMatrix(1,nlabel,mxREAL);
     OUT_YmaxVal     = mxCreateDoubleScalar(1);
