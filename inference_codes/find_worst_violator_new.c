@@ -104,6 +104,7 @@ void mexFunction ( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
     OUT_Yi_pos      = mxCreateDoubleScalar(1);
     Ymax            = mxGetPr(OUT_Ymax);
 
+    
     // Assign an ID to each unique label in the K-best list, starting from 1 to the number of unique elements.
     // Assign an ID to the true multilabel Yi, initial Yi to be 0.
     // Get the position of Yi in each row during the process.
@@ -205,6 +206,7 @@ void mexFunction ( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
             {
                 Yi_ind = arr2id_curpos->id;
             }
+            printf("---%d %d %d \n", ii, jj, Yi_ind);
         }
     }
     // Sort the position of Yi in each row and obtain the highest position.
