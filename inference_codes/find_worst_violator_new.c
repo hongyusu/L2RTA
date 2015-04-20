@@ -206,7 +206,7 @@ void mexFunction ( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
             {
                 Yi_ind = arr2id_curpos->id;
             }
-            printf("---%d %d %d \n", ii, jj, Yi_ind);
+            //printf("---%d %d %d \n", ii, jj, Yi_ind);
         }
     }
     // Sort the position of Yi in each row and obtain the highest position.
@@ -216,7 +216,10 @@ void mexFunction ( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
     Yi_pos = Yi_positions[0];  
     //printm(Yi_positions,1,Y_kappa_val_nrow);
     //printf("%.2f\n",Yi_pos);
+    //printm(Y_kappa_ind,Y_kappa_nrow,Y_kappa_ncol);
     free(Yi_positions);
+    
+    
 
     // get F_Y
     double F_Y=0; 

@@ -740,9 +740,11 @@ function [delta_obj_list] = conditional_gradient_descent(x, kappa)
      
 
     if iter==2 && x==4
+        Yi
         Y_kappa
         Y_kappa_val
         Ymax
+        Yi_pos
         adsfa
     end
     
