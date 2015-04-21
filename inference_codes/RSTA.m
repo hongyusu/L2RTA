@@ -739,21 +739,14 @@ function [delta_obj_list] = conditional_gradient_descent(x, kappa)
     Ymax = Ymax*2-1;
      
 
-    if iter==2 && x==4
-        Yi
-        Y_kappa
-        Y_kappa_val
-        Ymax
-        Yi_pos
-        adsfa
-    end
     
+    %% 
 
     %% If the worst violator is the correct label, exit without update current marginal dual variable of current example.
-    if sum(Ymax~=Y_tr(x,:))==0 %|| ( ( (kappa_decrease_flag==0) && kappa < params.maxkappa) && iter~=1 )
-        delta_obj_list = zeros(1,T_size);
-        return;
-    end
+%     if sum(Ymax~=Y_tr(x,:))==0 %|| ( ( (kappa_decrease_flag==0) && kappa < params.maxkappa) && iter~=1 )
+%         delta_obj_list = zeros(1,T_size);
+%         return;
+%     end
     
     
     %% Otherwise we need line serach to find optimal step size to the saddle point.
@@ -811,16 +804,7 @@ function [delta_obj_list] = conditional_gradient_descent(x, kappa)
     % TODO: this can be very problemetic, as using global tau, the quality on individual random spanning tree can be very bad
     
     tau = min(sum(nomi)/sum(denomi),1);
-    
-    if iter==2 && x==4
-        Y_kappa
-        Ymax
-        E
-        mu_0
-        [mu_0,mu,mu_d]
-     [sum(nomi),sum(denomi),tau]
-     adsfasdf
-    end
+
     
     if tau<0
         tau = 0;
@@ -872,11 +856,11 @@ function [delta_obj_list] = conditional_gradient_descent(x, kappa)
         mu_list{t}(:,x) = mu;
     end
 
-    if iter == 2 && x==4
-%         [sum(Gmax), sum(G0), tau]
+    if iter == 2 && x==-4
+        [sum(Gmax), sum(G0), tau]
         [gradient'*mu_d*tau,norm_const_quadratic_list(t)*tau^2/2*mu_d'*Kmu_d, delta_obj_list]
-      mu'
-      adf
+        mu'
+        adf
     end
     
     %%
@@ -1238,15 +1222,7 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton1(x, kappa)
     
     % Compute lambda
     lambda = g_global * pinv(Q);
-    if iter==2 && x==4
-        Ymax
-        E_global
-        mu_0
-        [E,E_global]
-        [mu_0,mu_global(:,x),dmu_set]
-        [g_global,Q,lambda]
-        adfasdf
-    end
+
     
     if sum(lambda) > 1
         lambda = lambda / sum(lambda);
@@ -1367,11 +1343,11 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton1(x, kappa)
         mu_list{t}(:,x) = mu;
     end
     
-    if iter == 2 && x==4
-%         [sum(Gmax),sum(G0),tau]
+    if iter == 2 && x==-4
+        [sum(Gmax),sum(G0),tau]
         [gradient'*mu_d*tau,norm_const_quadratic_list(t)*tau^2/2*mu_d'*Kmu_d, delta_obj_list]  
-      mu'
-      asdfas
+        mu'
+        asdfas
     end
 
     

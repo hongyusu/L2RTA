@@ -10,6 +10,8 @@
  * 0.0  : 01/03/2014
  *      : 25/04/2014
  *      : 05/12/2014
+ *      : 21/04/2015
+ *          kill the bug when k=1
  *
  * INPUT:
  *      1. Y_kappa:
@@ -391,7 +393,13 @@ void mexFunction ( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
         if(ii>=theta_ncol)
         {break;}
     }
-
+    
+    //printf("%d %d\n", cur_row,cur_col);
+    if(cur_row==-1 && cur_col==-1)
+    {
+        cur_row = 0;
+        cur_col = 0;
+    }
     //if(Y_ncol>0){printf("%d %d -> find %d best: %.2f threshold: %.2f Fy %.2f\n",cur_row,cur_col,find,best_F,theta_K,F_Y);}
     // STORE MULTILABEL THAT ACHIEVE THE BEST SCORE F
     for(int ii=0;ii<nlabel;ii++)
