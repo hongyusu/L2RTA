@@ -109,13 +109,13 @@ def run():
   for filename in filenames:
     #for slack_c in ['1','100','0.1','10','0.01','50','0.5','20','0.05','5']:
     #for slack_c in ['1','100','0.1','10','0.01']:
-    for slack_c in ['1','0.1','10']:
+    for slack_c in ['1','10','0.1']:
       for t in range(0,21,5):
         if t==0:
           t=1
         para_t="%d" % (t)
         graph_type = 'tree'
-        for kappa in ['1','2','4','8','16']:
+        for kappa in ['1','2','4','6','8','10']:
         #for kappa in ['2']:
           for l_norm in ['2']:
             #for kth_fold in ['1','2','3','4','5']:
