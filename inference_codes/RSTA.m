@@ -1462,14 +1462,14 @@ function [Ypred,YpredVal,Ys_positions,Yi_positions] = compute_error(Y,Kx,needPos
     global kappa;
     global iter;
     global l;
-    Ypred = zeros(size(Y));
-    YpredVal = zeros(size(Y,1),1);
-    Y_kappa = zeros(size(Y,1)*T_size,size(Y,2)*kappa);
+    
+    Ypred       = zeros(size(Y));
+    YpredVal    = zeros(size(Y,1),1);
+    Y_kappa     = zeros(size(Y,1)*T_size,size(Y,2)*kappa);
     Y_kappa_val = zeros(size(Y,1)*T_size,kappa);
     w_phi_e_local_list = cell(1,T_size);
     Ys_positions = ones(size(Y,1),1)*(kappa+1);
     Yi_positions = ones(size(Y,1),1)*(kappa+1);
-    
     
     % Iteration over a collection of random spanning trees, and compute the K-best multilabel from each tree
     for t=1:T_size
@@ -1478,16 +1478,14 @@ function [Ypred,YpredVal,Ys_positions,Yi_positions] = compute_error(Y,Kx,needPos
         mu  = mu_list{t};
         w_phi_e = compute_w_phi_e(Kx,E,Ye,mu);
         
-        
         l=size(E,1)+1;
         node_degree = zeros(1,l);
         for i=1:l
             node_degree(i) = sum(sum(E==i));
         end
         w_phi_e = reshape(w_phi_e,size(w_phi_e,1)*size(w_phi_e,2),1);
-        w_phi_e_local_list{t} = w_phi_e;
-        [Y_tmp,Y_tmp_val] = compute_topk_omp(w_phi_e,kappa,E,node_degree);
-        %[Y_tmp,Y_tmp_val] = compute_topk(w_phi_e,kappa,E);
+        w_phi_e_local_list{t}   = w_phi_e;
+        [Y_tmp,Y_tmp_val]       = compute_topk_omp(w_phi_e,kappa,E,node_degree);
 
         
         Y_kappa(((t-1)*size(Y,1)+1):(t*size(Y,1)),:)        = Y_tmp;
