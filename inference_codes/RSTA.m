@@ -1096,15 +1096,10 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton1(x, kappa)
 
     %% Definition of the parameters
     global loss_list;
-    global loss;
     global Ye_list;
-    global Ye;
     global E_list;
-    global E;
     global mu_list;
-    global mu;
     global ind_edge_val_list;
-    global ind_edge_val;
     global Rmu_list;
     global Smu_list;
     global norm_const_linear;
@@ -1114,19 +1109,9 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton1(x, kappa)
     global T_size;
     global params;
     global iter;
-    global val_list;
-    global Yipos_list;
-    global GmaxG0_list;
-    global GoodUpdate_list;
     global node_degree_list;
-    global m;
-    
-    global inverse_flag;
-    global ind_forwards;
-    global ind_backwards;
     global E_global;
     global loss_global;
-    global Ye_global;
     global ind_edge_val_global;
     global Smu_global;
     global Rmu_global;
@@ -1134,7 +1119,7 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton1(x, kappa)
     
     
     %% Compute K best multilabels from a collection of random spanning trees.
-    % Define variables to save results.
+    % Define variables to save intermediate results.
     Y_kappa     = zeros(T_size, kappa*l);   % K best multilabel
     Y_kappa_val = zeros(T_size, kappa);     % Score of K best multilabel
     gradient_list_local = cell(1, T_size);  % Gradient vector locally on each random spanning tree
@@ -1143,23 +1128,19 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton1(x, kappa)
     for t=1:T_size
         % Variables located on the spanning tree T_t of the current example x.
         loss    = loss_list{t}(:,x);
-        Ye      = Ye_list{t}(:,x);
         ind_edge_val = ind_edge_val_list{t};
-        mu      = mu_list{t}(:,x);
         E       = E_list{t};
         Rmu     = Rmu_list{t};
         Smu     = Smu_list{t};    
         % compute Kmu_x = K_x*mu, which is a part of the gradient, of dimension 4*|E| by m
-        Kmu_x = compute_Kmu_x(x,Kx_tr(:,x),E,ind_edge_val,Rmu,Smu); % this function can be merged with another function
-        Kmu_x_list_local{t} = Kmu_x;
+        Kmu_x_list_local{t} = compute_Kmu_x(x,Kx_tr(:,x),E,ind_edge_val,Rmu,Smu);
         % compute the gradient vector on the current spanning tree  
-        gradient = norm_const_linear*loss - norm_const_quadratic_list(t)*Kmu_x;
-        gradient_list_local{t} = gradient;
+        gradient_list_local{t} = norm_const_linear*loss - norm_const_quadratic_list(t)*Kmu_x_list_local{t};
         % Compute the K-best multilabels
-        [Ymax,YmaxVal] = compute_topk_omp(gradient,kappa,E,node_degree_list{t});
+        [Ymax,YmaxVal] = compute_topk_omp(gradient_list_local{t},kappa,E,node_degree_list{t});
         % Save results, including predicted multilabel and the corresponding score on the current spanning tree
-        Y_kappa(t,:)        = Ymax;
-        Y_kappa_val(t,:)    = YmaxVal;
+        Y_kappa(t,:) = Ymax;
+        Y_kappa_val(t,:) = YmaxVal;
     end
 
     %% Compose current global marginal dual variable (mu) from local marginal dual variables {mu_t}_{t=1}^{T}
@@ -1168,19 +1149,15 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton1(x, kappa)
     normalization_linear    = 1;
     normalization_quadratic = 1;
 
-    
-
-
 
     %% The following code will compute a conical combination of update directions,the number of update directions is |T|*kappa combination is given by lmd.
-    
-    % For each update direction in terms of multilabels, compute the corresponding mu_0, and compute the different mu_0-mu    
-    dmu_set = zeros(size(mu_global,1), T_size*kappa);   
-    Y_kappa = reshape(Y_kappa', l, kappa*T_size);
-    Y_kappa = Y_kappa';
-    
+    % Define variables to hold results    
+    dmu_set = zeros(size(mu_global,1), T_size*kappa);   % 4*|E_g| X |T|*kappa matrix of directions
+    Y_kappa = reshape(Y_kappa', l, kappa*T_size);       % l X |T|*kappa matrix of multilabels
+    Y_kappa = Y_kappa';                                 % |T|*kappa X l matrix of multilabels
+    % For each update direction compute corresponding mu and dmu
     for t = 1:size(Y_kappa,1)
-        Ymax    = Y_kappa(t,1:l);
+        Ymax    = Y_kappa(t,:);
         Umax_e  = 1+2*(Ymax(:,E_global(:,1))>0) + (Ymax(:,E_global(:,2)) >0);
         mu_0    = zeros(4*size(E_global,1),1);
         for u = 1:4
@@ -1188,7 +1165,7 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton1(x, kappa)
         end
         dmu_set(:,t) = mu_0-mu_global(:,x);
     end
-    % Compute Kmu_x
+    % Compute Kmu_x_global
     Kmu_x_global = compute_Kmu_x(x,Kx_tr(:,x),E_global,ind_edge_val_global,Rmu_global,Smu_global);
     
     % Compute the f'(x)
