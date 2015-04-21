@@ -1208,8 +1208,6 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton1(x, kappa)
 
     % Compute dmu with a convex combination of multiple update directions
     dmu_global  = dmu_set * lambda';
-
-
     
     % Decompose global update into a set of local updates on individual trees, assuming the quantities are correctly computed
     dmu_set = compose_mu_local_from_global(dmu_global);
@@ -1265,8 +1263,8 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton1(x, kappa)
         
     end
 
-    % 
-    if sum(Gmax)>=sum(G0)
+    % If lambda is feasible, always update
+    if sum(Gmax) - sum(G0) >= params.tolerance
         tau=1;
     else
         delta_obj_list = zeros(1,T_size);
@@ -1305,13 +1303,6 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton1(x, kappa)
         
         % Update marginal dual variable on individual spanning tree.
         mu_list{t}(:,x) = reshape(mu,4*size(E_list{t},1),1);
-    end
-    
-    if iter == 2 && x==-4
-        [sum(Gmax),sum(G0),tau]
-        [gradient'*mu_d*tau,norm_const_quadratic_list(t)*tau^2/2*mu_d'*Kmu_d, delta_obj_list]  
-        mu'
-        asdfas
     end
 
     
