@@ -1096,7 +1096,6 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton1(x, kappa)
 
     %% Definition of the parameters
     global loss_list;
-    global Ye_list;
     global E_list;
     global mu_list;
     global ind_edge_val_list;
@@ -1124,6 +1123,7 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton1(x, kappa)
     Y_kappa_val = zeros(T_size, kappa);     % Score of K best multilabel
     gradient_list_local = cell(1, T_size);  % Gradient vector locally on each random spanning tree
     Kmu_x_list_local    = cell(1, T_size);  % may not be necessary to have
+    
     % Iterate over a collection of random spanning trees and compute the K best multilabels on each spanning tree by Dynamic Programming.
     for t=1:T_size
         % Variables located on the spanning tree T_t of the current example x.
@@ -1150,11 +1150,12 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton1(x, kappa)
     normalization_quadratic = 1;
 
 
-    %% The following code will compute a conical combination of update directions,the number of update directions is |T|*kappa combination is given by lmd.
+    %% The following code will compute a conical combination of update directions, the number of update directions is |T|*kappa combination is given by lmd.
     % Define variables to hold results    
     dmu_set = zeros(size(mu_global,1), T_size*kappa);   % 4*|E_g| X |T|*kappa matrix of directions
     Y_kappa = reshape(Y_kappa', l, kappa*T_size);       % l X |T|*kappa matrix of multilabels
     Y_kappa = Y_kappa';                                 % |T|*kappa X l matrix of multilabels
+    
     % For each update direction compute corresponding mu and dmu
     for t = 1:size(Y_kappa,1)
         Ymax    = Y_kappa(t,:);
@@ -1165,6 +1166,7 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton1(x, kappa)
         end
         dmu_set(:,t) = mu_0-mu_global(:,x);
     end
+    
     % Compute Kmu_x_global
     Kmu_x_global = compute_Kmu_x(x,Kx_tr(:,x),E_global,ind_edge_val_global,Rmu_global,Smu_global);
     
@@ -1180,7 +1182,6 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton1(x, kappa)
     S_dmu   = sum(dmu,1);
     term12  = zeros(1,size(E_global,1)*num_directions);
     K_dmu   = zeros(4,size(E_global,1)*num_directions);
-    
     for u=1:4
         IndEdgeVal = full(ind_edge_val_global{u}(:,x));
         IndEdgeVal = reshape(IndEdgeVal(:,ones(num_directions,1)),1,size(E_global,1)*num_directions);
@@ -1188,70 +1189,50 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton1(x, kappa)
         term12 = term12 + H_u.*IndEdgeVal;
         K_dmu(u,:) = -H_u;
     end
-    
     for u=1:4
         K_dmu(u,:) = K_dmu(u,:) + term12;
     end
-    
-    %Q = reshape(dmu,4*size(E_global,1)*num_directions,1)' * reshape(K_dmu,4*size(E_global,1)*num_directions,1);
-    
     Q = reshape(dmu,4*size(E_global,1),num_directions)' * reshape(K_dmu,4*size(E_global,1),num_directions);
     
-    % Compute lambda
+    % Compute lambda by psudo inverse
     lambda = g_global * pinv(Q);
 
-    
+    % Make sure lambda is feasible
     if sum(lambda) > 1
         lambda = lambda / sum(lambda);
     end
-    
-    % Ensure lambda is feasible
-    if sum(lambda)<0 
-        delta_obj_list(1)=0;
+    if sum(lambda) < 0 
+        delta_obj_list = zeros(1,T_size);
         return
     end
 
-    
     % Compute dmu with a convex combination of multiple update directions
     dmu_global  = dmu_set * lambda';
-    mu_global_i = reshape(mu_global(:,x) + dmu_global,4,size(E_global,1));
 
 
-    for u=1:4
-        Smu_global{u}(:,x) = sum(mu_global_i)'.*ind_edge_val_global{u}(:,x);
-        Rmu_global{u}(:,x) = mu_global_i(u,:)';
-    end
     
     % Decompose global update into a set of local updates on individual trees, assuming the quantities are correctly computed
-    %dmu_set = decompose_local_from_global ( dmu_global, E_global, ind_backwards, inverse_flag );
     dmu_set = compose_mu_local_from_global(dmu_global);
     
     %% Otherwise we need line serach to find optimal step size to the saddle point.
     mu_d_list   = mu_list;
-    nomi        = zeros(1,T_size);
-    denomi      = zeros(1,T_size);
     kxx_mu_0    = cell(1,T_size);
     Gmax        = zeros(1,T_size);
     G0          = zeros(1,T_size);
     Kmu_d_list  = cell(1,T_size);
     for t=1:T_size
         % Obtain variables located for tree t and example x.
-        loss = loss_list{t}(:,x);
-        Ye  = Ye_list{t}(:,x);
-        ind_edge_val = ind_edge_val_list{t};
         mu  = mu_list{t}(:,x);
         E   = E_list{t};
-        Rmu = Rmu_list{t};
-        Smu = Smu_list{t};
-        Kmu_x       = Kmu_x_list_local{t};
-        gradient    = gradient_list_local{t};
         
-        % Compute Gmax and G0, these two values need to satisfy optimality condition
-        % Compute Gmax, which is the best objective value along the gradient.
-        mu_0 = mu+dmu_set(:,t);
-        Gmax(t) = mu_0'*gradient;
-        % Compute G0, which is current objective value along the gradient.
-        G0(t) = mu'*gradient;
+        % Compute mu_0
+        mu_0    = mu + dmu_set(:,t);
+        
+        % Compute Gmax, which is the best objective along the gradient, mu_0*g.
+        Gmax(t) = mu_0' * gradient_list_local{t};
+        
+        % Compute G0, which is current objective value along the gradient, mu*g.
+        G0(t)   = mu' * gradient_list_local{t};
         
         % compute kxx_mu_0
         mu_0    = reshape(mu_0, 4, size(E,1));
@@ -1260,11 +1241,11 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton1(x, kappa)
         kxx_mu_0{t} = zeros(4,size(E,1));
         if sum(mu_0) > 0
             for u=1:4
-                edgelabelindicator = full(ind_edge_val{u}(:,x));
-                real_mu_0 = reshape(mu_0(u,:),size(E,1),1);
-                H_u = smu.*edgelabelindicator - real_mu_0;
-                term12 = term12 + reshape(H_u.*edgelabelindicator,1,size(E,1));
-                kxx_mu_0{t}(u,:) = reshape(-H_u,1,size(E,1));
+                edgelabelindicator  = full(ind_edge_val_list{t}{u}(:,x));
+                real_mu_0   = reshape(mu_0(u,:),size(E,1),1);
+                H_u         = smu.*edgelabelindicator - real_mu_0;
+                term12      = term12 + reshape(H_u.*edgelabelindicator,1,size(E,1));
+                kxx_mu_0{t}(u,:)    = reshape(-H_u,1,size(E,1));
             end
         end
         for u=1:4
@@ -1273,21 +1254,30 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton1(x, kappa)
         kxx_mu_0{t} = reshape(kxx_mu_0{t},4*size(E,1),1);
 
         % compute Kmu_0
-        Kmu_0 = Kmu_x + kxx_mu_0{t} - Kxx_mu_x_list{t}(:,x);
+        Kmu_0 = Kmu_x_list_local{t} + kxx_mu_0{t} - Kxx_mu_x_list{t}(:,x);
 
         mu_0    = reshape(mu_0, 4*size(E,1),1);
         
         mu_d    = mu_0 - mu;
-        Kmu_d   = Kmu_0 - Kmu_x;      
+        Kmu_d   = Kmu_0 - Kmu_x_list_local{t};      
         Kmu_d_list{t}   = Kmu_d;
         mu_d_list{t}    = mu_d;
         
     end
 
+    % 
     if sum(Gmax)>=sum(G0)
         tau=1;
     else
-        tau=0;
+        delta_obj_list = zeros(1,T_size);
+        return
+    end
+    
+    % update smu_global and rmu_global
+    mu_global_i = reshape(mu_global(:,x) + dmu_global,4,size(E_global,1));
+    for u=1:4
+        Smu_global{u}(:,x) = sum(mu_global_i)'.*ind_edge_val_global{u}(:,x);
+        Rmu_global{u}(:,x) = mu_global_i(u,:)';
     end
     
     %% Update marginal dual variables based on the step size given by the line search on each individual random spanning tree.
@@ -1295,29 +1285,26 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton1(x, kappa)
     delta_obj_list = zeros(1,T_size);
     for t=1:T_size
         % Obtain variables that are local on each random spanning tree.
-        loss    = loss_list{t}(:,x);
-        Ye      = Ye_list{t}(:,x);
-        ind_edge_val = ind_edge_val_list{t};
-        mu      = mu_list{t}(:,x);
-        E       = E_list{t};
-        gradient    =  gradient_list_local{t};
-        mu_d    = mu_d_list{t};
-        Kmu_d   = Kmu_d_list{t};
+        mu = mu_list{t}(:,x);
         
         % Compute the difference in the objective in individual random spanning tree.
-        delta_obj_list(t) = gradient'*mu_d*tau - norm_const_quadratic_list(t)*tau^2/2*mu_d'*Kmu_d;
-        %[gradient'*mu_d*tau, norm_const_quadratic_list(t)*tau^2/2*mu_d'*Kmu_d]
-        mu = mu + tau*mu_d;
+        delta_obj_list(t) = gradient_list_local{t}'*mu_d_list{t}*tau - norm_const_quadratic_list(t)*tau^2/2*mu_d_list{t}'*Kmu_d_list{t};
+        
+        % Update mu
+        mu = mu + tau*mu_d_list{t};
+        
+        %
         Kxx_mu_x_list{t}(:,x) = (1-tau)*Kxx_mu_x_list{t}(:,x) + tau*kxx_mu_0{t};
+        
         % Update Smu and Rmu
-        mu = reshape(mu,4,size(E,1));
+        mu = reshape(mu,4,size(E_list{t},1));
         for u = 1:4
-            Smu_list{t}{u}(:,x) = (sum(mu)').*ind_edge_val{u}(:,x);
+            Smu_list{t}{u}(:,x) = (sum(mu)').*ind_edge_val_list{t}{u}(:,x);
             Rmu_list{t}{u}(:,x) = mu(u,:)';
         end
-        mu = reshape(mu,4*size(E,1),1);
+        
         % Update marginal dual variable on individual spanning tree.
-        mu_list{t}(:,x) = mu;
+        mu_list{t}(:,x) = reshape(mu,4*size(E_list{t},1),1);
     end
     
     if iter == 2 && x==-4
@@ -1327,8 +1314,6 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton1(x, kappa)
         asdfas
     end
 
-    
-    
     
     
     return;
