@@ -731,23 +731,20 @@ function [delta_obj_list] = conditional_gradient_descent(x, kappa)
     %   Ymax:         best multilabel
     %   Ymax_val:     
     %   Yi_pos:       position of the true multilabel in the K best list
-    [Ymax, Ymax_val, ~, Yi_pos] = find_worst_violator_new(Y_kappa,Y_kappa_val,Yi,IN_E,IN_gradient);
+    [Ymax, Ymax_val, ~, Yi_pos] = find_worst_violator_new(Y_kappa,Y_kappa_val,[],IN_E,IN_gradient);
     % save results to global variables
     val_list(x) = Ymax_val;
     Yipos_list(x) = Yi_pos;
     % change label back from 0/+1 to -1/+1
     Ymax = Ymax*2-1;
      
-
-    
-    %% 
-
     %% If the worst violator is the correct label, exit without update current marginal dual variable of current example.
 %     if sum(Ymax~=Y_tr(x,:))==0 %|| ( ( (kappa_decrease_flag==0) && kappa < params.maxkappa) && iter~=1 )
 %         delta_obj_list = zeros(1,T_size);
 %         return;
 %     end
     
+
     
     %% Otherwise we need line serach to find optimal step size to the saddle point.
     mu_d_list   = mu_list;
@@ -805,9 +802,9 @@ function [delta_obj_list] = conditional_gradient_descent(x, kappa)
     
     tau = min(sum(nomi)/sum(denomi),1);
 
-    
     if tau<0
-        tau = 0;
+        delta_obj_list = zeros(1,T_size);
+        return;
     end
     
     for t=1:T_size
@@ -817,7 +814,8 @@ function [delta_obj_list] = conditional_gradient_descent(x, kappa)
      end
 
     if sum(Gmax)<sum(G0)
-        tau=0;
+        delta_obj_list = zeros(1,T_size);
+        return;
     end
     
 	GmaxG0_list(x)      = sum(Gmax>=G0);
@@ -856,12 +854,6 @@ function [delta_obj_list] = conditional_gradient_descent(x, kappa)
         mu_list{t}(:,x) = mu;
     end
 
-    if iter == 2 && x==-4
-        [sum(Gmax), sum(G0), tau]
-        [gradient'*mu_d*tau,norm_const_quadratic_list(t)*tau^2/2*mu_d'*Kmu_d, delta_obj_list]
-        mu'
-        adf
-    end
     
     %%
     return;
@@ -1453,13 +1445,13 @@ function profile_update_tr
     
 end
 
-%% Compute training or test error
+%% Compute training/test error
 % PARAMETERS:
 %       Ypred:  predictions
 %       Ypred:  value of the predictions
 %       Ys_positions:   positions of the predicted multilabel Y* that can be validated
 %       Yi_positions:   positions of the true multilabel Yi
-%
+%%
 function [Ypred,YpredVal,Ys_positions,Yi_positions] = compute_error(Y,Kx,needPositions)
 
     % Collect global variables
@@ -1684,12 +1676,17 @@ function optimizer_init
     
 end
 
-%% Print out message
+%% 
+%   Print out message
+%%
 function print_message(msg,verbosity_level,filename)
 
     global params;
+    global profile;
+
     if params.verbosity >= verbosity_level
-        fprintf('\n%s: %s ',datestr(clock,13),msg);
+%         fprintf('\n%s: %s ',datestr(clock,13),msg);
+        fprintf('\n%.1f: %s ',cputime-profile.start_time,msg);
         if nargin == 3
             fid = fopen(filename,'a');
             fprintf(fid,'%s: %s\n',datestr(clock,13),msg);
