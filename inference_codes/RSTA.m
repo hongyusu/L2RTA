@@ -1097,7 +1097,13 @@ end
 % Conditional gradient descent with newton method to find a conical combination of update direction
 % direction is found based on global consensus graph
 % update is performed on local random spanning trees
+% Input:
+%       x:      current example
+%       kappa:  k best multilabel computed
+% Output:
+%       delta_obj_list: difference caused by updated in objective function
 %
+%%
 function [delta_obj_list] = conditional_gradient_descent_with_Newton1(x, kappa)
 
     %% Definition of the parameters
