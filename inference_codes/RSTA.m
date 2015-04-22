@@ -676,8 +676,10 @@ function [delta_obj_list] = conditional_gradient_descent(x, kappa)
     global GmaxG0_list;
     global GoodUpdate_list;
     global node_degree_list;
-    global iter;
     
+    
+    GoodUpdate_list(x)  = 0;
+    GmaxG0_list(x)      = 0;
     
     %% Compute K best multilabels from a collection of random spanning trees.
     % Define variables to store results.
@@ -1084,6 +1086,11 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton(x, kappa)
 end
 
 
+%%
+% Conditional gradient descent with newton method to find a conical combination of update direction
+% direction is found based on global consensus graph
+% update is performed on local random spanning trees
+%
 function [delta_obj_list] = conditional_gradient_descent_with_Newton1(x, kappa)
 
     %% Definition of the parameters
@@ -1099,7 +1106,6 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton1(x, kappa)
     global Kx_tr;
     global T_size;
     global params;
-    global iter;
     global node_degree_list;
     global E_global;
     global loss_global;
@@ -1107,6 +1113,11 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton1(x, kappa)
     global Smu_global;
     global Rmu_global;
     global Kxx_mu_x_list;
+    global GmaxG0_list;
+    global GoodUpdate_list;
+    
+    GoodUpdate_list(x)  = 0;
+    GmaxG0_list(x)      = 0;
     
     
     %% Compute K best multilabels from a collection of random spanning trees.
@@ -1147,6 +1158,8 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton1(x, kappa)
     dmu_set = zeros(size(mu_global,1), T_size*kappa);   % 4*|E_g| X |T|*kappa matrix of directions
     Y_kappa = reshape(Y_kappa', l, kappa*T_size);       % l X |T|*kappa matrix of multilabels
     Y_kappa = Y_kappa';                                 % |T|*kappa X l matrix of multilabels
+    
+    %Y_kappa = Y_kappa(1,:);
     
     % For each update direction compute corresponding mu and dmu
     for t = 1:size(Y_kappa,1)
@@ -1255,6 +1268,8 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton1(x, kappa)
         
     end
 
+    GmaxG0_list(x) = sum(Gmax>=G0);
+    
     % If lambda is feasible, always update
     if sum(Gmax) - sum(G0) >= params.tolerance
         tau=1;
@@ -1262,6 +1277,10 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton1(x, kappa)
         delta_obj_list = zeros(1,T_size);
         return
     end
+    
+    GoodUpdate_list(x) = 1;
+    
+    
     
     % update smu_global and rmu_global
     mu_global_i = reshape(mu_global(:,x) + dmu_global,4,size(E_global,1));
@@ -1297,13 +1316,27 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton1(x, kappa)
         mu_list{t}(:,x) = reshape(mu,4*size(E_list{t},1),1);
     end
 
+    global iter;
+    if iter ==-1 && x==2
+        lambda
+        mu_list{1}(:,x)'
+        [sum(Gmax),Gmax;sum(G0),G0]
+        asfd
+    end
     
     
     return;
 end
 
 
-%% Compute the best objective value along the gradient
+%% Compute the best objective value along the gradient (slack parameter is not considered)
+%   Input:
+%       gradient:   gradient on current examples (vector/matrix)
+%       Ymax:       best multilabel along the gradient
+%       E:          Edge list
+%   Output:
+%       Gmax:       best objective value along the gradient
+%%
 function [Gmax] = compute_Gmax(gradient, Ymax, E)
 
     m = size(Ymax,1);
