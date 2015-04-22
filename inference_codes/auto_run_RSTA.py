@@ -109,7 +109,7 @@ def run():
   for filename in filenames:
     #for slack_c in ['1','100','0.1','10','0.01','50','0.5','20','0.05','5']:
     #for slack_c in ['1','100','0.1','10','0.01']:
-    for slack_c in ['1','10','0.1']:
+    for slack_c in ['1','10','100']:
       for t in range(0,21,5):
         if t==0:
           t=1
