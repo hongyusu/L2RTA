@@ -1135,12 +1135,16 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton1(x, kappa)
         E       = E_list{t};
         Rmu     = Rmu_list{t};
         Smu     = Smu_list{t};    
+        
         % compute Kmu_x = K_x*mu, which is a part of the gradient, of dimension 4*|E| by m
         Kmu_x_list_local{t} = compute_Kmu_x(x,Kx_tr(:,x),E,ind_edge_val,Rmu,Smu);
+        
         % compute the gradient vector on the current spanning tree  
         gradient_list_local{t} = norm_const_linear*loss - norm_const_quadratic_list(t)*Kmu_x_list_local{t};
+        
         % Compute the K-best multilabels
         [Ymax,YmaxVal] = compute_topk_omp(gradient_list_local{t},kappa,E,node_degree_list{t});
+        
         % Save results, including predicted multilabel and the corresponding score on the current spanning tree
         Y_kappa(t,:) = Ymax;
         Y_kappa_val(t,:) = YmaxVal;
@@ -1566,8 +1570,17 @@ function [Ypred,YpredVal,Ys_positions,Yi_positions] = compute_error(Y,Kx,needPos
         end
     end
     
-    
-    
+    if iter ==-10
+        for i = 1:size(Y,1)
+            if sum(Y(i,:)~=Ypred(i,:)) >= 4
+                [iter,i,sum(Y(i,:)~=Ypred(i,:))]
+                [Y(i,:);Y(i,:)==Ypred(i,:);Ypred(i,:)]
+                Y_kappa((i:size(Y_kappa,1)/T_size:size(Y_kappa,1)),:)  
+                Y_kappa_val((i:size(Y_kappa,1)/T_size:size(Y_kappa,1)),:)
+            end
+        end
+        adsfas
+    end
 end
 
 
