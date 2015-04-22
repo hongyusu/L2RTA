@@ -57,7 +57,9 @@ function [rtn, ts_err] = RSTA (paramsIn, dataIn)
     global GoodUpdate_list;
     % Variable on global consensus graph
     global loss_global;
-  
+    global maxobj;
+    
+    maxobj=0;
     % Set random seed to make different run comparable.
     rand('twister', 0);
     
@@ -676,6 +678,8 @@ function [delta_obj_list] = conditional_gradient_descent(x, kappa)
     global GmaxG0_list;
     global GoodUpdate_list;
     global node_degree_list;
+    global iter;
+    global maxobj;
     
     
     GoodUpdate_list(x)  = 0;
@@ -772,6 +776,9 @@ function [delta_obj_list] = conditional_gradient_descent(x, kappa)
         % Compute Gmax, which is the best objective value along the gradient.
         Gmax(t) = compute_Gmax(gradient,Ymax,E);
         Gmax(t) = Gmax(t)*params.C;
+        if iter==1
+            maxobj = maxobj + Gmax(t);
+        end
         % Compute G0, which is current objective value along the gradient.
         G0(t) = mu'*gradient;
         % Compute mu_0, which is the best point along the descent direction.
@@ -863,227 +870,227 @@ end
 
 
 
-%% 
-% Conditional gradient optimization with Newton method to find the best update direction by a convex combination of multiple update directions.
-%
-% INPUT: 
-%   x:      index of the current example under optimization
-%   kappa:  number of best multilabel computed from each individual random spanning tree
-%
-% OUTPUT:
-%   delta_obj_list:     difference in terms of objective value on each random spanning tree
-%%
-function [delta_obj_list] = conditional_gradient_descent_with_Newton(x, kappa)
-
-    %% Definition of the parameters
-    global loss_list;
-    global loss;
-    global Ye_list;
-    global Ye;
-    global E_list;
-    global E;
-    global mu_list;
-    global mu;
-    global ind_edge_val_list;
-    global ind_edge_val;
-    global Rmu_list;
-    global Smu_list;
-    global norm_const_linear;
-    global norm_const_quadratic_list;
-    global l;
-    global Kx_tr;
-    global T_size;
-    global params;
-    global iter;
-    global val_list;
-    global Yipos_list;
-    global GmaxG0_list;
-    global GoodUpdate_list;
-    global node_degree_list;
-    global m;
-    
-    global inverse_flag;
-    global ind_forwards;
-    global ind_backwards;
-    global E_global;
-    global loss_global;
-    global Ye_global;
-    global ind_edge_val_global;
-    global Smu_global;
-    global Rmu_global;
-    
-    
-    %% Compute K best multilabels from a collection of random spanning trees.
-    % Define variables to save results.
-    Y_kappa     = zeros(T_size, kappa*l);   % K best multilabel
-    Y_kappa_val = zeros(T_size, kappa);     % Score of K best multilabel
-    gradient_list_local = cell(1, T_size);  % Gradient vector locally on each random spanning tree
-    Kmu_x_list_local    = cell(1, T_size);  % may not be necessary to have
-    % Iterate over a collection of random spanning trees and compute the K best multilabels on each spanning tree by Dynamic Programming.
-    for t=1:T_size
-        % Variables located on the spanning tree T_t of the current example x.
-        loss    = loss_list{t}(:,x);
-        Ye      = Ye_list{t}(:,x);
-        ind_edge_val = ind_edge_val_list{t};
-        mu      = mu_list{t}(:,x);
-        E       = E_list{t};
-        Rmu     = Rmu_list{t};
-        Smu     = Smu_list{t};    
-        % compute Kmu_x = K_x*mu, which is a part of the gradient, of dimension 4*|E| by m
-        Kmu_x = compute_Kmu_x(x,Kx_tr(:,x),E,ind_edge_val,Rmu,Smu); % this function can be merged with another function
-        Kmu_x_list_local{t} = Kmu_x;
-        % compute the gradient vector on the current spanning tree  
-        gradient = norm_const_linear*loss - norm_const_quadratic_list(t)*Kmu_x;
-        gradient_list_local{t} = gradient;
-        % Compute the K-best multilabels
-        [Ymax,YmaxVal] = compute_topk_omp(gradient,kappa,E,node_degree_list{t});
-        % Save results, including predicted multilabel and the corresponding score on the current spanning tree
-        Y_kappa(t,:)        = Ymax;
-        Y_kappa_val(t,:)    = YmaxVal;
-    end
-
-    %% Compose current global marginal dual variable (mu) from local marginal dual variables {mu_t}_{t=1}^{T}
-    mu_global = compose_mu_global_from_local;
-    
-
-    
-    
-%     normalization_linear    = 1/size(E_global,1);
+% %% 
+% % Conditional gradient optimization with Newton method to find the best update direction by a convex combination of multiple update directions.
+% %
+% % INPUT: 
+% %   x:      index of the current example under optimization
+% %   kappa:  number of best multilabel computed from each individual random spanning tree
+% %
+% % OUTPUT:
+% %   delta_obj_list:     difference in terms of objective value on each random spanning tree
+% %%
+% function [delta_obj_list] = conditional_gradient_descent_with_Newton(x, kappa)
+% 
+%     %% Definition of the parameters
+%     global loss_list;
+%     global loss;
+%     global Ye_list;
+%     global Ye;
+%     global E_list;
+%     global E;
+%     global mu_list;
+%     global mu;
+%     global ind_edge_val_list;
+%     global ind_edge_val;
+%     global Rmu_list;
+%     global Smu_list;
+%     global norm_const_linear;
+%     global norm_const_quadratic_list;
+%     global l;
+%     global Kx_tr;
+%     global T_size;
+%     global params;
+%     global iter;
+%     global val_list;
+%     global Yipos_list;
+%     global GmaxG0_list;
+%     global GoodUpdate_list;
+%     global node_degree_list;
+%     global m;
+%     
+%     global inverse_flag;
+%     global ind_forwards;
+%     global ind_backwards;
+%     global E_global;
+%     global loss_global;
+%     global Ye_global;
+%     global ind_edge_val_global;
+%     global Smu_global;
+%     global Rmu_global;
+%     
+%     
+%     %% Compute K best multilabels from a collection of random spanning trees.
+%     % Define variables to save results.
+%     Y_kappa     = zeros(T_size, kappa*l);   % K best multilabel
+%     Y_kappa_val = zeros(T_size, kappa);     % Score of K best multilabel
+%     gradient_list_local = cell(1, T_size);  % Gradient vector locally on each random spanning tree
+%     Kmu_x_list_local    = cell(1, T_size);  % may not be necessary to have
+%     % Iterate over a collection of random spanning trees and compute the K best multilabels on each spanning tree by Dynamic Programming.
+%     for t=1:T_size
+%         % Variables located on the spanning tree T_t of the current example x.
+%         loss    = loss_list{t}(:,x);
+%         Ye      = Ye_list{t}(:,x);
+%         ind_edge_val = ind_edge_val_list{t};
+%         mu      = mu_list{t}(:,x);
+%         E       = E_list{t};
+%         Rmu     = Rmu_list{t};
+%         Smu     = Smu_list{t};    
+%         % compute Kmu_x = K_x*mu, which is a part of the gradient, of dimension 4*|E| by m
+%         Kmu_x = compute_Kmu_x(x,Kx_tr(:,x),E,ind_edge_val,Rmu,Smu); % this function can be merged with another function
+%         Kmu_x_list_local{t} = Kmu_x;
+%         % compute the gradient vector on the current spanning tree  
+%         gradient = norm_const_linear*loss - norm_const_quadratic_list(t)*Kmu_x;
+%         gradient_list_local{t} = gradient;
+%         % Compute the K-best multilabels
+%         [Ymax,YmaxVal] = compute_topk_omp(gradient,kappa,E,node_degree_list{t});
+%         % Save results, including predicted multilabel and the corresponding score on the current spanning tree
+%         Y_kappa(t,:)        = Ymax;
+%         Y_kappa_val(t,:)    = YmaxVal;
+%     end
+% 
+%     %% Compose current global marginal dual variable (mu) from local marginal dual variables {mu_t}_{t=1}^{T}
+%     mu_global = compose_mu_global_from_local;
+%     
+% 
+%     
+%     
+% %     normalization_linear    = 1/size(E_global,1);
+% %     normalization_quadratic = 1;
+% %     
+% %     normalization_linear    = 1/size(E_global,1);
+% %     normalization_quadratic = 1/size(E_global,1);
+% %     
+% 
+%     normalization_linear    = 1;
 %     normalization_quadratic = 1;
+% 
 %     
-%     normalization_linear    = 1/size(E_global,1);
-%     normalization_quadratic = 1/size(E_global,1);
+% 
+% 
+% 
+%     %% The following code will compute a conical combination of update directions,the number of update directions is |T|*kappa combination is given by lmd.
 %     
-
-    normalization_linear    = 1;
-    normalization_quadratic = 1;
-
-    
-
-
-
-    %% The following code will compute a conical combination of update directions,the number of update directions is |T|*kappa combination is given by lmd.
-    
-    % For each update direction in terms of multilabels, compute the corresponding mu_0, and compute the different mu_0-mu    
-    dmu_set = zeros(size(mu_global,1), T_size*kappa);   
-    Y_kappa = reshape(Y_kappa', l, kappa*T_size);
-    Y_kappa = Y_kappa';
-    Y_kappa = unique(Y_kappa,'rows');
-
-    for t = 1:size(Y_kappa,1)
-        Ymax    = Y_kappa(t,1:l);
-        Umax_e  = 1+2*(Ymax(:,E_global(:,1))>0) + (Ymax(:,E_global(:,2)) >0);
-        mu_0    = zeros(4*size(E_global,1),1);
-        for u = 1:4
-            mu_0(4*(1:size(E_global,1))-4 + u) = params.C*(Umax_e == u);
-        end
-        dmu_set(:,t) = mu_0-mu_global(:,x);
-    end
-    % Compute Kmu_x
-    Kmu_x_global = compute_Kmu_x(x,Kx_tr(:,x),E_global,ind_edge_val_global,Rmu_global,Smu_global);
-    
-    % Compute the f'(x)
-    f_prim = normalization_linear * loss_global(:,x) - normalization_quadratic * Kmu_x_global;
-    
-    % Compute g = <f'(x),M>
-    g_global = f_prim' * dmu_set;
-    
-    % Compute Q (in brute force)
-    num_directions = size(dmu_set, 2);
-    dmu     = reshape(dmu_set,4,size(E_global,1)*num_directions);
-    S_dmu   = sum(dmu,1);
-    term12  = zeros(1,size(E_global,1)*num_directions);
-    K_dmu   = zeros(4,size(E_global,1)*num_directions);
-    
-    for u=1:4
-        IndEdgeVal = full(ind_edge_val_global{u}(:,x));
-        IndEdgeVal = reshape(IndEdgeVal(:,ones(num_directions,1)),1,size(E_global,1)*num_directions);
-        H_u = S_dmu.*IndEdgeVal - dmu(u,:);
-        term12 = term12 + H_u.*IndEdgeVal;
-        K_dmu(u,:) = -H_u;
-    end
-    
-    for u=1:4
-        K_dmu(u,:) = K_dmu(u,:) + term12;
-    end
-    
-    %Q = reshape(dmu,4*size(E_global,1)*num_directions,1)' * reshape(K_dmu,4*size(E_global,1)*num_directions,1);
-    
-    Q = reshape(dmu,4*size(E_global,1),num_directions)' * reshape(K_dmu,4*size(E_global,1),num_directions);
-    
-    % Compute lambda
-    lambda = g_global * pinv(Q);
-    
-    
-    
-    % Ensure lambda is feasible
-    if sum(lambda)>1+params.tolerance || sum(lambda)<0 
-        delta_obj_list(1)=0;
-        return
-    end
-
-   
-    
-    % Compute dmu with a convex combination of multiple update directions
-    dmu_global  = dmu_set * lambda';
-    mu_global_i = reshape(mu_global(:,x) + dmu_global,4,size(E_global,1));
-
-    for u=1:4
-        Smu_global{u}(:,x) = sum(mu_global_i)'.*ind_edge_val_global{u}(:,x);
-        Rmu_global{u}(:,x) = mu_global_i(u,:)';
-    end
-    
-    % Decompose global update into a set of local updates on individual trees, assuming the quantities are correctly computed
-    %dmu_set = decompose_local_from_global ( dmu_global, E_global, ind_backwards, inverse_flag );
-    dmu_set = compose_mu_local_from_global(dmu_global);
-    
-    
-    %% Compute the difference in terms of the global objective
-    % linear part of the objective
-    delta_obj_first = f_prim' * dmu_global;
-    % quadratic part
-    dmu_global = reshape(dmu_global,4,size(E_global,1));
-    smu = reshape(sum(dmu_global),size(E_global,1),1);
-    term12 = zeros(1,size(E_global,1));
-    Kxx_dmu = zeros(4,size(E_global,1));
-    for u=1:4
-        edgelabelindicator = full(ind_edge_val_global{u}(:,x));
-        real_dmu_global = reshape(dmu_global(u,:),size(E_global,1),1);
-        H_u = smu.*edgelabelindicator - real_dmu_global;
-        term12 = term12 + reshape(H_u.*edgelabelindicator,1,size(E_global,1));
-        Kxx_dmu(u,:) = reshape(-H_u,1,size(E_global,1));
-    end
-    for u=1:4
-        Kxx_dmu(u,:) = Kxx_dmu(u,:) + term12;
-    end
-    Kxx_dmu = reshape(Kxx_dmu,4*size(E_global,1),1);
-    delta_obj_second = -1/2 * normalization_quadratic *Kxx_dmu'*reshape(dmu_global,size(E_global,1)*4,1);
-    % combine the first and the second term
-    delta_obj_list(1) = delta_obj_first + delta_obj_second;
-
-    
-    %% Update the marginal dual variable on each individual random spanning tree
-    for t=1:T_size
-        ind_edge_val = ind_edge_val_list{t};
-        mu = mu_list{t}(:,x);
-        mu = mu + dmu_set(:,t);
-        mu = reshape(mu, 4, size(E,1));
-        for u = 1:4
-            Smu_list{t}{u}(:,x) = (sum(mu)').*ind_edge_val{u}(:,x);
-            Rmu_list{t}{u}(:,x) = mu(u,:)';
-        end
-        mu = reshape(mu, 4*(l-1),1);
-        mu_list{t}(:,x) = mu;
-    end
-    
-    global inner_iter
-    if iter==1 && inner_iter ==-1
-        lambda
-        sdfs
-    end
-    
-    return;
-end
+%     % For each update direction in terms of multilabels, compute the corresponding mu_0, and compute the different mu_0-mu    
+%     dmu_set = zeros(size(mu_global,1), T_size*kappa);   
+%     Y_kappa = reshape(Y_kappa', l, kappa*T_size);
+%     Y_kappa = Y_kappa';
+%     Y_kappa = unique(Y_kappa,'rows');
+% 
+%     for t = 1:size(Y_kappa,1)
+%         Ymax    = Y_kappa(t,1:l);
+%         Umax_e  = 1+2*(Ymax(:,E_global(:,1))>0) + (Ymax(:,E_global(:,2)) >0);
+%         mu_0    = zeros(4*size(E_global,1),1);
+%         for u = 1:4
+%             mu_0(4*(1:size(E_global,1))-4 + u) = params.C*(Umax_e == u);
+%         end
+%         dmu_set(:,t) = mu_0-mu_global(:,x);
+%     end
+%     % Compute Kmu_x
+%     Kmu_x_global = compute_Kmu_x(x,Kx_tr(:,x),E_global,ind_edge_val_global,Rmu_global,Smu_global);
+%     
+%     % Compute the f'(x)
+%     f_prim = normalization_linear * loss_global(:,x) - normalization_quadratic * Kmu_x_global;
+%     
+%     % Compute g = <f'(x),M>
+%     g_global = f_prim' * dmu_set;
+%     
+%     % Compute Q (in brute force)
+%     num_directions = size(dmu_set, 2);
+%     dmu     = reshape(dmu_set,4,size(E_global,1)*num_directions);
+%     S_dmu   = sum(dmu,1);
+%     term12  = zeros(1,size(E_global,1)*num_directions);
+%     K_dmu   = zeros(4,size(E_global,1)*num_directions);
+%     
+%     for u=1:4
+%         IndEdgeVal = full(ind_edge_val_global{u}(:,x));
+%         IndEdgeVal = reshape(IndEdgeVal(:,ones(num_directions,1)),1,size(E_global,1)*num_directions);
+%         H_u = S_dmu.*IndEdgeVal - dmu(u,:);
+%         term12 = term12 + H_u.*IndEdgeVal;
+%         K_dmu(u,:) = -H_u;
+%     end
+%     
+%     for u=1:4
+%         K_dmu(u,:) = K_dmu(u,:) + term12;
+%     end
+%     
+%     %Q = reshape(dmu,4*size(E_global,1)*num_directions,1)' * reshape(K_dmu,4*size(E_global,1)*num_directions,1);
+%     
+%     Q = reshape(dmu,4*size(E_global,1),num_directions)' * reshape(K_dmu,4*size(E_global,1),num_directions);
+%     
+%     % Compute lambda
+%     lambda = g_global * pinv(Q);
+%     
+%     
+%     
+%     % Ensure lambda is feasible
+%     if sum(lambda)>1+params.tolerance || sum(lambda)<0 
+%         delta_obj_list(1)=0;
+%         return
+%     end
+% 
+%    
+%     
+%     % Compute dmu with a convex combination of multiple update directions
+%     dmu_global  = dmu_set * lambda';
+%     mu_global_i = reshape(mu_global(:,x) + dmu_global,4,size(E_global,1));
+% 
+%     for u=1:4
+%         Smu_global{u}(:,x) = sum(mu_global_i)'.*ind_edge_val_global{u}(:,x);
+%         Rmu_global{u}(:,x) = mu_global_i(u,:)';
+%     end
+%     
+%     % Decompose global update into a set of local updates on individual trees, assuming the quantities are correctly computed
+%     %dmu_set = decompose_local_from_global ( dmu_global, E_global, ind_backwards, inverse_flag );
+%     dmu_set = compose_mu_local_from_global(dmu_global);
+%     
+%     
+%     %% Compute the difference in terms of the global objective
+%     % linear part of the objective
+%     delta_obj_first = f_prim' * dmu_global;
+%     % quadratic part
+%     dmu_global = reshape(dmu_global,4,size(E_global,1));
+%     smu = reshape(sum(dmu_global),size(E_global,1),1);
+%     term12 = zeros(1,size(E_global,1));
+%     Kxx_dmu = zeros(4,size(E_global,1));
+%     for u=1:4
+%         edgelabelindicator = full(ind_edge_val_global{u}(:,x));
+%         real_dmu_global = reshape(dmu_global(u,:),size(E_global,1),1);
+%         H_u = smu.*edgelabelindicator - real_dmu_global;
+%         term12 = term12 + reshape(H_u.*edgelabelindicator,1,size(E_global,1));
+%         Kxx_dmu(u,:) = reshape(-H_u,1,size(E_global,1));
+%     end
+%     for u=1:4
+%         Kxx_dmu(u,:) = Kxx_dmu(u,:) + term12;
+%     end
+%     Kxx_dmu = reshape(Kxx_dmu,4*size(E_global,1),1);
+%     delta_obj_second = -1/2 * normalization_quadratic *Kxx_dmu'*reshape(dmu_global,size(E_global,1)*4,1);
+%     % combine the first and the second term
+%     delta_obj_list(1) = delta_obj_first + delta_obj_second;
+% 
+%     
+%     %% Update the marginal dual variable on each individual random spanning tree
+%     for t=1:T_size
+%         ind_edge_val = ind_edge_val_list{t};
+%         mu = mu_list{t}(:,x);
+%         mu = mu + dmu_set(:,t);
+%         mu = reshape(mu, 4, size(E,1));
+%         for u = 1:4
+%             Smu_list{t}{u}(:,x) = (sum(mu)').*ind_edge_val{u}(:,x);
+%             Rmu_list{t}{u}(:,x) = mu(u,:)';
+%         end
+%         mu = reshape(mu, 4*(l-1),1);
+%         mu_list{t}(:,x) = mu;
+%     end
+%     
+%     global inner_iter
+%     if iter==1 && inner_iter ==-1
+%         lambda
+%         sdfs
+%     end
+%     
+%     return;
+% end
 
 
 %%
@@ -1149,6 +1156,7 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton1(x, kappa)
         Y_kappa(t,:) = Ymax;
         Y_kappa_val(t,:) = YmaxVal;
     end
+    
 
     %% Compose current global marginal dual variable (mu) from local marginal dual variables {mu_t}_{t=1}^{T}
     mu_global = compose_mu_global_from_local;
@@ -1438,6 +1446,7 @@ function profile_update_tr
     global T_size;
     global duality_gap_on_trees;
     global obj_list;
+    global maxobj;
 
     if params.profiling
         profile.n_err_microlabel_prev = profile.n_err_microlabel;
@@ -1451,12 +1460,13 @@ function profile_update_tr
         profile.p_err = profile.n_err/length(profile.microlabel_errors);
         % Print out messages
         print_message(...
-            sprintf('iter: %d 1_tr: %d %3.2f h_tr: %d %3.2f obj: %.2f gap: %.2f%% K: %d Y*: %3.2f%% %.2f Yi: %3.2f%% %.2f K: %.2f %.2f %d Mg: %.2f%% %.3f %.3f Update %.2f%% %.2f%%',...
+            sprintf('iter: %d 1_tr: %d %3.2f h_tr: %d %3.2f obj(%.2f): %.2f gap: %.2f%% K: %d Y*: %3.2f%% %.2f Yi: %3.2f%% %.2f K: %.2f %.2f %d Mg: %.2f%% %.3f %.3f Update %.2f%% %.2f%%',...
             opt_round,...
             profile.n_err,...
             profile.p_err*100,...
             profile.n_err_microlabel,...
             profile.p_err_microlabel*100,...
+            maxobj,...
             obj,...
             mean(duality_gap_on_trees./(obj_list+duality_gap_on_trees))*100,...
             kappa,...
