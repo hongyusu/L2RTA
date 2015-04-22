@@ -1158,6 +1158,7 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton1(x, kappa)
     dmu_set = zeros(size(mu_global,1), T_size*kappa);   % 4*|E_g| X |T|*kappa matrix of directions
     Y_kappa = reshape(Y_kappa', l, kappa*T_size);       % l X |T|*kappa matrix of multilabels
     Y_kappa = Y_kappa';                                 % |T|*kappa X l matrix of multilabels
+    Y_kappa = unique(Y_kappa,'rows');
     
     %Y_kappa = Y_kappa(1,:);
     
@@ -1171,7 +1172,7 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton1(x, kappa)
         end
         dmu_set(:,t) = mu_0-mu_global(:,x);
     end
-    
+
     % Compute Kmu_x_global
     Kmu_x_global = compute_Kmu_x(x,Kx_tr(:,x),E_global,ind_edge_val_global,Rmu_global,Smu_global);
     
@@ -1214,8 +1215,10 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton1(x, kappa)
     % Compute dmu with a convex combination of multiple update directions
     dmu_global  = dmu_set * lambda';
     
+
     % Decompose global update into a set of local updates on individual trees, assuming the quantities are correctly computed
     dmu_set = compose_mu_local_from_global(dmu_global);
+    
     
     %% Otherwise we need line serach to find optimal step size to the saddle point.
     mu_d_list   = mu_list;
@@ -1316,14 +1319,6 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton1(x, kappa)
         mu_list{t}(:,x) = reshape(mu,4*size(E_list{t},1),1);
     end
 
-    global iter;
-    if iter ==-1 && x==2
-        lambda
-        mu_list{1}(:,x)'
-        [sum(Gmax),Gmax;sum(G0),G0]
-        asfd
-    end
-    
     
     return;
 end
@@ -1570,6 +1565,9 @@ function [Ypred,YpredVal,Ys_positions,Yi_positions] = compute_error(Y,Kx,needPos
             Ypred(i,:) = Ypred(i,:)*2-1;
         end
     end
+    
+    
+    
 end
 
 
