@@ -1687,7 +1687,7 @@ function print_message(msg,verbosity_level,filename)
         fprintf('\n%.1f: %s ',cputime-profile.start_time,msg);
         if nargin == 3
             fid = fopen(filename,'a');
-            fprintf(fid,'%s: %s\n',datestr(clock,13),msg);
+            fprintf(fid,'%.1f: %s\n',cputime-profile.start_time,msg);
             fclose(fid);
         end
     end
