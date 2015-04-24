@@ -627,7 +627,7 @@ function compute_duality_gap
 
     %% Compute primal upper bound, which is objective+duality_gap
     dgap = max(0,dgap);
-    duality_gap_on_trees = dgap;
+    duality_gap_on_trees = min(duality_gap_on_trees, dgap);
     primal_ub = obj + sum(dgap);
     
 end
