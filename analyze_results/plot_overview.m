@@ -3,13 +3,13 @@
 
 
 
-function plot_learning()
+function plot_overview()
 
 
     addpath('./savefigure/');
     
     dataset = {'toy10','toy50','emotions','yeast','scene'};
-    dataset = {'toy10','toy50','emotions'};
+
     for di = 1:length(dataset)
         
         

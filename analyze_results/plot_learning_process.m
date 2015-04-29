@@ -3,11 +3,44 @@
 
 
 
-function plot_learning()
+function plot_learning_process()
 
 
     addpath('./savefigure/');
     
+    qd=char(34);
+    qs=char(39);
+    
+    
+    dataset = {'toy10','toy50','emotions'};
+    ts = [1, 5,10,15,20];
+    ks = [1 2 4 6 8 10 12];
+    cs = [1 10 100];
+    gs = [1 5];    
+    
+    for di = 1:length(dataset)
+        
+        for gi = 1:length(gs)
+
+            for ci = 1:length(cs)
+
+                for ki = 1:length(ks)
+
+                    for ti = 1:length(ts)
+
+                        % training_1_err, training_ham_err, obj, duality_gap, gmax-g0, update
+                        system(sprintf('cat  ../outputs/backup_run/%s_tree_%d_f1_l2_k%d_c%d_s%d_n1_RSTAs.log|head -n20|awk -F%s %s %s{print $6%s %s$9%s %s$11%s %s$13%s %s$14%s %s$32%s %s$33}%s|sed s/\\%%//g > tmp',...
+                            dataset{di},ts(ti),ks(ki),cs(ci),gs(gi),qs,qs,qs,qd,qd,qd,qd,qd,qd,qd,qd,qd,qd,qd,qd,qs));
+                        x = dlmread('tmp');
+
+                    end
+                end
+                
+            end
+        end
+    end
+    
+    return
     dataset = {'toy10','toy50','emotions','yeast','scene'};
     dataset = {'toy10','toy50','emotions'};
     for di = 1:length(dataset)
@@ -15,11 +48,7 @@ function plot_learning()
         
         dname = dataset{di};
 
-        
-        ts = [1, 5,10,15,20];
-        ks = [1 2 4 6 8 10 12];
-        cs = [1 10 100];
-        gs = [1 5];
+
 
 
         
@@ -40,8 +69,7 @@ function plot_learning()
                     t=ts(i);
                     c=cs(ic);
 
-                    qd=char(34);
-                    qs=char(39);
+                    
                     % training_1_err, training_ham_err, obj, duality_gap, gmax-g0, update
                     system(sprintf('for i in 1 2 4 6 8 10 12; do cat  ../outputs/backup_run/%s_tree_%d_f1_l2_k${i}_c%d_s%d_n1_RSTAs.log|tail -n3|head -n1|awk -F%s %s %s{print $6%s %s$9%s %s$11%s %s$13%s %s$14%s %s$32%s %s$33}%s|sed s/\\%%//g; done > tmp',...
                         dname,t,c,g,qs,qs,qs,qd,qd,qd,qd,qd,qd,qd,qd,qd,qd,qd,qd,qs));
