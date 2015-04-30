@@ -12,11 +12,11 @@ function plot_learning_process()
     qs=char(39);
     
     
-    dataset = {'toy10','toy50','emotions'};
+    dataset = {'toy10','toy50','emotions','yeast','scene'};
 
     
     
-    ts = [1, 5,10,15,20];
+    ts = [5 10 15 20];
     ks = [1 2 4 6 8 10 12];
     cs = [1 10 100];
     gs = [1];    
