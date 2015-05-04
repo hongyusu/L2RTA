@@ -28,7 +28,7 @@ addpath('./savefigure/');
     
     ts = [1 5 10 15 20];
     ks = [1 2 4 6 8 10 12];
-    cs = [1];
+    cs = [1,10];
     gs = [1];    
     
     for di = 1:length(dataset)
