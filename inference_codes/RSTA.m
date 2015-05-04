@@ -1224,13 +1224,15 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton1(x, kappa)
     if sum(lambda) > 1
         lambda = lambda / sum(lambda);
     end
-    if sum(lambda) < 0 
+    % Make sure lambda is over zero
+    if sum(lambda) <= params.tolerance 
         delta_obj_list = zeros(1,T_size);
         return
     end
 
     % Compute dmu with a convex combination of multiple update directions
     dmu_global  = dmu_set * lambda';
+    
     
 
     % Decompose global update into a set of local updates on individual trees, assuming the quantities are correctly computed
@@ -1289,9 +1291,8 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton1(x, kappa)
     end
 
     GmaxG0_list(x) = sum(Gmax>=G0);
-    if sum(Gmax) - sum(G0) >= params.tolerance && Gmax>=G0
-        Gmax
-        G0
+    if ~ (sum(Gmax) - sum(G0) >= params.tolerance) && Gmax>=G0
+        [(sum(Gmax) - sum(G0) >= params.tolerance),Gmax,G0,lambda sum(lambda) ]
     end
     
     
