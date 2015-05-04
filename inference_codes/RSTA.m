@@ -113,8 +113,8 @@ function [rtn, ts_err] = RSTA (paramsIn, dataIn)
     val_list        = zeros(1,m);
     Yipos_list      = ones(1,m)*(params.maxkappa+1);
     kappa_list      = zeros(1,m);
-    GmaxG0_list     = zeros(1,m);
-    GoodUpdate_list = zeros(1,m);
+    GmaxG0_list     = ones(1,m);
+    GoodUpdate_list = ones(1,m);
     obj_list        = zeros(1,T_size);
     
     
@@ -194,7 +194,6 @@ function [rtn, ts_err] = RSTA (paramsIn, dataIn)
             obj_list    = obj_list + delta_obj_list;
             obj         = obj + sum(delta_obj_list);
         end
-        
         % Profile after iterating over all training examples once
         if mod(iter, params.profileiter)==0
             progress_made = (obj >= prev_obj);  
@@ -1290,6 +1289,11 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton1(x, kappa)
     end
 
     GmaxG0_list(x) = sum(Gmax>=G0);
+    if sum(Gmax) - sum(G0) >= params.tolerance && Gmax>=G0
+        Gmax
+        G0
+    end
+    
     
     % If lambda is feasible, always update
     if sum(Gmax) - sum(G0) >= params.tolerance
