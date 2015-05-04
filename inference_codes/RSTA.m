@@ -1291,9 +1291,6 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton1(x, kappa)
     end
 
     GmaxG0_list(x) = sum(Gmax>=G0);
-    if ~ (sum(Gmax) - sum(G0) >= params.tolerance) && Gmax>=G0
-        [(sum(Gmax) - sum(G0) >= params.tolerance),Gmax,G0,lambda sum(lambda) ]
-    end
     
     
     % If lambda is feasible, always update
