@@ -58,6 +58,7 @@ function [rtn, ts_err] = RSTA (paramsIn, dataIn)
     % Variable on global consensus graph
     global loss_global;
     global maxobj;
+    global Yi_positions_tr;
     
     maxobj=0;
     % Set random seed to make different run comparable.
@@ -181,6 +182,7 @@ function [rtn, ts_err] = RSTA (paramsIn, dataIn)
         end
 %         for xi = randsample(1:m,m,true,Yipos_list/sum(Yipos_list)) % sample training examples according to the rank of the true label in last iteration
 %         for xi = randsample(1:m,m)    % sample training examples uniformly at random, stochastic optimization
+%         for xi = randsample(1:m,m,true,Yi_positions_tr/sum(Yi_positions_tr))
         for xi = 1:m                  % iterater by a fix order over a set of training examples
             inner_iter = inner_iter +1;
             print_message(sprintf('Start descend on example %d initial k %d',xi,kappa),3)
@@ -807,10 +809,12 @@ function [delta_obj_list] = conditional_gradient_descent(x, kappa)
     
     %% Decide whether to update the marginal dual variable on a collection of spanning trees by looking at the maximum objective along the gradient.
     % TODO: this can be very problemetic, as using global tau, the quality on individual random spanning tree can be very bad
+ 
     
     tau = min(sum(nomi)/sum(denomi),1);
 
-    if tau<0
+
+    if tau <= params.tolerance || sum(denomi) == 0
         delta_obj_list = zeros(1,T_size);
         return;
     end
@@ -819,14 +823,16 @@ function [delta_obj_list] = conditional_gradient_descent(x, kappa)
         E = E_list{t};
         gradient = gradient_list_local{t};
         Gmax(t) = (mu'+tau*mu_d_list{t}')*gradient;
-     end
+    end
 
-    if sum(Gmax)<sum(G0)
+    GmaxG0_list(x)      = sum(Gmax>=G0);
+    
+    if ~(sum(Gmax)-sum(G0) >= params.tolerance)
         delta_obj_list = zeros(1,T_size);
         return;
     end
     
-	GmaxG0_list(x)      = sum(Gmax>=G0);
+	
     GoodUpdate_list(x)  = (tau>0);
     
 
@@ -1224,6 +1230,7 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton1(x, kappa)
     if sum(lambda) > 1
         lambda = lambda / sum(lambda);
     end
+
     % Make sure lambda is over zero
     if sum(lambda) <= params.tolerance 
         delta_obj_list = zeros(1,T_size);
@@ -1290,11 +1297,13 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton1(x, kappa)
         
     end
 
+
+
     GmaxG0_list(x) = sum(Gmax>=G0);
     
     
     % If lambda is feasible, always update
-    if sum(Gmax) - sum(G0) >= params.tolerance
+    if sum(Gmax) - sum(G0) >= -params.tolerance
         tau=1;
     else
         delta_obj_list = zeros(1,T_size);
