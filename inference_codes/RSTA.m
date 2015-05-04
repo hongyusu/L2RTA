@@ -827,6 +827,7 @@ function [delta_obj_list] = conditional_gradient_descent(x, kappa)
 
     GmaxG0_list(x)      = sum(Gmax>=G0);
     
+
     if ~(sum(Gmax)-sum(G0) >= params.tolerance)
         delta_obj_list = zeros(1,T_size);
         return;
