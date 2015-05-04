@@ -113,7 +113,7 @@ function [rtn, ts_err] = RSTA (paramsIn, dataIn)
     val_list        = zeros(1,m);
     Yipos_list      = ones(1,m)*(params.maxkappa+1);
     kappa_list      = zeros(1,m);
-    GmaxG0_list     = ones(1,m);
+    GmaxG0_list     = ones(1,m)*T_size;
     GoodUpdate_list = ones(1,m);
     obj_list        = zeros(1,T_size);
     
@@ -1455,6 +1455,7 @@ function profile_update_tr
     global duality_gap_on_trees;
     global obj_list;
     global maxobj;
+    global Yi_positions_tr;
 
     if params.profiling
         profile.n_err_microlabel_prev = profile.n_err_microlabel;
