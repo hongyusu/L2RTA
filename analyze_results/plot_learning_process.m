@@ -23,12 +23,12 @@ addpath('./savefigure/');
     
     
     dataset = {'toy10','toy50','emotions','yeast','scene'};
-    %dataset = {'toy10'}
+    dataset = {'toy10'}
     
     
-    ts = [1 5 10 15 20];
+    ts = [5 10 15 20];
     ks = [1 2 4 6 8 10 12];
-    cs = [1,10];
+    cs = [1 10 100];
     gs = [1];    
     
     for di = 1:length(dataset)
@@ -49,7 +49,7 @@ addpath('./savefigure/');
                         
                         x = dlmread('tmp');
                         
-                        js = [1 2 3 4 5 6 7];
+                        js = [1 2 3 4 5 6 7 8];
                         for j =1:length(js)
                             
                             subplot(length(ks),length(js),j+(ki-1)*length(js))
@@ -57,31 +57,34 @@ addpath('./savefigure/');
                             plot(x(:,j),'-');
                             xlabel('Iteration count');
                             if j==1
-                                title(sprintf('Running time, T=%d, C=%d',ks(ki),cs(ci)));
+                                title(sprintf('Running time, K=%d, C=%d',ks(ki),cs(ci)));
                             end
                             if j==2
-                                title(sprintf('0/1 loss tr, T=%d, C=%d',ks(ki),cs(ci)));
+                                title(sprintf('0/1 loss tr, K=%d, C=%d',ks(ki),cs(ci)));
                             end
                             if j==3
-                                title(sprintf('Hamming loss tr, T=%d, C=%d',ks(ki),cs(ci)));
+                                title(sprintf('Hamming loss tr, K=%d, C=%d',ks(ki),cs(ci)));
                             end
                             if j==4
-                                title(sprintf('Objective, T=%d, C=%d',ks(ki),cs(ci)));
+                                title(sprintf('Objective, K=%d, C=%d',ks(ki),cs(ci)));
                             end
                             if j==5
-                                title(sprintf('Gap value, T=%d, C=%d',ks(ki),cs(ci)));
+                                title(sprintf('Gap value, K=%d, C=%d',ks(ki),cs(ci)));
                             end
                             if j==6
-                                title(sprintf('Gap percentage, T=%d, C=%d',ks(ki),cs(ci)));
+                                title(sprintf('Gap percentage, K=%d, C=%d',ks(ki),cs(ci)));
                             end
                             if j==7
-                                title(sprintf('Update, T=%d, C=%d',ks(ki),cs(ci)));
+                                title(sprintf('Tree update, K=%d, C=%d',ks(ki),cs(ci)));
+                            end
+                            if j==8
+                                title(sprintf('Example update, K=%d, C=%d',ks(ki),cs(ci)));
                             end
                             hold off
                         end
                     end
                 end
-                lgd = legend(strcat('K=',num2str(ts')));
+                lgd = legend(strcat('T=',num2str(ts')));
                 set(lgd,  'fontsize', 10, 'interpreter','latex','Position', [0,0.2,0.1,0.1]);
 
                 export_fig(sprintf('../plots/plot_learning_process_%s_%d_%d.jpg',dataset{di},gs(gi),cs(ci)),figure1)
