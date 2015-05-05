@@ -110,7 +110,7 @@ def run():
     #for slack_c in ['1','100','0.1','10','0.01','50','0.5','20','0.05','5']:
     #for slack_c in ['1','100','0.1','10','0.01']:
     for slack_c in ['1','10','100']:
-      for t in range(0,21,5):
+      for t in range(0,31,5):
         if t==0:
           t=1
         para_t="%d" % (t)
