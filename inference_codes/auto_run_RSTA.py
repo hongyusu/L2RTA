@@ -115,7 +115,7 @@ def run():
           t=1
         para_t="%d" % (t)
         graph_type = 'tree'
-        for kappa in ['1','2','4','6','8','10','12']:
+        for kappa in ['1','2','4','6','8','10','12','14','16']:
         #for kappa in ['2']:
           for l_norm in ['2']:
             #for kth_fold in ['1','2','3','4','5']:
