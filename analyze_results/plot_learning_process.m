@@ -84,51 +84,51 @@ function plot_overall_statistics(dataset,ts,ks,cs,gs)
                         end
 
                         if j==2
-                            title(sprintf('Tr 0/1, C%d', c));
+                            title(sprintf('Tr 0/1 %%, C%d', c));
                         end
                         if j==3
-                            title(sprintf('Tr hamming, C%d', c));
+                            title(sprintf('Tr hamming %%, C%d', c));
                         end            
                         if j==4
                             title(sprintf('Objective, C%d', c));
                         end
                         if j==5
-                            title(sprintf('Gap, C%d', c));
+                            title(sprintf('Gap value, C%d', c));
                         end  
                         if j==6
-                            title(sprintf('Duality gap %, C%d', c));
+                            title(sprintf('Gap %%, C%d', c));
                         end 
                         if j==7
-                            title(sprintf('Tree update %, C%d', c));
+                            title(sprintf('Tree update %%, C%d', c));
                         end 
                         if j==8
-                            title(sprintf('Example update %, C%d', c));
+                            title(sprintf('Example update %%, C%d', c));
                         end 
                         if j==9
-                            title(sprintf('Running time %, C%d', c));
+                            title(sprintf('Running time, C%d', c));
                         end 
                         if j==12
-                            title(sprintf('Ts 0/1, C%d', c));
+                            title(sprintf('Ts 0/1 %%, C%d', c));
                         end
                         if j==13
-                            title(sprintf('Ts hamming, C%d', c));
+                            title(sprintf('Ts hamming %%, C%d', c));
                         end
                         if j==14
-                            title(sprintf('Yi tr, C%d', c));
+                            title(sprintf('Yi tr %%, C%d', c));
                         end
                         if j==15
-                            title(sprintf('Yi ts, C%d', c));
+                            title(sprintf('Yi ts %%, C%d', c));
                         end
                         hold off
                     end
 
                 end
                 lgd = legend(strcat('T=',num2str(ts')));
-                set(lgd,  'fontsize', 10, 'interpreter','latex','Position', [0,0.2,0.1,0.1]);
+                set(lgd,  'fontsize', 10, 'interpreter','latex','Position', [0.01,0.1,0.1,0.1]);
 
             end
             
-            export_fig(sprintf('../plots/plot_overall_statistics_%s_%d_%d.jpg',dataset{di},gs(gi),cs(ci)),figure1)
+            export_fig(sprintf('../plots/plot_overall_statistics_%s_%d.jpg',dataset{di},gs(gi)),figure1)
 
         end
 
