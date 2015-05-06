@@ -201,7 +201,7 @@ function plot_x_as_iteration_count(dataset,ts,ks,cs,gs)
                     end
                 end
                 lgd = legend(strcat('T=',num2str(ts')));
-                set(lgd,  'fontsize', 10, 'interpreter','latex','Position', [0,0.2,0.1,0.1]);
+                set(lgd,  'fontsize', 10, 'interpreter','latex','Position', [0.01,0.2,0.1,0.1]);
 
                 export_fig(sprintf('../plots/plot_learning_process_%s_%d_%d.jpg',dataset{di},gs(gi),cs(ci)),figure1)
             end
