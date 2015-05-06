@@ -8,8 +8,8 @@ function plot_learning_process(option)
 
     dataset = {'toy10','toy50','emotions','yeast','scene'};
     dataset = {'toy10'};
-    ts = [5 10 15 20];
-    ks = [1 2 4 6 8 10 12];
+    ts = [1 5 10 15 20 25];
+    ks = [1 2 4 6 8 10 12 14 16];
     cs = [1 10 100];
     gs = [1];  
     
@@ -59,11 +59,11 @@ function plot_overall_statistics(dataset,ts,ks,cs,gs)
 
 
                     % training_1_err, training_ham_err, obj, duality_gap, gmax-g0, update
-                    system(sprintf('for i in 1 2 4 6 8 10 12; do cat  ../outputs/backup_run/%s_tree_%d_f1_l2_k${i}_c%d_s%d_n1_RSTAs.log|tail -n3|head -n1|awk -F%s %s %s{print $6%s %s$9%s %s$11%s %s$13%s %s$14%s %s$32%s %s$33}%s|sed s/\\%%//g; done > tmp',...
+                    system(sprintf('for i in 1 2 4 6 8 10 12 14 16; do cat  ../outputs/backup_run/%s_tree_%d_f1_l2_k${i}_c%d_s%d_n1_RSTAs.log|tail -n3|head -n1|awk -F%s %s %s{print $6%s %s$9%s %s$11%s %s$13%s %s$14%s %s$32%s %s$33}%s|sed s/\\%%//g; done > tmp',...
                         dname,t,c,g,qs,qs,qs,qd,qd,qd,qd,qd,qd,qd,qd,qd,qd,qd,qd,qs));
                     x = dlmread('tmp');
                     % training_1_err, training_ham_err,test_1_err, test_ham_err, yi_tr, yi_ts
-                    system(sprintf('for i in 1 2 4 6 8 10 12; do cat  ../outputs/backup_run/%s_tree_%d_f1_l2_k${i}_c%d_s%d_n1_RSTAs.log|tail -n2|head -n1|awk -F%s %s %s{print $1%s %s$4%s %s$7%s %s$10%s %s$13%s %s$18%s %s$24}%s|sed s/://g|sed s/\\%%//g; done > tmp',...
+                    system(sprintf('for i in 1 2 4 6 8 10 12 14 16; do cat  ../outputs/backup_run/%s_tree_%d_f1_l2_k${i}_c%d_s%d_n1_RSTAs.log|tail -n2|head -n1|awk -F%s %s %s{print $1%s %s$4%s %s$7%s %s$10%s %s$13%s %s$18%s %s$24}%s|sed s/://g|sed s/\\%%//g; done > tmp',...
                         dname,t,c,g,qs,qs,qs,qd,qd,qd,qd,qd,qd,qd,qd,qd,qd,qd,qd,qs));
                     y = dlmread('tmp');
 
@@ -188,7 +188,7 @@ function plot_x_as_iteration_count(dataset,ts,ks,cs,gs)
                                 title(sprintf('Gap value, K=%d, C=%d',ks(ki),cs(ci)));
                             end
                             if j==6
-                                title(sprintf('Gap percentage, K=%d, C=%d',ks(ki),cs(ci)));
+                                title(sprintf('Gap %, K=%d, C=%d',ks(ki),cs(ci)));
                             end
                             if j==7
                                 title(sprintf('Tree update, K=%d, C=%d',ks(ki),cs(ci)));

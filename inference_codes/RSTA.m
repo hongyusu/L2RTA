@@ -1163,6 +1163,8 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton(x, kappa)
         Y_kappa_val(t,:)    = YmaxVal;
     end
     
+    Y_kappa
+    Y_kappa_val
     
 
     %% Compose current global marginal dual variable (mu) from local marginal dual variables {mu_t}_{t=1}^{T}
