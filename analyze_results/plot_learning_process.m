@@ -8,7 +8,7 @@ function plot_learning_process(option)
 
     dataset = {'toy10','toy50','emotions','yeast','scene'};
     dataset = {'toy10'};
-    ts = [1 5 10 15 20 25];
+    ts = [1 5 10 15 20 25 30];
     ks = [1 2 4 6 8 10 12 14 16];
     cs = [1 10 100];
     gs = [1];  
