@@ -1098,7 +1098,6 @@ end
 %     return;
 % end
 
-
 %%
 % Conditional gradient descent with newton method to find a conical combination of update direction
 % direction is found based on global consensus graph
@@ -1134,6 +1133,7 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton(x, kappa)
     global Kxx_mu_x_list;
     global GmaxG0_list;
     global GoodUpdate_list;
+    global Y_tr;
     
     GoodUpdate_list(x)  = 0;
     GmaxG0_list(x)      = 0;
@@ -1162,9 +1162,8 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton(x, kappa)
         Y_kappa(t,:)        = Ymax;
         Y_kappa_val(t,:)    = YmaxVal;
     end
-    
-    Y_kappa
-    Y_kappa_val
+
+
     
 
     %% Compose current global marginal dual variable (mu) from local marginal dual variables {mu_t}_{t=1}^{T}
@@ -1179,12 +1178,18 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton(x, kappa)
     dmu_set = zeros(size(mu_global,1), T_size*kappa);   % 4*|E_g| X |T|*kappa matrix of directions
     Y_kappa = reshape(Y_kappa', l, kappa*T_size);       % l X |T|*kappa matrix of multilabels
     Y_kappa = Y_kappa';                                 % |T|*kappa X l matrix of multilabels
-    Y_kappa = unique(Y_kappa,'rows');
     
-    Y_kappa
-    global Y_tr;
-    Y_tr(x,:)
-    %Y_kappa = Y_kappa(1,:);
+%     % remove the correct label from the list        
+%     Y_kappa = [Y_tr(x,:);Y_kappa];
+%     Y_kappa = unique(Y_kappa,'rows','stable');
+%     if size(Y_kappa,1) > 1
+%         Y_kappa = Y_kappa(2:end,:);
+%     end
+
+
+    
+
+    
     
     % For each update direction compute corresponding mu and dmu
     for t = 1:size(Y_kappa,1)
@@ -1232,6 +1237,17 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton(x, kappa)
         lambda = lambda / sum(lambda);
     end
 
+    if 0
+        global iter;
+        if iter ==10 && x==1
+            Y_kappa
+            Y_kappa_val
+            Y_tr(x,:)
+            lambda
+            daad
+        end
+    end
+    
     % Make sure lambda is over zero
     if sum(lambda) <= params.tolerance 
         delta_obj_list = zeros(1,T_size);
@@ -1472,6 +1488,7 @@ function profile_update_tr
         
         % compute training error
         [Ypred_tr,~,Ys_positions_tr,Yi_positions_tr] = compute_error(Y_tr,Kx_tr,1);  
+        
         profile.microlabel_errors = sum(abs(Ypred_tr-Y_tr) >0,2);
         profile.n_err_microlabel = sum(profile.microlabel_errors);
         profile.p_err_microlabel = profile.n_err_microlabel/numel(Y_tr);
