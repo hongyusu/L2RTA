@@ -1239,7 +1239,7 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton(x, kappa)
 
     if 0
         global iter;
-        if iter ==10 && x==1
+        if iter ==1 && x==50
             Y_kappa
             Y_kappa_val
             Y_tr(x,:)
