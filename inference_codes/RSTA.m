@@ -1179,7 +1179,7 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton(x, kappa)
     Y_kappa = reshape(Y_kappa', l, kappa*T_size);       % l X |T|*kappa matrix of multilabels
     Y_kappa = Y_kappa';                                 % |T|*kappa X l matrix of multilabels
     
-%     % remove the correct label from the list        
+%     % remove the correct multilabel from the list of worst violating multilabels       
 %     Y_kappa = [Y_tr(x,:);Y_kappa];
 %     Y_kappa = unique(Y_kappa,'rows','stable');
 %     if size(Y_kappa,1) > 1
@@ -1188,10 +1188,7 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton(x, kappa)
 
 
     
-
-    
-    
-    % For each update direction compute corresponding mu and dmu
+    % For each update direction compute corresponding mu and dmu based on the global consensus graph
     for t = 1:size(Y_kappa,1)
         Ymax    = Y_kappa(t,:);
         Umax_e  = 1+2*(Ymax(:,E_global(:,1))>0) + (Ymax(:,E_global(:,2)) >0);
@@ -1237,16 +1234,7 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton(x, kappa)
         lambda = lambda / sum(lambda);
     end
 
-    if 0
-        global iter;
-        if iter ==1 && x==50
-            Y_kappa
-            Y_kappa_val
-            Y_tr(x,:)
-            lambda
-            daad
-        end
-    end
+
     
     % Make sure lambda is over zero
     if sum(lambda) <= params.tolerance 
