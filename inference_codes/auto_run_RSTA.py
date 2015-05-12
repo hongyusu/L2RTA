@@ -109,7 +109,7 @@ def run():
   for filename in filenames:
     #for slack_c in ['1','100','0.1','10','0.01','50','0.5','20','0.05','5']:
     #for slack_c in ['1','100','0.1','10','0.01']:
-    for slack_c in ['1','10','100','0.5','0.1']:
+    for slack_c in ['1', '10', '100', '0.5', '0.1']:
       for t in [1, 2, 5, 10, 15, 20, 25, 30]:
         para_t="%d" % (t)
         graph_type = 'tree'
