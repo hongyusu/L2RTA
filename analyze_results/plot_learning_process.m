@@ -9,7 +9,7 @@ function plot_learning_process(option)
 %     dataset = {'toy10','toy50','emotions','yeast','scene'};
     dataset = {'toy10','toy50','emotions','yeast'};
 %     ts = [1 2 5 10 15 20 25];
-    ts = [2 5 10 20 30];
+    ts = [2 10 30];
     ks = [1 2 4 6 8 10 12 14 16];
 %     cs = {'0.5', '1', '10', '100'};
     cs = {'10'};
@@ -48,7 +48,7 @@ function plot_overall_statistics(dataset,ts,ks,cs,gs)
             
             figure1 = figure('visible','off');
             set(figure1, 'PaperUnits', 'centimeters');
-            set(figure1, 'Position',[0 0 7000 600*length(gs)]);
+            set(figure1, 'Position',[0 0 7000 700*length(cs)]);
 
 
             g = gs{gi};
@@ -128,7 +128,7 @@ function plot_overall_statistics(dataset,ts,ks,cs,gs)
 
                 end
                 lgd = legend(strcat('T=',num2str(ts')));
-                set(lgd,  'fontsize', 10, 'interpreter','latex','Position', [0.01,0.1,0.1,0.1]);
+                set(lgd,  'fontsize', 10, 'interpreter','latex','Position', [0.01,0.1,0.1,0.2]);
 
             end
             
@@ -158,7 +158,7 @@ function plot_x_as_iteration_count(dataset,ts,ks,cs,gs)
                 % initilize figures
                 figure1 = figure('visible','off');
                 set(figure1, 'PaperUnits', 'centimeters');
-                set(figure1, 'Position',[0 0 6000 3000]);
+                set(figure1, 'Position',[0 0 6000 300*length(ks)]);
                 
                 for ti = 1:length(ts)
                     for ki = 1:length(ks)
