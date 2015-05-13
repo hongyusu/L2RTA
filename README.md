@@ -23,27 +23,13 @@
 		auto_profile_RSTA.py
 	
    - The python scripts will run/profile Random Spanning Tree Approximation algorithm parallel on interactive cluster.
-
    - The parallelism is for the purpose of multiple parameters and datasets.
-
    - The scripts use the help of PYTHON 'thread' and 'queue' package.
-
    - The framework looks at each combination of parameters as a job and pools all jobs into a job queue.
-
    - A group of workers (computing nodes) are then activated, each will take and process from the queue the first job.
-
    - If the job is not completed by the worker, the worker will push the job back to the queue, an other worker sill processe the job later on.
-
    - A penalty system is implemented to make it difficult for worker to get job if the worker is somehow malfunctioning. 
-
-
    - There are thoughts need to be implemented.
-
-     - loss function should be scaled.
-	
-
-
-
+      - loss function should be scaled.
    - Description of the GitHub repository
-
-   - This repository contains RTA algorithm with improved inference algorithm for update direction finding. The RTA algorithm was originally introduced in Advances in Neural Informatics Processing System NIPS 2014. In each stochastic gradient descent iteration, the new inference algorithm aims to combine multiple updated directions. In other words, the optimal updated direction is given by a convex combination of many suboptimal update directions. Thus, the new inference algorithm avoid computing the best direction from the K-best list which was used in original RTA algorithm. 
+      - This repository contains RTA algorithm with improved inference algorithm for update direction finding. The RTA algorithm was originally introduced in Advances in Neural Informatics Processing System NIPS 2014. In each stochastic gradient descent iteration, the new inference algorithm aims to combine multiple updated directions. In other words, the optimal updated direction is given by a convex combination of many suboptimal update directions. Thus, the new inference algorithm avoid computing the best direction from the K-best list which was used in original RTA algorithm. 
