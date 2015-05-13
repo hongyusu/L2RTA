@@ -9,7 +9,7 @@ function plot_learning_process(option,n)
 %     dataset = {'toy10','toy50','emotions','yeast','scene'};
     dataset = {'toy10'}%,'toy50'};
 %     ts = [1 2 5 10 15 20 25 30];
-    ts = [1 2 5 30];
+    ts = [1 2 30];
 %     ks = [1 2 4 6 8 10 12 14 16];
     ks = [1 4 8 12 16];
 %     cs = {'0.1','0.5', '1', '10', '100','1000'};
@@ -69,7 +69,7 @@ function plot_overall_statistics(dataset,ts,ks,cs,gs,n)
                     
 
                     % training_1_err, training_ham_err, obj, duality_gap, gmax-g0, update
-                    system(sprintf('for i in 1 4 8 12 16; do cat  ../outputs/backup_run/%s_tree_%d_f1_l2_k${i}_c%s_s%s_n%s_RSTAs.log|head -n3|tail -n1|awk -F%s %s %s{print $6%s %s$9%s %s$11%s %s$13%s %s$14%s %s$32%s %s$33}%s|sed s/\\%%//g; done > tmp',...
+                    system(sprintf('for i in 1 4 8 12 16; do cat  ../outputs/backup_run/%s_tree_%d_f1_l2_k${i}_c%s_s%s_n%s_RSTAs.log|head -n2|tail -n1|awk -F%s %s %s{print $6%s %s$9%s %s$11%s %s$13%s %s$14%s %s$32%s %s$33}%s|sed s/\\%%//g; done > tmp',...
                         dname,t,c,g,n,qs,qs,qs,qd,qd,qd,qd,qd,qd,qd,qd,qd,qd,qd,qd,qs));
                     x = dlmread('tmp');
                     % training_1_err, training_ham_err,test_1_err, test_ham_err, yi_tr, yi_ts

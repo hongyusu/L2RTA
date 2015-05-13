@@ -310,7 +310,7 @@ function initialize_global_consensus_graph
     end     
     loss_global = reshape(loss_global,4*size(E_global,1),m);
     
-    %loss_global(loss_global~=0)=1;
+    loss_global(loss_global~=0)=1;
     
     % Compute the vector of Ye and ind_edge_val of the global consensus graph
     Ye_global = reshape(loss_global==0,4,size(E_global,1)*m);
@@ -1678,7 +1678,7 @@ function [loss,Ye,ind_edge_val] = compute_loss_vector(Y,t,scaling)
     end     
     loss = reshape(loss,4*size(E,1),m);
     
-    %loss(loss~=0)=1;
+    loss(loss~=0)=1;
       
     Ye = reshape(loss==0,4,size(E,1)*m);
     for u = 1:4
