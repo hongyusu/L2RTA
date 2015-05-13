@@ -20,50 +20,69 @@
 
     <section class="main-content">
       <h1>
-<a id="l2rta" class="anchor" href="#l2rta" aria-hidden="true"><span class="octicon octicon-link"></span></a><strong>L2RTA</strong>
-</h1>
+<a id="l2-norm-random-spanning-tree-approximation" class="anchor" href="#l2-norm-random-spanning-tree-approximation" aria-hidden="true"><span class="octicon octicon-link"></span></a>L2-norm random spanning tree approximation</h1>
 
-<ol>
-<li><p>Random spanning tree approximation in L2-norm regularization for multilabel structured output prediction.</p></li>
-<li><p>Please start examining the RSTA codes from MATLAB function run_RSTA.m.</p></li>
-<li><p>To compile the code, please make sure you have gcc compileer that supports OMP. </p></li>
-<li><p>Inference function are implemented with OMP library in C, which enables parallel computation for multiple trees.</p></li>
+<h2>
+<a id="general-information" class="anchor" href="#general-information" aria-hidden="true"><span class="octicon octicon-link"></span></a>General information</h2>
+
+<ul>
+<li>Random spanning tree approximation in L2-norm regularization for multilabel structured output prediction.</li>
+<li>Please start examining the RSTA codes from MATLAB function run_RSTA.m.</li>
+<li>To compile the code, please make sure you have <code>gcc</code> compiler that supports OMP. </li>
+<li>Inference function are implemented with OpenMP library in C, which enables parallel computation for multiple trees.</li>
 <li>
 <p>The C function can be compiled with the following command. Note that you might need to change the path of gcc compiler.</p>
 
-<p><code>mex compute_topk_omp.c forward_alg_omp.c backward_alg_omp.c  CFLAGS="\$CFLAGS -fopenmp -std=c99" LDFLAGS="\$LDFLAGS -fopenmp" CC="/usr/bin/gcc"</code></p>
-
-<p><code>mex find_worst_violator_new.c CFLAGS="\$CFLAGS -fopenmp -std=c99" LDFLAGS="\$LDFLAGS -fopenmp" CC="/usr/bin/gcc"</code></p>
+<pre><code>`mex compute_topk_omp.c forward_alg_omp.c backward_alg_omp.c  CFLAGS="\$CFLAGS -fopenmp -std=c99" LDFLAGS="\$LDFLAGS -fopenmp" CC="/usr/bin/gcc"`
+`mex find_worst_violator_new.c CFLAGS="\$CFLAGS -fopenmp -std=c99" LDFLAGS="\$LDFLAGS -fopenmp" CC="/usr/bin/gcc"`
+</code></pre>
 </li>
 <li>
-<p>To run RSTA algorithm, try following command in MATLAB, which will run the algorithm on a test sample of 'ArD15' dataset with 5 random spanning trees and maximum depth of K-best list is </p>
+<p>To run RSTA algorithm, try following command in MATLAB, which will run the algorithm on a test sample of 'ArD15' dataset with 5 random spanning trees and maximum depth of K-best list being 2 </p>
 
-<p><code>run_RSTA('ArD15','tree','5','1','1','2','2')</code></p>
+<pre><code>`run_RSTA('ArD15','tree','5','1','1','2','2')`
+</code></pre>
 </li>
 <li>
 <p>There are two PYTHON scripts:</p>
 
-<p>auto_run_RSTA.py</p>
-
-<p>auto_profile_RSTA.py</p>
+<pre><code>auto_run_RSTA.py    
+auto_profile_RSTA.py
+</code></pre>
 </li>
 <li><p>The python scripts will run/profile Random Spanning Tree Approximation algorithm parallel on interactive cluster.</p></li>
-<li><p>The parallelism is for the purpose of multiple parameters and datasets.</p></li>
-<li><p>The scripts use the help of PYTHON 'thread' and 'queue' package.</p></li>
-<li><p>The framework looks at each combination of parameters as a job and pools all jobs into a job queue.</p></li>
-<li><p>A group of workers (computing nodes) are then activated, each will take and process from the queue the first job.</p></li>
-<li><p>If the job is not completed by the worker, the worker will push the job back to the queue, an other worker sill processe the job later on.</p></li>
-<li><p>A penalty system is implemented to make it difficult for worker to get job if the worker is somehow malfunctioning. </p></li>
-<li>
-<p>There are thoughts need to be implemented.</p>
+<li>The parallelism is for the purpose of multiple parameters and datasets.</li>
+<li>The scripts use the help of PYTHON 'thread' and 'queue' package.</li>
+<li>The framework looks at each combination of parameters as a job and pools all jobs into a job queue.</li>
+<li>A group of workers (computing nodes) are then activated, each will take and process from the queue the first job.</li>
+<li>If the job is not completed by the worker, the worker will push the job back to the queue, an other worker sill processe the job later on.</li>
+<li>A penalty system is implemented to make it difficult for worker to get job if the worker is somehow malfunctioning. </li>
+<li>There are thoughts need to be implemented.
 
-<ol>
+<ul>
 <li>loss function should be scaled.</li>
-</ol>
+</ul>
 </li>
-<li><p>Description of the GitHub repository</p></li>
-<li><p>This repository contains RTA algorithm with improved inference algorithm for update direction finding. The RTA algorithm was originally introduced in Advances in Neural Informatics Processing System NIPS 2014. In each stochastic gradient descent iteration, the new inference algorithm aims to combine multiple updated directions. In other words, the optimal updated direction is given by a convex combination of many suboptimal update directions. Thus, the new inference algorithm avoid computing the best direction from the K-best list which was used in original RTA algorithm. </p></li>
-</ol>
+<li>
+<p>Detailed description can be found from</p>
+
+<pre><code>./inference_code/README.md
+</code></pre>
+</li>
+<li>
+<p>Description of the GitHub repository</p>
+
+<ul>
+<li>This repository contains RTA algorithm with improved inference algorithm for update direction finding. The RTA algorithm was originally introduced in Advances in Neural Informatics Processing System NIPS 2014. In each stochastic gradient descent iteration, the new inference algorithm aims to combine multiple updated directions. In other words, the optimal updated direction is given by a convex combination of many suboptimal update directions. Thus, the new inference algorithm avoid computing the best direction from the K-best list which was used in original RTA algorithm. </li>
+</ul>
+</li>
+<li>Website of this project
+
+<ul>
+<li><a href="http://hongyusu.github.io/L2RTA/">http://hongyusu.github.io/L2RTA/</a></li>
+</ul>
+</li>
+</ul>
 
       <footer class="site-footer">
         <span class="site-footer-owner"><a href="https://github.com/hongyusu/L2RTA">L2-norm Random Spanning Tree Approximation</a> is maintained by <a href="https://github.com/hongyusu">hongyusu</a>.</span>
