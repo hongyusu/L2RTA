@@ -10,8 +10,8 @@
    - Inference function are implemented with OpenMP library in C, which enables parallel computation for multiple trees.
    - The C function can be compiled with the following command. Note that you might need to change the path of gcc compiler.
 
-`mex compute_topk_omp.c forward_alg_omp.c backward_alg_omp.c  CFLAGS="\$CFLAGS -fopenmp -std=c99" LDFLAGS="\$LDFLAGS -fopenmp" CC="/usr/bin/gcc"`
-`mex find_worst_violator_new.c CFLAGS="\$CFLAGS -fopenmp -std=c99" LDFLAGS="\$LDFLAGS -fopenmp" CC="/usr/bin/gcc"`
+		`mex compute_topk_omp.c forward_alg_omp.c backward_alg_omp.c  CFLAGS="\$CFLAGS -fopenmp -std=c99" LDFLAGS="\$LDFLAGS -fopenmp" CC="/usr/bin/gcc"`
+		`mex find_worst_violator_new.c CFLAGS="\$CFLAGS -fopenmp -std=c99" LDFLAGS="\$LDFLAGS -fopenmp" CC="/usr/bin/gcc"`
 	
    - To run RSTA algorithm, try following command in MATLAB, which will run the algorithm on a test sample of 'ArD15' dataset with 5 random spanning trees and maximum depth of K-best list is 
 	`run_RSTA('ArD15','tree','5','1','1','2','2')`
