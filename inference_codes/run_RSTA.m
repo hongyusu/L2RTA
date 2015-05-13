@@ -156,7 +156,7 @@ function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, 
     
     %% Select part of the data for code sanity check if 'isTest==1'.
 
-    iteration   = 20;
+    iteration   = 50;
     profile_iteration = 5;
     if isTest == 1
         ntrain  = 80;
