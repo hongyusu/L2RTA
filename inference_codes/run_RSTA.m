@@ -165,7 +165,7 @@ function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, 
         Y       = Y(1:ntrain,:);
         K       = K(1:ntrain,1:ntrain);
         Ind     = Ind(1:ntrain);
-        iteration = 1;
+        iteration = 5;
         profile_iteration = 1;
         
     end
