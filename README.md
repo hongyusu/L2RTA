@@ -31,5 +31,9 @@
    - A penalty system is implemented to make it difficult for worker to get job if the worker is somehow malfunctioning. 
    - There are thoughts need to be implemented.
       - loss function should be scaled.
+   - Detailed description can be found from
+
+		./inference_code/README.md
+
    - Description of the GitHub repository
       - This repository contains RTA algorithm with improved inference algorithm for update direction finding. The RTA algorithm was originally introduced in Advances in Neural Informatics Processing System NIPS 2014. In each stochastic gradient descent iteration, the new inference algorithm aims to combine multiple updated directions. In other words, the optimal updated direction is given by a convex combination of many suboptimal update directions. Thus, the new inference algorithm avoid computing the best direction from the K-best list which was used in original RTA algorithm. 
