@@ -7,14 +7,14 @@ function plot_learning_process(option,n)
 
 
 %     dataset = {'toy10','toy50','emotions','yeast','scene'};
-    dataset = {'toy10','toy50','emotions','yeast'};
-%     ts = [1 2 5 10 15 20 25];
-    ts = [1 10 20 30];
+    dataset = {'toy10','toy50'};
+%     ts = [1 2 5 10 15 20 25 30];
+    ts = [1 2 5 30];
     ks = [1 2 4 6 8 10 12 14 16];
+%     cs = {'0.1','0.5', '1', '10', '100','1000'};
     cs = {'0.5', '1', '10', '100'};
-%     cs = {'0.5', '10'};
 %     gs = {'0.1', '1', '5'};  
-    gs = {'1'};
+    gs = {'1','0.1'};
     
    
     
