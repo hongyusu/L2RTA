@@ -102,17 +102,17 @@ def run():
   is_main_run_factor=5
   #filenames=['toy10','toy50','emotions','medical','enron','yeast','scene','cal500','fp','cancer']
   #filenames=['cancer']
-  filenames=['toy10','toy50','emotions','fp','yeast','scene']
+  filenames=['toy10','toy50','emotions','yeast','scene']
   n=0
   # generate job_queue
   logging.info('\t\tGenerating priority queue.')
   for newton_method in ['1','0']:
     for filename in filenames:
-      for slack_c in ['1', '10', '100', '0.01', '0.1']:
-        for t in [1, 2, 5, 10, 20, 30]:
+      for slack_c in ['1', '10', '0.01', '0.1']:
+        for t in [1, 5, 10, 20, 30]:
           para_t="%d" % (t)
           graph_type = 'tree'
-          for kappa in ['1','2','4','6','8','10','12','14','16']:
+          for kappa in ['1','4','8','12']:
             for l_norm in ['2']:
               #for kth_fold in ['1','2','3','4','5']:
               for kth_fold in ['1']:
