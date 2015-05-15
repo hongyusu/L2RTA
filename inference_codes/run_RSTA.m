@@ -156,7 +156,7 @@ function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, 
     
     %% Select part of the data for code sanity check if 'isTest==1'.
 
-    iteration   = 50;
+    iteration   = 100;
     profile_iteration = 5;
     if isTest == 1
         ntrain  = 80;
@@ -170,14 +170,7 @@ function run_RSTA (filename, graph_type, t, isTest, kth_fold, l_norm, maxkappa, 
         
     end
     
-    ntrain  = 500;
-    ntrain  = min(ntrain,size(Y,1));
-    X       = X(1:ntrain,:);
-    Y       = Y(1:ntrain,:);
-    K       = K(1:ntrain,1:ntrain);
-    Ind     = Ind(1:ntrain);
-    
-
+ 
 
 %     run_SVM(kth_fold, size(Y,2), Ind, X, Y,slack_c)
 %     adfasd

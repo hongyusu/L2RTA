@@ -102,7 +102,7 @@ def run():
   is_main_run_factor=5
   #filenames=['toy10','toy50','emotions','medical','enron','yeast','scene','cal500','fp','cancer']
   #filenames=['cancer']
-  filenames=['toy10','toy50','emotions','yeast','scene']
+  filenames=['toy10','toy50','emotions','yeast','scene','fp']
   n=0
   # generate job_queue
   logging.info('\t\tGenerating priority queue.')
@@ -112,11 +112,11 @@ def run():
         for t in [1, 5, 10, 20, 30]:
           para_t="%d" % (t)
           graph_type = 'tree'
-          for kappa in ['1','4','8','12']:
+          for kappa in ['1','4','8','12','16']:
             for l_norm in ['2']:
               #for kth_fold in ['1','2','3','4','5']:
               for kth_fold in ['1']:
-                for loss_scaling_factor in ['0.1','1','10']:
+                for loss_scaling_factor in ['0.1','1','5']:
                   if checkfile(filename,graph_type,para_t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method):
                     continue
                   else:

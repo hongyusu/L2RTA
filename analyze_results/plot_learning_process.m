@@ -9,13 +9,13 @@ function plot_learning_process(option,n)
 %     dataset = {'toy10','toy50','emotions','yeast','scene'};
     dataset = {'toy10','toy50','emotions'};
 %     ts = [1 2 5 10 15 20 25 30];
-    ts = [1 10 20 30];
+    ts = [5 10 20 30];
 %     ks = [1 2 4 6 8 10 12 14 16];
     ks = [1 4 8 12 16];
 %     cs = {'0.1','0.5', '1', '10', '100','1000'};
-    cs = {'0.01', '0.1', '1', '10', '100'};
+    cs = {'0.1', '1', '10'};
 %     gs = {'0.1', '1', '5'};  
-    gs = {'1','0.1','5'};
+    gs = {'1'};
     
    
     
@@ -69,9 +69,13 @@ function plot_overall_statistics(dataset,ts,ks,cs,gs,n)
                     
 
                     % training_1_err, training_ham_err, obj, duality_gap, gmax-g0, update
-                    system(sprintf('for i in 1 4 8 12 16; do cat  ../outputs/backup_run/%s_tree_%d_f1_l2_k${i}_c%s_s%s_n%s_RSTAs.log|head -n2|tail -n1|awk -F%s %s %s{print $6%s %s$9%s %s$11%s %s$13%s %s$14%s %s$32%s %s$33}%s|sed s/\\%%//g; done > tmp',...
+                    system(sprintf('for i in 1 4 8 12 16; do cat  ../outputs/backup_run/%s_tree_%d_f1_l2_k${i}_c%s_s%s_n%s_RSTAs.log|tail -n5|head -n3|awk -F%s %s %s{print $6%s %s$9%s %s$11%s %s$13%s %s$14%s %s$32%s %s$33}%s|sed s/\\%%//g; done > tmp',...
                         dname,t,c,g,n,qs,qs,qs,qd,qd,qd,qd,qd,qd,qd,qd,qd,qd,qd,qd,qs));
                     x = dlmread('tmp');
+                    
+                    x = mean(reshape(x,3,size(x,2)*length(ks)),1);
+                    x = reshape(x',length(ks),length(x)/length(ks));
+                   
                     % training_1_err, training_ham_err,test_1_err, test_ham_err, yi_tr, yi_ts
                     system(sprintf('for i in 1 4 8 12 16; do cat  ../outputs/backup_run/%s_tree_%d_f1_l2_k${i}_c%s_s%s_n%s_RSTAs.log|tail -n2|head -n1|awk -F%s %s %s{print $1%s %s$4%s %s$7%s %s$10%s %s$13%s %s$18%s %s$24}%s|sed s/://g|sed s/\\%%//g; done > tmp',...
                         dname,t,c,g,n,qs,qs,qs,qd,qd,qd,qd,qd,qd,qd,qd,qd,qd,qd,qd,qs));
