@@ -108,15 +108,15 @@ def run():
   logging.info('\t\tGenerating priority queue.')
   for newton_method in ['1','0']:
     for filename in filenames:
-      for slack_c in ['1', '10', '0.01', '0.1']:
+      for slack_c in ['1', '10', '0.1']:
         for t in [1, 5, 10, 20, 30]:
           para_t="%d" % (t)
           graph_type = 'tree'
-          for kappa in ['1','4','8','12','16']:
+          for kappa in ['1','4','6','8','10','12','14','16']:
             for l_norm in ['2']:
               #for kth_fold in ['1','2','3','4','5']:
               for kth_fold in ['1']:
-                for loss_scaling_factor in ['0.1','1','5']:
+                for loss_scaling_factor in ['0.1','1']:
                   if checkfile(filename,graph_type,para_t,kth_fold,l_norm,kappa,slack_c,loss_scaling_factor,newton_method):
                     continue
                   else:
