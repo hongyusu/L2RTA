@@ -102,7 +102,7 @@ def run():
   is_main_run_factor=5
   #filenames=['toy10','toy50','emotions','medical','enron','yeast','scene','cal500','fp','cancer']
   #filenames=['cancer']
-  filenames=['toy10','toy50','emotions','yeast','scene','fp']
+  filenames=['toy10','toy50','emotions','yeast','scene','enron','fp','medical']
   n=0
   # generate job_queue
   logging.info('\t\tGenerating priority queue.')
