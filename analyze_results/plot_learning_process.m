@@ -6,11 +6,11 @@ function plot_learning_process(option,n)
 
 
 
-    dataset = {'toy10','toy50','emotions','yeast','scene','fp'};
+    dataset = {'toy10','toy50','emotions','yeast','scene','fp','enron','medical'};
 %     ts = [5 10 20 30];
-    ts = [5 10];
+    ts = [5 10 20];
     ks = [1 2 3 4 5 6 8 10 12 14 16];
-    cs = {'1', '10'};
+    cs = {'0.1', '1', '10'};
     gs = {'1','0.1'};
     
    

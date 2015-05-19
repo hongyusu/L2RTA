@@ -1165,7 +1165,6 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton(x, kappa)
         Y_kappa_val(t,:)    = YmaxVal;
     end
 
-
     
 
     %% Compose current global marginal dual variable (mu) from local marginal dual variables {mu_t}_{t=1}^{T}
@@ -1355,6 +1354,15 @@ function [delta_obj_list] = conditional_gradient_descent_with_Newton(x, kappa)
         mu_list{t}(:,x) = reshape(mu,4*size(E_list{t},1),1);
     end
 
+    
+    global iter;
+    if iter == 1 && x==2
+        a = reshape(Y_kappa',l,kappa);
+        a'
+        lambda
+        delta_obj_list
+        adf
+    end
     
     return;
 end
